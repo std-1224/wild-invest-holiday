@@ -6,6 +6,7 @@ import { InvestmentModal } from "./components/Modals/InvestmentModal";
 import { ROICalculatorPane } from "./components/Panels/ROICalculatorPane";
 import { CabinCard } from "./components/Cards/CabinCard";
 import { MissionSection } from "./sections/MissionSection";
+import { LoginModal } from "./components/Modals/LoginModal";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -68,8 +69,6 @@ export default function App() {
       image: "/3BR.jpg",
     },
   ];
-
-  console.log("currentPage: ", currentPage);
 
   return (
     <div style={{ minHeight: "100vh" }}>
@@ -477,106 +476,11 @@ export default function App() {
 
       {/* Login Modal */}
       {showLoginModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 100,
-          }}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "12px",
-              padding: "2rem",
-              maxWidth: "400px",
-              width: "90%",
-              position: "relative",
-            }}
-          >
-            <button
-              onClick={() => setShowLoginModal(false)}
-              style={{
-                position: "absolute",
-                top: "1rem",
-                right: "1rem",
-                background: "none",
-                border: "none",
-                fontSize: "1.5rem",
-                cursor: "pointer",
-              }}
-            >
-              ×
-            </button>
-            <h2 style={{ marginBottom: "1rem", color: "#0E181F" }}>
-              Investor Login
-            </h2>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setShowLoginModal(false);
-                setIsLoggedIn(true);
-              }}
-            >
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
-                />
-              </div>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ width: "100%" }}
-              >
-                Login
-              </button>
-            </form>
-          </div>
-        </div>
+        <LoginModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
       )}
 
       {/* Investment Modal */}
