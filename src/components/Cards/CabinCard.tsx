@@ -1,7 +1,8 @@
 // Cabin Card Component
+import { CabinVideo } from "../CabinVideo";
 export const CabinCard = ({ cabin, onInvest }: any) => (
   <div className="cabin-card">
-    <img src={cabin.image} alt={cabin.name} className="cabin-image" />
+    <CabinVideo cabin={cabin} />
     <div className="cabin-content">
       <h3 className="cabin-title">{cabin.name.toUpperCase()}</h3>
       <div className="cabin-price">
