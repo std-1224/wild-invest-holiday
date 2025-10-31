@@ -7,6 +7,7 @@ import { ROICalculatorPane } from "./components/Panels/ROICalculatorPane";
 import { CabinCard } from "./components/Cards/CabinCard";
 import { MissionSection } from "./sections/MissionSection";
 import { LoginModal } from "./components/Modals/LoginModal";
+import { FAQAccordion } from "./components/FAQAccordion";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -95,6 +96,11 @@ export default function App() {
                     onInvest={handleCabinInvest}
                   />
                 ))}
+              </div>
+              
+              {/* FAQ Section */}
+              <div style={{ marginTop: '4rem', paddingTop: '2rem', borderTop: '1px solid rgba(14, 24, 31, 0.1)' }}>
+                <FAQAccordion />
               </div>
             </div>
           </>
