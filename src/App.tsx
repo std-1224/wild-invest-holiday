@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { TikTokCarousel } from "./components/TikTokCarousel";
-import { Navigation } from "./components/navigation";
+import { Navigation } from "./components/Navigation";
 import { HeroSection } from "./sections/HeroSection";
 import { InvestmentModal } from "./components/Modals/InvestmentModal";
 import { ROICalculatorPane } from "./components/Panels/ROICalculatorPane";
@@ -68,6 +68,8 @@ export default function App() {
       image: "/3BR.jpg",
     },
   ];
+
+  console.log("currentPage: ", currentPage);
 
   return (
     <div style={{ minHeight: "100vh" }}>
