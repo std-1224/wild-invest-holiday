@@ -7,7 +7,8 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    name: "",
+    firstName: "",
+    lastName: "",
     confirmPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +38,8 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
         const result = await apiClient.register({
           email: formData.email,
           password: formData.password,
-          name: formData.name,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
         });
         if (result.success) {
           setMessage(
@@ -120,31 +122,58 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
 
         <form onSubmit={handleSubmit}>
           {!isLogin && (
-            <div style={{ marginBottom: "1rem" }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "0.5rem",
-                  fontWeight: "bold",
-                }}
-              >
-                Full Name
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "2px solid #86DBDF",
-                  borderRadius: "8px",
-                }}
-              />
-            </div>
+            <>
+              <div style={{ marginBottom: "1rem" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontWeight: "bold",
+                  }}
+                >
+                  First name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.firstName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, firstName: e.target.value })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "2px solid #86DBDF",
+                    borderRadius: "8px",
+                  }}
+                />
+              </div>
+              <div style={{ marginBottom: "1rem" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Last name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lastName: e.target.value })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "2px solid #86DBDF",
+                    borderRadius: "8px",
+                  }}
+                />
+              </div>
+            </>
           )}
 
           <div style={{ marginBottom: "1rem" }}>

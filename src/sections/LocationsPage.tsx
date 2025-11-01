@@ -84,6 +84,53 @@ export const LocationsPage = ({}: LocationsPageProps) => {
                 Experience the beauty of the Victorian High Country with skiing,
                 hiking, and mountain adventures.
               </p>
+              {/* Attractions icons grid */}
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "0.75rem",
+                  alignItems: "center",
+                  marginTop: "0.5rem",
+                }}
+              >
+                {[
+                  { key: "water-skiing", label: "Water Skiing", src: "/water-ski.svg" },
+                  { key: "playground", label: "Playground", src: "/playground.svg" },
+                  { key: "pool", label: "Pool", src: "/pool.svg" },
+                  { key: "skiing", label: "Skiing", src: "/skiing.svg" },
+                  { key: "hiking", label: "Hiking", src: "/hiking.svg" },
+                  { key: "museum", label: "Museum", src: "/museum.svg" },
+                  { key: "mt-buller", label: "Mt Buller", src: "/mt-buller.svg" },
+                  { key: "food-trucks", label: "Food Trucks", src: "/food-trucks.svg" },
+                  { key: "bottle-shop", label: "Bottle Shop", src: "/bottle-shop.svg" },
+                  { key: "pizza-ovens", label: "Pizza Ovens", src: "/pizza-ovens.svg" },
+                ].map((item) => (
+                  <div
+                    key={item.key}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      width: 90,
+                      fontSize: "0.8rem",
+                      color: "#0E181F",
+                    }}
+                  >
+                    <img
+                      src={item.src}
+                      alt={item.label}
+                      onError={(e: any) => {
+                        // If the specific icon is missing, fall back to a generic icon
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/attractions/default.png";
+                      }}  
+                      style={{ width: 72, height: 72, objectFit: "contain", marginBottom: 6 }}
+                    />
+                    <div style={{ textAlign: "center" }}>{item.label}</div>
+                  </div>
+                ))}
+              </div>
               <a
                 href="https://ibe12.rmscloud.com/7C958C5EB59D2E0A/1"
                 target="_blank"
@@ -91,7 +138,7 @@ export const LocationsPage = ({}: LocationsPageProps) => {
                 className="btn btn-primary"
                 style={{ fontSize: "0.9rem" }}
               >
-                Book Your Stay
+                Book a Stay
               </a>
             </div>
           </div>
@@ -159,7 +206,7 @@ export const LocationsPage = ({}: LocationsPageProps) => {
                 disabled
                 style={{ opacity: 0.5, fontSize: "0.9rem" }}
               >
-                Coming Soon
+                Book a Stay
               </button>
             </div>
           </div>
