@@ -164,7 +164,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   });
 
   return (
-    <div className="min-h-screen py-8 w-full max-w-full overflow-x-hidden bg-[#f5f5f5]">
+    <div className="min-h-screen pb-8 w-full max-w-full overflow-x-hidden bg-[#f5f5f5]">
       <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto px-4 lg:px-8">
         <div className="flex-1">
           {/* Header */}
