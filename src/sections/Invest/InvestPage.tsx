@@ -1,5 +1,5 @@
-import { ROICalculatorPane } from "../components/Panels/ROICalculatorPane";
-import { CabinCard } from "../components/Cards/CabinCard";
+import { ROICalculatorPane } from "../../components/Panels/ROICalculatorPane";
+import { CabinCard } from "../../components/Cards/CabinCard";
 import "./InvestPage.css";
 
 interface InvestPageProps {

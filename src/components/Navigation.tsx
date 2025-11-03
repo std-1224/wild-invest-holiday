@@ -110,6 +110,30 @@ export const Navigation = ({
             </li>
             <li>
               <a
+                href="#invest"
+                className="nav-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onNavigate && onNavigate("investor-portal");
+                }}
+              >
+                Invest Portal
+              </a>
+            </li>
+            <li>
+              <a
+                href="#invest"
+                className="nav-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onNavigate && onNavigate("holiday-homes");
+                }}
+              >
+                Holiday
+              </a>
+            </li>
+            <li>
+              <a
                 href="#locations"
                 className="nav-link"
                 onClick={(e) => {
@@ -226,6 +250,32 @@ export const Navigation = ({
                   }}
                 >
                   Invest
+                </a>
+              </li>
+              <li style={{ marginBottom: "0.5rem" }}>
+                <a
+                  href="#invest"
+                  className="nav-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigate && onNavigate("investor-portal");
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Invest Portal
+                </a>
+              </li>
+              <li style={{ marginBottom: "0.5rem" }}>
+                <a
+                  href="#invest"
+                  className="nav-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigate && onNavigate("holiday-homes");
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Holiday
                 </a>
               </li>
               <li style={{ marginBottom: "0.5rem" }}>

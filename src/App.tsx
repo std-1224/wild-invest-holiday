@@ -3,8 +3,12 @@ import { Navigation } from "./components/Navigation";
 import { InvestmentModal } from "./components/Modals/InvestmentModal";
 import { LoginModal } from "./components/Modals/LoginModal";
 import { HomePage } from "./sections/HomePage";
-import { InvestPage } from "./sections/InvestPage";
 import { LocationsPage } from "./sections/LocationsPage";
+import { InvestPage } from "./sections/Invest/InvestPage";
+import { InvestorPortal } from "./sections/InvestorPortal";
+import { HolidayHomesPage } from "./sections/HolidayHomes";
+import { colors, getExtrasForCabin } from "./config/mockCalculate";
+import { ReservationModal } from "./components/Modals/ReservationModal";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -12,7 +16,14 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
-  const [selectedCabin, setSelectedCabin] = useState(null);
+  const [selectedCabin, setSelectedCabin] = useState<string | null>(null);
+  const [showReservationModal, setShowReservationModal] = useState(false);
+
+  const [selectedCabinForInvestment, setSelectedCabinForInvestment] = useState<
+    string | null
+  >(null);
+
+  const extras = getExtrasForCabin("3BR"); // Default for ROI calculator
 
   // Check for existing login on load
   useEffect(() => {
@@ -87,14 +98,26 @@ export default function App() {
         )}
 
         {currentPage === "invest" && (
-          <InvestPage
-            cabins={cabins}
-            onInvest={handleCabinInvest}
+          <InvestPage cabins={cabins} onInvest={handleCabinInvest} />
+        )}
+
+        {currentPage === "holiday-homes" && (
+          <HolidayHomesPage
+            setShowInvestmentModal={setShowInvestmentModal}
+            setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+            setSelectedCabin={setSelectedCabin}
           />
         )}
 
-        {currentPage === "locations" && (
-          <LocationsPage />
+        {currentPage === "locations" && <LocationsPage />}
+
+        {currentPage === "investor-portal" && (
+          <InvestorPortal
+            setIsLoggedIn={setIsLoggedIn}
+            onInvestClick={() => setCurrentPage("invest")}
+            setShowInvestmentModal={setShowInvestmentModal}
+            setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+          />
         )}
 
         {/* Login Modal */}
@@ -115,6 +138,17 @@ export default function App() {
               setSelectedCabin(null);
             }}
             onInvest={handleCabinInvest}
+          />
+        )}
+        {selectedCabin && (
+          <ReservationModal
+            // cabin={cabins[selectedCabin]}
+            // cabinType={selectedCabin}
+            // onClose={() => setSelectedCabin(null)}
+            // extras={extras}
+            setShowReservationModal={setShowReservationModal}
+            showReservationModal={showReservationModal}
+            setIsLoggedIn={setIsLoggedIn}
           />
         )}
       </div>
