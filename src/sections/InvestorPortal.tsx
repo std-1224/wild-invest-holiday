@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { cabins, getExtrasForCabin } from "../config/mockCalculate";
+import { AttitudeChangeModal } from "../components/Modals/AttitudeChangeModal";
 
 type CabinType = "1BR" | "2BR" | "3BR";
 
@@ -281,10 +282,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 <div className="flex gap-4">
                   <button
                     onClick={() => {
-                      if (investmentAttitude !== "retain") {
-                        setPendingAttitudeChange("retain");
-                        setShowAttitudeChangeModal(true);
-                      }
+                      setPendingAttitudeChange("retain");
+                      setShowAttitudeChangeModal(true);
                     }}
                     className={`px-6 py-3 rounded-lg font-bold transition-all text-[#0e181f] ${
                       investmentAttitude === "retain"
@@ -296,10 +295,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                   </button>
                   <button
                     onClick={() => {
-                      if (investmentAttitude !== "payout") {
-                        setPendingAttitudeChange("payout");
-                        setShowAttitudeChangeModal(true);
-                      }
+                      setPendingAttitudeChange("payout");
+                      setShowAttitudeChangeModal(true);
                     }}
                     className={`px-6 py-3 rounded-lg font-bold transition-all text-[#0e181f] ${
                       investmentAttitude === "payout"
@@ -1210,6 +1207,23 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
             </div>
           </div>
         )}
+
+        {/* Attitude Change Modal */}
+        <AttitudeChangeModal
+          isOpen={showAttitudeChangeModal}
+          onClose={() => {
+            setShowAttitudeChangeModal(false);
+            setPendingAttitudeChange(null);
+          }}
+          onConfirm={() => {
+            if (pendingAttitudeChange) {
+              setInvestmentAttitude(pendingAttitudeChange);
+              setShowAttitudeChangeModal(false);
+              setPendingAttitudeChange(null);
+            }
+          }}
+          pendingAttitude={pendingAttitudeChange}
+        />
       </div>
     </div>
   );

@@ -14,7 +14,6 @@ interface AuthContextType {
   showForgotPasswordModal: () => void;
   login: () => void;
   logout: () => void;
-  setOnNavigateToPortal: (callback: () => void) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,12 +28,13 @@ export const useAuth = () => {
 
 interface AuthProviderProps {
   children: ReactNode;
+  onNavigateToPortal?: () => void;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [onNavigateToPortal, setOnNavigateToPortal] = useState<
-    (() => void) | null
-  >(null);
+export const AuthProvider = ({
+  children,
+  onNavigateToPortal,
+}: AuthProviderProps) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeModal, setActiveModal] = useState<
     | "login"
@@ -98,8 +98,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     showForgotPasswordModal,
     login,
     logout,
-    setOnNavigateToPortal: (callback: () => void) =>
-      setOnNavigateToPortal(() => callback),
   };
 
   return (

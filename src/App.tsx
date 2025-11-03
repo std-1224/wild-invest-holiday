@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Navbar } from "./components/Navbar";
 import { InvestmentModal } from "./components/Modals/InvestmentModal";
 import { HomePage } from "./sections/HomePage";
@@ -11,8 +11,12 @@ import { ReservationModal } from "./components/Modals/ReservationModal";
 import { ChatWidget } from "./components/ChatWidget";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
-function AppContent() {
-  const [currentPage, setCurrentPage] = useState("home");
+interface AppContentProps {
+  currentPage: string;
+  setCurrentPage: (page: string) => void;
+}
+
+function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [selectedCabin, setSelectedCabin] = useState<string | null>(null);
   const [showReservationModal, setShowReservationModal] = useState(false);
@@ -24,18 +28,7 @@ function AppContent() {
   const extras = getExtrasForCabin("3BR"); // Default for ROI calculator
 
   // Use the auth context
-  const {
-    isLoggedIn,
-    setIsLoggedIn,
-    showLoginModal,
-    logout,
-    setOnNavigateToPortal,
-  } = useAuth();
-
-  // Set the navigation callback for the auth context
-  useEffect(() => {
-    setOnNavigateToPortal(() => () => setCurrentPage("investor-portal"));
-  }, [setOnNavigateToPortal]);
+  const { isLoggedIn, setIsLoggedIn, showLoginModal, logout } = useAuth();
 
   const handleCabinInvest = (cabin: any) => {
     setSelectedCabin(cabin);
@@ -146,9 +139,11 @@ function AppContent() {
 }
 
 export default function App() {
+  const [currentPage, setCurrentPage] = useState("home");
+
   return (
-    <AuthProvider>
-      <AppContent />
+    <AuthProvider onNavigateToPortal={() => setCurrentPage("investor-portal")}>
+      <AppContent currentPage={currentPage} setCurrentPage={setCurrentPage} />
     </AuthProvider>
   );
 }
