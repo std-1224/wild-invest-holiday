@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { cabins, getExtrasForCabin } from "../config/mockCalculate";
+import { cabins, getExtrasForCabin, calculateROI } from "../config/mockCalculate";
 import { AttitudeChangeModal } from "../components/Modals/AttitudeChangeModal";
 import { BoostModal } from "../components/Modals/BoostModal";
 
@@ -868,7 +868,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
 
         {/* Sticky Investment Panel - Right Side - Only show on Overview tab */}
         {activeTab === "overview" && (
-          <div className="w-full lg:w-[420px] lg:sticky lg:top-32 lg:h-[calc(100vh-8rem)] overflow-y-auto p-4 lg:flex-shrink-0 scroll-smooth">
+          <div className="w-full lg:w-[420px] lg:sticky lg:top-32 p-4 lg:flex-shrink-0 scroll-smooth">
             <div className="bg-white rounded-lg shadow-xl p-6">
               <h3 className="text-xl font-black mb-4 italic text-[#0e181f] font-[family-name:var(--font-roboto-condensed,_'Roboto_Condensed',_Impact,_'Arial_Black',_sans-serif)]">
                 Grow Your Wild Portfolio
@@ -922,25 +922,31 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                         ${cabin.price.toLocaleString()} plus GST
                       </p>
                       <div className="mt-2 pt-2 border-t border-gray-200">
-                        <p className="text-xs text-gray-600">
-                          Estimated ROI:{" "}
-                          <span className="font-bold text-[#0e181f]">
-                            {key === "1BR"
-                              ? "53.1%"
-                              : key === "2BR"
-                              ? "43.7%"
-                              : "42.7%"}
-                          </span>
-                        </p>
-                        <p className="text-xs font-bold text-[#10B981]">
-                          ~$
-                          {key === "1BR"
-                            ? "58,447"
-                            : key === "2BR"
-                            ? "74,355"
-                            : "106,650"}
-                          /year potential income
-                        </p>
+                        {(() => {
+                          // Calculate ROI with default values (66% occupancy, $200 nightly rate)
+                          const roiData = calculateROI({
+                            cabinType: key as CabinType,
+                            occupancyRate: 66,
+                            nightlyRate: 200,
+                            selectedExtras: [],
+                            financingType: "paid",
+                            depositAmount: 0,
+                          });
+                          return (
+                            <>
+                              <p className="text-xs text-gray-600">
+                                Estimated ROI:{" "}
+                                <span className="font-bold text-[#0e181f]">
+                                  {roiData.roi.toFixed(1)}%
+                                </span>
+                              </p>
+                              <p className="text-xs font-bold text-[#10B981]">
+                                ~${roiData.annualProfit.toLocaleString()}/year
+                                potential income
+                              </p>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   ))}
@@ -1114,22 +1120,44 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                             <span>Extras:</span>
                             <span className="font-bold">
                               $
-                              {[
-                                { id: "insurance", price: 1200 },
-                                { id: "maintenance", price: 800 },
-                                { id: "furniture", price: 12000 },
-                                { id: "appliances", price: 5000 },
-                              ]
+                              {(() => {
+                                const availableExtras = getExtrasForCabin(
+                                  floatingInvestmentData.selectedCabin
+                                );
+                                return availableExtras
+                                  .filter((e) =>
+                                    floatingInvestmentData.selectedExtras.includes(
+                                      e.id
+                                    )
+                                  )
+                                  .reduce((sum, e) => sum + e.price, 0)
+                                  .toLocaleString();
+                              })()}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between border-t pt-2 mt-2">
+                          <span className="font-bold">Total Investment:</span>
+                          <span className="font-bold text-[#0e181f]">
+                            $
+                            {(() => {
+                              const cabinPrice = cabins[
+                                floatingInvestmentData.selectedCabin as keyof typeof cabins
+                              ].price;
+                              const availableExtras = getExtrasForCabin(
+                                floatingInvestmentData.selectedCabin
+                              );
+                              const extrasTotal = availableExtras
                                 .filter((e) =>
                                   floatingInvestmentData.selectedExtras.includes(
                                     e.id
                                   )
                                 )
-                                .reduce((sum, e) => sum + e.price, 0)
-                                .toLocaleString()}
-                            </span>
-                          </div>
-                        )}
+                                .reduce((sum, e) => sum + e.price, 0);
+                              return (cabinPrice + extrasTotal).toLocaleString();
+                            })()}
+                          </span>
+                        </div>
                         <div className="flex justify-between border-t pt-2 mt-2">
                           <span className="font-bold">Holding Deposit:</span>
                           <span className="font-bold text-[#ffcf00]">
