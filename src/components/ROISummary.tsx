@@ -19,163 +19,67 @@ export const ROISummary = ({
   });
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        background: "white",
-        borderRadius: "16px",
-        padding: "2rem",
-        maxWidth: "500px",
-        width: "90%",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-        zIndex: 1000,
-        border: "3px solid #FFCF00",
-      }}
-    >
+    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-8 max-w-[500px] w-[90%] shadow-[0_20px_60px_rgba(0,0,0,0.3)] z-[1000] border-[3px] border-[#ffcf00]">
       <button
         onClick={onClose}
-        style={{
-          position: "absolute",
-          top: "1rem",
-          right: "1rem",
-          background: "none",
-          border: "none",
-          fontSize: "1.5rem",
-          cursor: "pointer",
-        }}
+        className="absolute top-4 right-4 bg-transparent border-none text-2xl cursor-pointer"
       >
         ×
       </button>
 
-      <h3
-        style={{
-          fontFamily:
-            '"Eurostile Condensed", "Arial Black", Impact, sans-serif',
-          fontSize: "1.5rem",
-          fontWeight: "900",
-          fontStyle: "italic",
-          color: "#0E181F",
-          marginBottom: "1.5rem",
-          textAlign: "center",
-        }}
-      >
+      <h3 className="text-2xl font-black italic text-[#0e181f] mb-6 text-center font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
         ROI SUMMARY
       </h3>
 
-      <div
-        style={{
-          background: "linear-gradient(135deg, #FFCF00 0%, #FFD700 100%)",
-          padding: "1.5rem",
-          borderRadius: "12px",
-          color: "#0E181F",
-          marginBottom: "1.5rem",
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            fontSize: "2.5rem",
-            fontWeight: "bold",
-            marginBottom: "0.5rem",
-          }}
-        >
+      <div className="bg-gradient-to-br from-[#ffcf00] to-[#ffd700] p-6 rounded-xl text-[#0e181f] mb-6 text-center">
+        <div className="text-[2.5rem] font-bold mb-2">
           {roi.roi.toFixed(1)}% ROI
         </div>
-        <div style={{ fontSize: "1rem", opacity: 0.8 }}>
+        <div className="text-base opacity-80">
           Annual Return on Investment
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: "0.75rem" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            padding: "0.75rem 0",
-            borderBottom: "2px solid #f0f0f0",
-          }}
-        >
-          <span style={{ fontWeight: "600" }}>Total Investment:</span>
-          <span style={{ fontWeight: "bold", fontSize: "1.1rem" }}>
+      <div className="grid gap-3">
+        <div className="flex justify-between py-3 border-b-2 border-[#f0f0f0]">
+          <span className="font-semibold">Total Investment:</span>
+          <span className="font-bold text-[1.1rem]">
             ${roi.totalInvestment.toLocaleString()}
           </span>
         </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            padding: "0.75rem 0",
-            borderBottom: "2px solid #f0f0f0",
-          }}
-        >
-          <span style={{ fontWeight: "600" }}>Annual Revenue:</span>
-          <span style={{ fontWeight: "bold", fontSize: "1.1rem" }}>
+        <div className="flex justify-between py-3 border-b-2 border-[#f0f0f0]">
+          <span className="font-semibold">Annual Revenue:</span>
+          <span className="font-bold text-[1.1rem]">
             ${roi.annualRevenue.toLocaleString()}
           </span>
         </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            padding: "0.75rem 0",
-            borderBottom: "2px solid #f0f0f0",
-          }}
-        >
-          <span style={{ fontWeight: "600" }}>Annual Profit:</span>
-          <span
-            style={{
-              fontWeight: "bold",
-              fontSize: "1.1rem",
-              color: "#0E181F",
-            }}
-          >
+        <div className="flex justify-between py-3 border-b-2 border-[#f0f0f0]">
+          <span className="font-semibold">Annual Profit:</span>
+          <span className="font-bold text-[1.1rem] text-[#0e181f]">
             ${roi.annualProfit.toLocaleString()}
           </span>
         </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            padding: "0.75rem 0",
-            borderBottom: "2px solid #f0f0f0",
-          }}
-        >
-          <span style={{ fontWeight: "600" }}>Monthly Profit:</span>
-          <span
-            style={{
-              fontWeight: "bold",
-              fontSize: "1.1rem",
-              color: "#0E181F",
-            }}
-          >
+        <div className="flex justify-between py-3 border-b-2 border-[#f0f0f0]">
+          <span className="font-semibold">Monthly Profit:</span>
+          <span className="font-bold text-[1.1rem] text-[#0e181f]">
             ${roi.monthlyProfit.toLocaleString()}
           </span>
         </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            padding: "0.75rem 0",
-          }}
-        >
-          <span style={{ fontWeight: "600" }}>Effective Nightly Rate:</span>
-          <span style={{ fontWeight: "bold", fontSize: "1.1rem" }}>
+        <div className="flex justify-between py-3">
+          <span className="font-semibold">Effective Nightly Rate:</span>
+          <span className="font-bold text-[1.1rem]">
             ${roi.effectiveNightlyRate}
           </span>
         </div>
       </div>
 
-      <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
+      <div className="mt-6 text-center">
         <button
-          className="btn btn-primary"
+          className="px-6 py-3 rounded-lg font-semibold text-base no-underline inline-block transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5 p-3 px-8"
           onClick={() => {
             alert("Investment process would start here!");
             onClose();
           }}
-          style={{ padding: "0.75rem 2rem", fontSize: "1rem" }}
         >
           Proceed with Investment
         </button>

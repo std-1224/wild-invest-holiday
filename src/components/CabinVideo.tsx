@@ -23,7 +23,7 @@ export const CabinVideo = ({ cabin }: any) => {
       loop
       muted
       playsInline
-      className="cabin-video"
+      className="w-full h-[200px] object-cover"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     />

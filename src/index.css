@@ -1,3 +1,22 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-*: initial;
+  --color-wild-dark-blue: #0e181f;
+  --color-wild-aqua: #86dbdf;
+  --color-wild-yellow: #ffcf00;
+  --color-wild-orange: #ec874c;
+  --color-wild-peach: #ffcda3;
+  --color-wild-light-gray: #f5f5f5;
+
+  --font-family-*: initial;
+  --font-family-eurostile: "Eurostile Condensed", "Arial Black", Impact, sans-serif;
+  --font-family-helvetica: "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  font-family: var(--font-family-helvetica);
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-wild-light-gray);
+}

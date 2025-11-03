@@ -64,83 +64,28 @@ export const ROICalculator = ({ cabinType, onClose }: any) => {
   );
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100,
-      }}
-    >
-      <div
-        style={{
-          background: "white",
-          borderRadius: "16px",
-          padding: "2rem",
-          maxWidth: "800px",
-          width: "90%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          position: "relative",
-        }}
-      >
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+      <div className="bg-white rounded-2xl p-8 max-w-[800px] w-[90%] max-h-[90vh] overflow-y-auto relative">
         <button
           onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "1rem",
-            right: "1rem",
-            background: "none",
-            border: "none",
-            fontSize: "1.5rem",
-            cursor: "pointer",
-          }}
+          className="absolute top-4 right-4 bg-transparent border-none text-2xl cursor-pointer"
         >
           ×
         </button>
 
-        <h2
-          style={{
-            fontFamily:
-              '"Eurostile Condensed", "Arial Black", Impact, sans-serif',
-            fontSize: "2rem",
-            fontWeight: "900",
-            fontStyle: "italic",
-            color: "#0E181F",
-            marginBottom: "2rem",
-            textAlign: "center",
-          }}
-        >
+        <h2 className="text-[2rem] font-black italic text-[#0e181f] mb-8 text-center font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
           ROI CALCULATOR
         </h2>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "2rem",
-          }}
-        >
+        <div className="grid grid-cols-2 gap-8">
           {/* Inputs */}
           <div>
-            <h3 style={{ color: "#0E181F", marginBottom: "1rem" }}>
+            <h3 className="text-[#0e181f] mb-4">
               Investment Details
             </h3>
 
-            <div style={{ marginBottom: "1rem" }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "0.5rem",
-                  fontWeight: "bold",
-                }}
-              >
+            <div className="mb-4">
+              <label className="block mb-2 font-bold">
                 Cabin Type
               </label>
               <select
@@ -151,12 +96,7 @@ export const ROICalculator = ({ cabinType, onClose }: any) => {
                     cabinType: e.target.value as Inputs["cabinType"],
                   })
                 }
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "2px solid #86DBDF",
-                  borderRadius: "8px",
-                }}
+                className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
               >
                 <option value="1BR">1 Bedroom - $110,000</option>
                 <option value="2BR">2 Bedroom - $135,000</option>
@@ -164,14 +104,8 @@ export const ROICalculator = ({ cabinType, onClose }: any) => {
               </select>
             </div>
 
-            <div style={{ marginBottom: "1rem" }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "0.5rem",
-                  fontWeight: "bold",
-                }}
-              >
+            <div className="mb-4">
+              <label className="block mb-2 font-bold">
                 Occupancy Rate (%)
               </label>
               <input
@@ -183,23 +117,12 @@ export const ROICalculator = ({ cabinType, onClose }: any) => {
                     occupancyRate: parseInt(e.target.value),
                   })
                 }
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "2px solid #86DBDF",
-                  borderRadius: "8px",
-                }}
+                className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
               />
             </div>
 
-            <div style={{ marginBottom: "1rem" }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "0.5rem",
-                  fontWeight: "bold",
-                }}
-              >
+            <div className="mb-4">
+              <label className="block mb-2 font-bold">
                 Nightly Rate ($)
               </label>
               <input
@@ -211,33 +134,18 @@ export const ROICalculator = ({ cabinType, onClose }: any) => {
                     nightlyRate: parseInt(e.target.value),
                   })
                 }
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "2px solid #86DBDF",
-                  borderRadius: "8px",
-                }}
+                className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
               />
             </div>
 
             <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "0.5rem",
-                  fontWeight: "bold",
-                }}
-              >
+              <label className="block mb-2 font-bold">
                 Premium Extras
               </label>
               {availableExtras.map((extra) => (
                 <label
                   key={extra.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: "0.5rem",
-                  }}
+                  className="flex items-center mb-2"
                 >
                   <input
                     type="checkbox"
@@ -257,9 +165,9 @@ export const ROICalculator = ({ cabinType, onClose }: any) => {
                         });
                       }
                     }}
-                    style={{ marginRight: "0.5rem" }}
+                    className="mr-2"
                   />
-                  <span style={{ fontSize: "0.9rem" }}>
+                  <span className="text-[0.9rem]">
                     {extra.name} (+${extra.nightlyImpact}/night) - $
                     {extra.price.toLocaleString()}
                   </span>
@@ -270,103 +178,54 @@ export const ROICalculator = ({ cabinType, onClose }: any) => {
 
           {/* Results */}
           <div>
-            <h3 style={{ color: "#0E181F", marginBottom: "1rem" }}>
+            <h3 className="text-[#0e181f] mb-4">
               Projected Returns
             </h3>
 
-            <div
-              style={{
-                background: "linear-gradient(135deg, #FFCF00 0%, #FFD700 100%)",
-                padding: "1.5rem",
-                borderRadius: "12px",
-                color: "#0E181F",
-                marginBottom: "1rem",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "2rem",
-                  fontWeight: "bold",
-                  marginBottom: "0.5rem",
-                }}
-              >
+            <div className="bg-gradient-to-br from-[#ffcf00] to-[#ffd700] p-6 rounded-xl text-[#0e181f] mb-4">
+              <div className="text-[2rem] font-bold mb-2">
                 {roi.roi.toFixed(1)}% ROI
               </div>
-              <div style={{ fontSize: "0.9rem", opacity: 0.8 }}>
+              <div className="text-[0.9rem] opacity-80">
                 Annual Return on Investment
               </div>
             </div>
 
-            <div style={{ display: "grid", gap: "0.75rem" }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "0.5rem 0",
-                  borderBottom: "1px solid #eee",
-                }}
-              >
+            <div className="grid gap-3">
+              <div className="flex justify-between py-2 border-b border-[#eee]">
                 <span>Total Investment:</span>
-                <span style={{ fontWeight: "bold" }}>
+                <span className="font-bold">
                   ${roi.totalInvestment.toLocaleString()}
                 </span>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "0.5rem 0",
-                  borderBottom: "1px solid #eee",
-                }}
-              >
+              <div className="flex justify-between py-2 border-b border-[#eee]">
                 <span>Annual Revenue:</span>
-                <span style={{ fontWeight: "bold" }}>
+                <span className="font-bold">
                   ${roi.annualRevenue.toLocaleString()}
                 </span>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "0.5rem 0",
-                  borderBottom: "1px solid #eee",
-                }}
-              >
+              <div className="flex justify-between py-2 border-b border-[#eee]">
                 <span>Annual Profit:</span>
-                <span style={{ fontWeight: "bold", color: "#0E181F" }}>
+                <span className="font-bold text-[#0e181f]">
                   ${roi.annualProfit.toLocaleString()}
                 </span>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "0.5rem 0",
-                  borderBottom: "1px solid #eee",
-                }}
-              >
+              <div className="flex justify-between py-2 border-b border-[#eee]">
                 <span>Monthly Profit:</span>
-                <span style={{ fontWeight: "bold", color: "#0E181F" }}>
+                <span className="font-bold text-[#0e181f]">
                   ${roi.monthlyProfit.toLocaleString()}
                 </span>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "0.5rem 0",
-                }}
-              >
+              <div className="flex justify-between py-2">
                 <span>Effective Nightly Rate:</span>
-                <span style={{ fontWeight: "bold" }}>
+                <span className="font-bold">
                   ${roi.effectiveNightlyRate}
                 </span>
               </div>
             </div>
 
             <button
-              className="btn btn-primary"
-              style={{ width: "100%", marginTop: "1.5rem" }}
+              className="w-full mt-6 px-6 py-3 rounded-lg font-semibold text-base no-underline inline-block transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
               onClick={() => {
                 alert("Investment process would start here!");
                 onClose();

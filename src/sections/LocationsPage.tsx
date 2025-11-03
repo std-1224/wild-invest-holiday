@@ -2,60 +2,14 @@ interface LocationsPageProps {}
 
 export const LocationsPage = ({}: LocationsPageProps) => {
   return (
-    <div
-      style={{
-        paddingTop: "120px",
-        minHeight: "100vh",
-        backgroundColor: "#F5F5F5",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          padding: "0 20px",
-        }}
-      >
-        <h1
-          style={{
-            fontFamily: '"Eurostile Condensed", "Arial Black", Impact, sans-serif',
-            fontSize: "clamp(3rem, 8vw, 5rem)",
-            fontWeight: "900",
-            fontStyle: "italic",
-            color: "#0E181F",
-            textAlign: "center",
-            marginBottom: "4rem",
-            textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
-          }}
-        >
+    <div className="pt-[120px] min-h-screen bg-[#f5f5f5]">
+      <div className="max-w-[1200px] mx-auto px-5">
+        <h1 className="text-[clamp(3rem,8vw,5rem)] font-black italic text-[#0e181f] text-center mb-16 [text-shadow:2px_2px_4px_rgba(0,0,0,0.1)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
           OUR LOCATIONS
         </h1>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
-            gap: "3rem",
-          }}
-        >
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-12">
           <div
-            style={{
-              background: "white",
-              borderRadius: "16px",
-              overflow: "hidden",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-              transition: "transform 0.3s ease, box-shadow 0.3s ease",
-              border: "2px solid transparent",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-8px)";
-              e.currentTarget.style.boxShadow = "0 16px 48px rgba(0,0,0,0.2)";
-              e.currentTarget.style.borderColor = "#FFCF00";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.15)";
-              e.currentTarget.style.borderColor = "transparent";
-            }}
+            className="bg-white rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.15)] transition-all duration-300 border-2 border-transparent hover:-translate-y-2 hover:shadow-[0_16px_48px_rgba(0,0,0,0.2)] hover:border-[#ffcf00]"
           >
             <video
               src="/mansfield-flythrough.mp4"
@@ -63,37 +17,18 @@ export const LocationsPage = ({}: LocationsPageProps) => {
               loop
               muted
               playsInline
-              style={{
-                width: "100%",
-                height: "300px",
-                objectFit: "cover",
-              }}
+              className="w-full h-[300px] object-cover"
             />
-            <div style={{ padding: "1.5rem" }}>
-              <h3
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  color: "#0E181F",
-                  marginBottom: "1rem",
-                }}
-              >
+            <div className="p-6">
+              <h3 className="text-2xl font-bold text-[#0e181f] mb-4">
                 Mansfield, Victoria
               </h3>
-              <p style={{ color: "#666", marginBottom: "1rem" }}>
+              <p className="text-[#666] mb-4">
                 Experience the beauty of the Victorian High Country with skiing,
                 hiking, and mountain adventures.
               </p>
               {/* Attractions icons grid */}
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "0.75rem",
-                  alignItems: "center",
-                  marginTop: "0.5rem",
-                }}
-              >
+              <div className="flex flex-wrap gap-3 items-center mt-2">
                 {[
                   { key: "water-skiing", label: "Water Skiing", src: "/water-ski.svg" },
                   { key: "playground", label: "Playground", src: "/playground.svg" },
@@ -108,14 +43,7 @@ export const LocationsPage = ({}: LocationsPageProps) => {
                 ].map((item) => (
                   <div
                     key={item.key}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      width: 90,
-                      fontSize: "0.8rem",
-                      color: "#0E181F",
-                    }}
+                    className="flex flex-col items-center w-[90px] text-[0.8rem] text-[#0e181f]"
                   >
                     <img
                       src={item.src}
@@ -124,10 +52,10 @@ export const LocationsPage = ({}: LocationsPageProps) => {
                         // If the specific icon is missing, fall back to a generic icon
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = "/attractions/default.png";
-                      }}  
-                      style={{ width: 72, height: 72, objectFit: "contain", marginBottom: 6 }}
+                      }}
+                      className="w-[72px] h-[72px] object-contain mb-1.5"
                     />
-                    <div style={{ textAlign: "center" }}>{item.label}</div>
+                    <div className="text-center">{item.label}</div>
                   </div>
                 ))}
               </div>
@@ -135,32 +63,14 @@ export const LocationsPage = ({}: LocationsPageProps) => {
                 href="https://ibe12.rmscloud.com/7C958C5EB59D2E0A/1"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-primary"
-                style={{ fontSize: "0.9rem" }}
+                className="px-6 py-3 rounded-lg font-semibold text-base no-underline inline-block transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
               >
                 Book a Stay
               </a>
             </div>
           </div>
           <div
-            style={{
-              background: "white",
-              borderRadius: "16px",
-              overflow: "hidden",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-              transition: "transform 0.3s ease, box-shadow 0.3s ease",
-              border: "2px solid transparent",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-8px)";
-              e.currentTarget.style.boxShadow = "0 16px 48px rgba(0,0,0,0.2)";
-              e.currentTarget.style.borderColor = "#FFCF00";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.15)";
-              e.currentTarget.style.borderColor = "transparent";
-            }}
+            className="bg-white rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.15)] transition-all duration-300 border-2 border-transparent hover:-translate-y-2 hover:shadow-[0_16px_48px_rgba(0,0,0,0.2)] hover:border-[#ffcf00]"
           >
             <video
               src="/byron-coming-soon.mp4"
@@ -168,43 +78,22 @@ export const LocationsPage = ({}: LocationsPageProps) => {
               loop
               muted
               playsInline
-              style={{
-                width: "100%",
-                height: "300px",
-                objectFit: "cover",
-              }}
+              className="w-full h-[300px] object-cover"
             />
-            <div style={{ padding: "1.5rem" }}>
-              <h3
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  color: "#0E181F",
-                  marginBottom: "1rem",
-                }}
-              >
+            <div className="p-6">
+              <h3 className="text-2xl font-bold text-[#0e181f] mb-4">
                 Byron Bay, NSW
               </h3>
-              <div
-                style={{
-                  background: "#EC874C",
-                  color: "white",
-                  padding: "0.5rem",
-                  borderRadius: "4px",
-                  display: "inline-block",
-                  marginBottom: "1rem",
-                }}
-              >
+              <div className="bg-[#ec874c] text-white py-2 px-2 rounded inline-block mb-4">
                 Coming Soon
               </div>
-              <p style={{ color: "#666", marginBottom: "1rem" }}>
+              <p className="text-[#666] mb-4">
                 Coastal paradise coming soon. Be the first to know when we launch in
                 Byron Bay.
               </p>
               <button
-                className="btn btn-secondary"
+                className="px-6 py-3 rounded-lg font-semibold text-base no-underline inline-block transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] opacity-50 hover:-translate-y-0.5"
                 disabled
-                style={{ opacity: 0.5, fontSize: "0.9rem" }}
               >
                 Book a Stay
               </button>

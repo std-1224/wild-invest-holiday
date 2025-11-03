@@ -139,46 +139,16 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
   if (!isOpen) return null;
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100,
-      }}
-    >
-      <div
-        style={{
-          background: "white",
-          borderRadius: "12px",
-          padding: "2rem",
-          maxWidth: "400px",
-          width: "90%",
-          position: "relative",
-        }}
-      >
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+      <div className="bg-white rounded-xl p-8 max-w-[400px] w-[90%] relative">
         <button
           onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "1rem",
-            right: "1rem",
-            background: "none",
-            border: "none",
-            fontSize: "1.5rem",
-            cursor: "pointer",
-          }}
+          className="absolute top-4 right-4 bg-transparent border-none text-2xl cursor-pointer"
         >
           ×
         </button>
 
-        <h2 style={{ marginBottom: "1rem", color: "#0E181F" }}>
+        <h2 className="mb-4 text-[#0e181f]">
           {modalType === "login" && "Investor Login"}
           {modalType === "register" && "Create Account"}
           {modalType === "forgot" && "Reset Password"}
@@ -189,16 +159,11 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
 
         {message && (
           <div
-            style={{
-              background: message.includes("successful")
-                ? "#d4edda"
-                : "#f8d7da",
-              color: message.includes("successful") ? "#155724" : "#721c24",
-              padding: "0.75rem",
-              borderRadius: "4px",
-              marginBottom: "1rem",
-              fontSize: "0.9rem",
-            }}
+            className={`p-3 rounded mb-4 text-[0.9rem] ${
+              message.includes("successful")
+                ? "bg-[#d4edda] text-[#155724]"
+                : "bg-[#f8d7da] text-[#721c24]"
+            }`}
           >
             {message}
           </div>
@@ -209,14 +174,8 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
           {modalType === "login" && (
             <>
               {/* ...login UI... */}
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   Email
                 </label>
                 <input
@@ -226,22 +185,11 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   Password
                 </label>
                 <input
@@ -251,53 +199,30 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn btn-primary"
-                style={{
-                  width: "100%",
-                  marginBottom: "1rem",
-                  fontSize: "0.9rem",
-                }}
+                className="w-full mb-4 text-sm px-6 py-3 rounded-lg font-semibold transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
               >
                 {isLoading ? "Loading..." : "Login"}
               </button>
-              <div style={{ textAlign: "center" }}>
+              <div className="text-center">
                 <button
                   type="button"
                   onClick={() => setModalType("register")}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#86DBDF",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
+                  className="bg-transparent border-none text-[#86dbdf] underline cursor-pointer"
                 >
                   Don't have an account? Sign up
                 </button>
               </div>
-              <div style={{ textAlign: "center", marginTop: "1rem" }}>
+              <div className="text-center mt-4">
                 <button
                   type="button"
                   onClick={() => setModalType("forgot")}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#86DBDF",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                  }}
+                  className="bg-transparent border-none text-[#86dbdf] underline cursor-pointer text-[0.9rem]"
                 >
                   Forgot Password?
                 </button>
@@ -307,14 +232,8 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
           {/* Registration Modal */}
           {modalType === "register" && (
             <>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   First name
                 </label>
                 <input
@@ -324,22 +243,11 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                   onChange={(e) =>
                     setFormData({ ...formData, firstName: e.target.value })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   Last name
                 </label>
                 <input
@@ -349,25 +257,14 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                   onChange={(e) =>
                     setFormData({ ...formData, lastName: e.target.value })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   Referral Code (Optional)
                 </label>
-                <div style={{ position: "relative" }}>
+                <div className="relative">
                   <input
                     type="text"
                     value={formData.referralCode}
@@ -376,25 +273,11 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                       setFormData({ ...formData, referralCode: code });
                       validateReferralCode(code);
                     }}
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      border: "2px solid #86DBDF",
-                      borderRadius: "8px",
-                      paddingRight: "40px",
-                    }}
+                    className="w-full p-3 border-2 border-[#86dbdf] rounded-lg pr-10"
                     placeholder="Enter referral code"
                   />
                   {formData.referralCode && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        right: "12px",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        fontSize: "1.2rem",
-                      }}
-                    >
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[1.2rem]">
                       {referralStatus === "valid"
                         ? "✅"
                         : referralStatus === "invalid"
@@ -404,14 +287,8 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                   )}
                 </div>
               </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   Email
                 </label>
                 <input
@@ -421,22 +298,11 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   Password
                 </label>
                 <input
@@ -446,22 +312,11 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   Confirm Password
                 </label>
                 <input
@@ -474,37 +329,21 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                       confirmPassword: e.target.value,
                     })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn btn-primary"
-                style={{
-                  width: "100%",
-                  marginBottom: "1rem",
-                  fontSize: "0.9rem",
-                }}
+                className="w-full mb-4 text-sm px-6 py-3 rounded-lg font-semibold transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
               >
                 {isLoading ? "Loading..." : "Create Account"}
               </button>
-              <div style={{ textAlign: "center" }}>
+              <div className="text-center">
                 <button
                   type="button"
                   onClick={() => setModalType("login")}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#86DBDF",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
+                  className="bg-transparent border-none text-[#86dbdf] underline cursor-pointer"
                 >
                   Already have an account? Login
                 </button>
@@ -514,14 +353,8 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
           {/* Forgot Password Modal */}
           {modalType === "forgot" && (
             <>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   Email
                 </label>
                 <input
@@ -531,43 +364,21 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn btn-primary"
-                style={{
-                  width: "100%",
-                  marginBottom: "1rem",
-                  fontSize: "0.9rem",
-                }}
+                className="w-full mb-4 text-sm px-6 py-3 rounded-lg font-semibold transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
               >
                 {isLoading ? "Sending..." : "Send Reset Link"}
               </button>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: "1rem",
-                }}
-              >
+              <div className="flex justify-center gap-4">
                 <button
                   type="button"
                   onClick={() => setModalType("login")}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#86DBDF",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
+                  className="bg-transparent border-none text-[#86dbdf] underline cursor-pointer"
                 >
                   Back to Login
                 </button>
@@ -577,14 +388,8 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
           {/* Reset Password Modal */}
           {modalType === "reset" && (
             <>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   Reset Code
                 </label>
                 <input
@@ -597,22 +402,11 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                       verificationCode: e.target.value,
                     })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   New Password
                 </label>
                 <input
@@ -622,43 +416,21 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                   onChange={(e) =>
                     setFormData({ ...formData, newPassword: e.target.value })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn btn-primary"
-                style={{
-                  width: "100%",
-                  marginBottom: "1rem",
-                  fontSize: "0.9rem",
-                }}
+                className="w-full mb-4 text-sm px-6 py-3 rounded-lg font-semibold transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
               >
                 {isLoading ? "Resetting..." : "Reset Password"}
               </button>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: "1rem",
-                }}
-              >
+              <div className="flex justify-center gap-4">
                 <button
                   type="button"
                   onClick={() => setModalType("login")}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#86DBDF",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
+                  className="bg-transparent border-none text-[#86dbdf] underline cursor-pointer"
                 >
                   Back to Login
                 </button>
@@ -668,14 +440,8 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
           {/* Verification Modal */}
           {modalType === "verify" && (
             <>
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div className="mb-4">
+                <label className="block mb-2 font-bold">
                   Verification Code
                 </label>
                 <input
@@ -688,33 +454,17 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                       verificationCode: e.target.value,
                     })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "2px solid #86DBDF",
-                    borderRadius: "8px",
-                  }}
+                  className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn btn-primary"
-                style={{
-                  width: "100%",
-                  marginBottom: "1rem",
-                  fontSize: "0.9rem",
-                }}
+                className="w-full mb-4 text-sm px-6 py-3 rounded-lg font-semibold transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
               >
                 {isLoading ? "Verifying..." : "Verify Email"}
               </button>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: "1rem",
-                }}
-              >
+              <div className="flex justify-center gap-4">
                 <button
                   type="button"
                   onClick={async () => {
@@ -723,26 +473,14 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
                     setIsLoading(false);
                     setMessage("Verification code resent!");
                   }}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#86DBDF",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
+                  className="bg-transparent border-none text-[#86dbdf] underline cursor-pointer"
                 >
                   Resend Code
                 </button>
                 <button
                   type="button"
                   onClick={() => setModalType("login")}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#86DBDF",
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                  }}
+                  className="bg-transparent border-none text-[#86dbdf] underline cursor-pointer"
                 >
                   Back to Login
                 </button>
@@ -752,46 +490,20 @@ export const LoginModal = ({ isOpen, onClose, onLoginSuccess }: any) => {
           {/* Account Exists Modal */}
           {modalType === "exists" && (
             <>
-              <div
-                style={{
-                  marginBottom: "1rem",
-                  color: "#721c24",
-                  background: "#f8d7da",
-                  padding: "1rem",
-                  borderRadius: "8px",
-                }}
-              >
+              <div className="mb-4 text-[#721c24] bg-[#f8d7da] p-4 rounded-lg">
                 An account with this email already exists.
               </div>
               <button
                 type="button"
                 onClick={() => setModalType("login")}
-                style={{
-                  width: "100%",
-                  marginBottom: "1rem",
-                  fontSize: "0.9rem",
-                  background: "#86DBDF",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  padding: "0.75rem",
-                  cursor: "pointer",
-                }}
+                className="w-full mb-4 text-[0.9rem] bg-[#86dbdf] text-white border-none rounded-lg p-3 cursor-pointer"
               >
                 Login to Existing Account
               </button>
               <button
                 type="button"
                 onClick={() => setModalType("forgot")}
-                style={{
-                  width: "100%",
-                  fontSize: "0.9rem",
-                  background: "none",
-                  color: "#86DBDF",
-                  border: "none",
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                }}
+                className="w-full text-[0.9rem] bg-transparent text-[#86dbdf] border-none underline cursor-pointer"
               >
                 Forgot Password?
               </button>

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { colors } from "../../config/mockCalculate";
 
 type ReservationExtras = Record<string, boolean>;
 
@@ -99,25 +98,13 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
       <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         {step === 1 && (
           <>
-            <h2
-              className="text-2xl font-bold mb-6 text-center italic"
-              style={{
-                fontFamily:
-                  '"Eurostile Condensed", "Arial Black", Impact, sans-serif',
-                fontWeight: "900",
-                fontStyle: "italic",
-                color: colors.darkBlue,
-              }}
-            >
+            <h2 className="text-2xl font-black mb-6 text-center italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
               Book Your Stay
             </h2>
             <form onSubmit={handleReservationSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.darkBlue }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                     First Name
                   </label>
                   <input
@@ -134,10 +121,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.darkBlue }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                     Last Name
                   </label>
                   <input
@@ -157,10 +141,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.darkBlue }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                     Email Address
                   </label>
                   <input
@@ -177,10 +158,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.darkBlue }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                     Phone Number
                   </label>
                   <input
@@ -200,10 +178,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.darkBlue }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                     Check-in Date
                   </label>
                   <input
@@ -220,10 +195,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.darkBlue }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                     Check-out Date
                   </label>
                   <input
@@ -243,10 +215,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.darkBlue }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                     Number of Guests
                   </label>
                   <select
@@ -268,10 +237,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.darkBlue }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                     Cabin Type
                   </label>
                   <select
@@ -292,10 +258,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.darkBlue }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                     Location
                   </label>
                   <select
@@ -317,17 +280,14 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
               </div>
 
               <div className="mb-6">
-                <label
-                  className="block text-sm font-medium mb-2"
-                  style={{ color: colors.darkBlue }}
-                >
+                <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                   Special Requests
                 </label>
                 <textarea
                   value={reservationData.specialRequests}
                   onChange={(e) =>
                     setReservationData({
-                      ...reservationData,
+                        ...reservationData,
                       specialRequests: e.target.value,
                     })
                   }
@@ -339,10 +299,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 
               {/* Extras Selection */}
               <div className="mb-6">
-                <h3
-                  className="text-lg font-bold mb-4"
-                  style={{ color: colors.darkBlue }}
-                >
+                <h3 className="text-lg font-bold mb-4 text-[#0e181f]">
                   Add Extras to Your Stay
                 </h3>
                 <div className="space-y-3">
@@ -378,15 +335,11 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                   ].map((extra) => (
                     <label
                       key={extra.id}
-                      className="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all hover:shadow-md border-2"
-                      style={{
-                        backgroundColor: reservationExtras[extra.id]
-                          ? `${colors.yellow}20`
-                          : "white",
-                        borderColor: reservationExtras[extra.id]
-                          ? colors.yellow
-                          : colors.aqua,
-                      }}
+                      className={`flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all hover:shadow-md border-2 ${
+                        reservationExtras[extra.id]
+                          ? "bg-[#ffcf00]/[0.2] border-[#ffcf00]"
+                          : "bg-white border-[#86dbdf]"
+                      }`}
                     >
                       <div className="flex items-center gap-3 flex-1">
                         <input
@@ -398,14 +351,10 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                               [extra.id]: !prev[extra.id as keyof ReservationExtras],
                             }))
                           }
-                          className="w-5 h-5"
-                          style={{ accentColor: colors.yellow }}
+                          className="w-5 h-5 accent-[#ffcf00]"
                         />
                         <div>
-                          <p
-                            className="font-bold"
-                            style={{ color: colors.darkBlue }}
-                          >
+                          <p className="font-bold text-[#0e181f]">
                             {extra.name}
                           </p>
                           <p className="text-sm text-gray-600">
@@ -414,10 +363,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                         </div>
                       </div>
                       <div className="text-right">
-                        <p
-                          className="font-bold text-lg"
-                          style={{ color: colors.yellow }}
-                        >
+                        <p className="font-bold text-lg text-[#ffcf00]">
                           ${extra.price}
                         </p>
                         <p className="text-xs text-gray-500">{extra.unit}</p>
@@ -428,17 +374,8 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
               </div>
 
               {/* Reservation Summary */}
-              <div
-                className="mb-6 p-4 rounded-lg"
-                style={{
-                  backgroundColor: `${colors.aqua}20`,
-                  border: `2px solid ${colors.aqua}`,
-                }}
-              >
-                <h3
-                  className="font-bold mb-2"
-                  style={{ color: colors.darkBlue }}
-                >
+              <div className="mb-6 p-4 rounded-lg bg-[#86dbdf]/[0.2] border-2 border-[#86dbdf]">
+                <h3 className="font-bold mb-2 text-[#0e181f]">
                   Reservation Summary
                 </h3>
                 <div className="space-y-2 text-sm">
@@ -474,10 +411,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                     (key) => reservationExtras[key]
                   ) && (
                     <div className="border-t pt-2">
-                      <p
-                        className="font-bold mb-1"
-                        style={{ color: colors.darkBlue }}
-                      >
+                      <p className="font-bold mb-1 text-[#0e181f]">
                         Selected Extras:
                       </p>
                       {Object.entries(reservationExtras).map(
@@ -511,7 +445,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                               className="flex justify-between text-xs"
                             >
                               <span>{extra.name}</span>
-                              <span style={{ color: colors.yellow }}>
+                              <span className="text-[#ffcf00]">
                                 ${extra.price}
                               </span>
                             </div>
@@ -526,22 +460,14 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90"
-                  style={{
-                    backgroundColor: colors.yellow,
-                    color: colors.darkBlue,
-                  }}
+                  className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f]"
                 >
                   Continue to Account Creation
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowReservationModal(false)}
-                  className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90"
-                  style={{
-                    backgroundColor: colors.darkBlue,
-                    color: colors.white,
-                  }}
+                  className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#0e181f] text-white"
                 >
                   Cancel
                 </button>
@@ -552,27 +478,15 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 
         {step === 2 && (
           <>
-            <h2
-              className="text-2xl font-bold mb-6 text-center italic"
-              style={{
-                fontFamily:
-                  '"Eurostile Condensed", "Arial Black", Impact, sans-serif',
-                fontWeight: "900",
-                fontStyle: "italic",
-                color: colors.darkBlue,
-              }}
-            >
+            <h2 className="text-2xl font-black mb-6 text-center italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
               Create Your Account
             </h2>
-            <p className="text-center mb-6" style={{ color: colors.darkBlue }}>
+            <p className="text-center mb-6 text-[#0e181f]">
               To complete your reservation, please create an account with us.
             </p>
             <form onSubmit={handleAccountCreation}>
               <div className="mb-4">
-                <label
-                  className="block text-sm font-medium mb-2"
-                  style={{ color: colors.darkBlue }}
-                >
+                <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                   Password
                 </label>
                 <input
@@ -586,10 +500,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                 />
               </div>
               <div className="mb-4">
-                <label
-                  className="block text-sm font-medium mb-2"
-                  style={{ color: colors.darkBlue }}
-                >
+                <label className="block text-sm font-medium mb-2 text-[#0e181f]">
                   Confirm Password
                 </label>
                 <input
@@ -619,7 +530,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                     className="mr-2"
                     required
                   />
-                  <span className="text-sm" style={{ color: colors.darkBlue }}>
+                  <span className="text-sm text-[#0e181f]">
                     I agree to the Terms of Service and Privacy Policy
                   </span>
                 </label>
@@ -627,22 +538,14 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90"
-                  style={{
-                    backgroundColor: colors.yellow,
-                    color: colors.darkBlue,
-                  }}
+                  className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f]"
                 >
                   Create Account & Complete Reservation
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90"
-                  style={{
-                    backgroundColor: colors.darkBlue,
-                    color: colors.white,
-                  }}
+                  className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#0e181f] text-white"
                 >
                   Back
                 </button>
@@ -654,51 +557,32 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
         {step === 3 && (
           <>
             <div className="text-center">
-              <h2
-                className="text-2xl font-bold mb-6 italic"
-                style={{
-                  fontFamily:
-                    '"Eurostile Condensed", "Arial Black", Impact, sans-serif',
-                  fontWeight: "900",
-                  fontStyle: "italic",
-                  color: colors.darkBlue,
-                }}
-              >
+              <h2 className="text-2xl font-black mb-6 italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
                 Reservation Confirmed!
               </h2>
-              <div
-                className="mb-6 p-4 rounded-lg"
-                style={{ backgroundColor: colors.aqua + "20" }}
-              >
-                <p
-                  className="text-lg font-bold mb-2"
-                  style={{ color: colors.darkBlue }}
-                >
+              <div className="mb-6 p-4 rounded-lg bg-[#86dbdf]/[0.2]">
+                <p className="text-lg font-bold mb-2 text-[#0e181f]">
                   {reservationData.firstName} {reservationData.lastName}
                 </p>
-                <p className="text-sm" style={{ color: colors.darkBlue }}>
+                <p className="text-sm text-[#0e181f]">
                   {reservationData.cabinType} Cabin at{" "}
                   {reservationData.location}
                 </p>
-                <p className="text-sm" style={{ color: colors.darkBlue }}>
+                <p className="text-sm text-[#0e181f]">
                   {reservationData.checkIn} to {reservationData.checkOut}
                 </p>
-                <p className="text-sm" style={{ color: colors.darkBlue }}>
+                <p className="text-sm text-[#0e181f]">
                   {reservationData.guests}{" "}
                   {reservationData.guests === 1 ? "Guest" : "Guests"}
                 </p>
               </div>
-              <p className="mb-6" style={{ color: colors.darkBlue }}>
+              <p className="mb-6 text-[#0e181f]">
                 Your account has been created and your reservation is confirmed.
                 You'll receive a confirmation email shortly.
               </p>
               <button
                 onClick={handleCompleteReservation}
-                className="px-8 py-3 rounded-lg font-bold transition-all hover:opacity-90"
-                style={{
-                  backgroundColor: colors.yellow,
-                  color: colors.darkBlue,
-                }}
+                className="px-8 py-3 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f]"
               >
                 Continue to My Account
               </button>

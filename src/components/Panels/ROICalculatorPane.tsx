@@ -44,71 +44,26 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
   };
 
   return (
-    <div
-      style={{
-        background: "white",
-        borderRadius: "8px",
-        padding: "1rem",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-        border: "1px solid #FFCF00",
-      }}
-    >
-      <h3
-        style={{
-          fontFamily:
-            '"Eurostile Condensed", "Arial Black", Impact, sans-serif',
-          fontSize: "1rem",
-          fontWeight: "900",
-          fontStyle: "italic",
-          color: "#0E181F",
-          marginBottom: "0.75rem",
-          textAlign: "center",
-        }}
-      >
+    <div className="bg-white rounded-lg p-4 shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-[#ffcf00]">
+      <h3 className="font-black italic text-[#0e181f] mb-3 text-center text-base font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
         ROI CALCULATOR
       </h3>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "0.75rem",
-        }}
-      >
+      <div className="grid grid-cols-2 gap-3">
         {/* Inputs */}
         <div>
-          <h4
-            style={{
-              color: "#0E181F",
-              marginBottom: "0.5rem",
-              fontSize: "0.85rem",
-              fontWeight: "600",
-            }}
-          >
+          <h4 className="text-[#0e181f] mb-2 text-[0.85rem] font-semibold">
             Investment Details
           </h4>
 
-          <div style={{ marginBottom: "0.5rem" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.25rem",
-                fontWeight: "600",
-                fontSize: "0.75rem",
-              }}
-            >
+          <div className="mb-2">
+            <label className="block mb-1 font-semibold text-xs">
               Cabin Type
             </label>
             <select
               value={inputs.cabinType}
               onChange={(e) => handleCabinTypeChange(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "0.375rem",
-                border: "1px solid #86DBDF",
-                borderRadius: "4px",
-                fontSize: "0.75rem",
-              }}
+              className="w-full p-1.5 border border-[#86dbdf] rounded text-xs"
             >
               <option value="1BR">1 Bedroom - $110,000</option>
               <option value="2BR">2 Bedroom - $135,000</option>
@@ -116,15 +71,8 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
             </select>
           </div>
 
-          <div style={{ marginBottom: "0.5rem" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.25rem",
-                fontWeight: "600",
-                fontSize: "0.75rem",
-              }}
-            >
+          <div className="mb-2">
+            <label className="block mb-1 font-semibold text-xs">
               Occupancy Rate (%)
             </label>
             <input
@@ -136,25 +84,12 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
                   occupancyRate: parseInt(e.target.value),
                 })
               }
-              style={{
-                width: "100%",
-                padding: "0.375rem",
-                border: "1px solid #86DBDF",
-                borderRadius: "4px",
-                fontSize: "0.75rem",
-              }}
+              className="w-full p-1.5 border border-[#86dbdf] rounded text-xs"
             />
           </div>
 
-          <div style={{ marginBottom: "0.5rem" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.25rem",
-                fontWeight: "600",
-                fontSize: "0.75rem",
-              }}
-            >
+          <div className="mb-2">
+            <label className="block mb-1 font-semibold text-xs">
               Nightly Rate ($)
             </label>
             <input
@@ -166,25 +101,12 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
                   nightlyRate: parseInt(e.target.value),
                 })
               }
-              style={{
-                width: "100%",
-                padding: "0.375rem",
-                border: "1px solid #86DBDF",
-                borderRadius: "4px",
-                fontSize: "0.75rem",
-              }}
+              className="w-full p-1.5 border border-[#86dbdf] rounded text-xs"
             />
           </div>
 
-          <div style={{ marginBottom: "0.5rem" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.25rem",
-                fontWeight: "600",
-                fontSize: "0.75rem",
-              }}
-            >
+          <div className="mb-2">
+            <label className="block mb-1 font-semibold text-xs">
               Payment Method
             </label>
             <select
@@ -195,13 +117,7 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
                   financingType: e.target.value as "paid" | "financed",
                 })
               }
-              style={{
-                width: "100%",
-                padding: "0.375rem",
-                border: "1px solid #86DBDF",
-                borderRadius: "4px",
-                fontSize: "0.75rem",
-              }}
+              className="w-full p-1.5 border border-[#86dbdf] rounded text-xs"
             >
               <option value="paid">Fully Paid</option>
               <option value="financed">Financed</option>
@@ -209,15 +125,8 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
           </div>
 
           {inputs.financingType === "financed" && (
-            <div style={{ marginBottom: "0.5rem" }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "0.25rem",
-                  fontWeight: "600",
-                  fontSize: "0.75rem",
-                }}
-              >
+            <div className="mb-2">
+              <label className="block mb-1 font-semibold text-xs">
                 Deposit Amount ($)
               </label>
               <input
@@ -229,38 +138,21 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
                     depositAmount: parseInt(e.target.value),
                   })
                 }
-                style={{
-                  width: "100%",
-                  padding: "0.375rem",
-                  border: "1px solid #86DBDF",
-                  borderRadius: "4px",
-                  fontSize: "0.75rem",
-                }}
+                className="w-full p-1.5 border border-[#86dbdf] rounded text-xs"
                 placeholder="Enter deposit amount"
               />
             </div>
           )}
 
           <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.25rem",
-                fontWeight: "600",
-                fontSize: "0.75rem",
-              }}
-            >
+            <label className="block mb-1 font-semibold text-xs">
               Premium Extras
             </label>
-            <div style={{ maxHeight: "100px", overflowY: "auto" }}>
+            <div className="max-h-[100px] overflow-y-auto">
               {availableExtras.map((extra: any) => (
                 <label
                   key={extra.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: "0.25rem",
-                  }}
+                  className="flex items-center mb-1"
                 >
                   <input
                     type="checkbox"
@@ -280,9 +172,9 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
                         });
                       }
                     }}
-                    style={{ marginRight: "0.25rem" }}
+                    className="mr-1"
                   />
-                  <span style={{ fontSize: "0.7rem" }}>
+                  <span className="text-[0.7rem]">
                     {extra.name} (+${extra.nightlyImpact}/night) - $
                     {extra.price.toLocaleString()}
                   </span>
@@ -294,101 +186,48 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
 
         {/* Results */}
         <div>
-          <h4
-            style={{
-              color: "#0E181F",
-              marginBottom: "0.5rem",
-              fontSize: "0.85rem",
-              fontWeight: "600",
-            }}
-          >
+          <h4 className="text-[#0e181f] mb-2 text-[0.85rem] font-semibold">
             Projected Returns
           </h4>
 
-          <div
-            style={{
-              background: "linear-gradient(135deg, #FFCF00 0%, #FFD700 100%)",
-              padding: "0.75rem",
-              borderRadius: "6px",
-              color: "#0E181F",
-              marginBottom: "0.75rem",
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                marginBottom: "0.25rem",
-              }}
-            >
+          <div className="bg-[linear-gradient(135deg,_rgb(255,207,0)_0%,_rgb(255,215,0)_100%)] p-3 rounded-md text-[#0e181f] mb-3 text-center">
+            <div className="text-xl font-bold mb-1">
               {roi.roi.toFixed(1)}% ROI
             </div>
-            <div style={{ fontSize: "0.7rem", opacity: 0.8 }}>
+            <div className="text-[0.7rem] opacity-80">
               Annual Return
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gap: "0.25rem",
-              marginBottom: "0.75rem",
-              fontSize: "0.7rem",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "0.25rem 0",
-              }}
-            >
-              <span style={{ fontWeight: "600" }}>Total Price:</span>
-              <span style={{ fontWeight: "bold" }}>
+          <div className="grid gap-1 mb-3 text-[0.7rem]">
+            <div className="flex justify-between py-1">
+              <span className="font-semibold">Total Price:</span>
+              <span className="font-bold">
                 ${roi.totalCabinPrice.toLocaleString()}
               </span>
             </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "0.25rem 0",
-              }}
-            >
-              <span style={{ fontWeight: "600" }}>Actual Investment:</span>
-              <span style={{ fontWeight: "bold", color: "#FFCF00" }}>
+            <div className="flex justify-between py-1">
+              <span className="font-semibold">Actual Investment:</span>
+              <span className="font-bold text-[#ffcf00]">
                 ${roi.actualInvestment.toLocaleString()}
               </span>
             </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "0.25rem 0",
-              }}
-            >
-              <span style={{ fontWeight: "600" }}>Annual Profit:</span>
-              <span style={{ fontWeight: "bold", color: "#0E181F" }}>
+            <div className="flex justify-between py-1">
+              <span className="font-semibold">Annual Profit:</span>
+              <span className="font-bold text-[#0e181f]">
                 ${roi.annualProfit.toLocaleString()}
               </span>
             </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "0.25rem 0",
-              }}
-            >
-              <span style={{ fontWeight: "600" }}>Monthly Profit:</span>
-              <span style={{ fontWeight: "bold", color: "#0E181F" }}>
+            <div className="flex justify-between py-1">
+              <span className="font-semibold">Monthly Profit:</span>
+              <span className="font-bold text-[#0e181f]">
                 ${roi.monthlyProfit.toLocaleString()}
               </span>
             </div>
           </div>
 
           <button
-            className="btn btn-primary"
+            className="w-full text-sm p-2 rounded-lg font-semibold border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f]"
             onClick={() =>
               onInvest &&
               onInvest({
@@ -397,12 +236,6 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
                 extras: inputs.selectedExtras,
               })
             }
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              fontSize: "0.8rem",
-              fontWeight: "600",
-            }}
           >
             Proceed with Investment
           </button>

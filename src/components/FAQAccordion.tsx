@@ -68,73 +68,31 @@ export const FAQAccordion = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <div className="faq-section" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 0' }}>
-      <h2 
-        className="section-title" 
-        style={{ 
-          marginBottom: '2rem',
-          fontFamily: '"Eurostile Condensed", "Arial Black", Impact, sans-serif',
-          fontSize: '2.5rem',
-          fontWeight: '900',
-          fontStyle: 'italic',
-          color: '#0E181F',
-          textAlign: 'center',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
-        }}
-      >
+    <div className="max-w-[800px] mx-auto py-8">
+      <h2 className="mb-8 text-[2.5rem] font-black italic text-[#0e181f] text-center [text-shadow:2px_2px_4px_rgba(0,0,0,0.1)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
         Frequently Asked Questions
       </h2>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+
+      <div className="flex flex-col gap-2">
         {faqData.map((faq, index) => (
           <div
             key={index}
-            style={{
-              border: '1px solid rgba(14, 24, 31, 0.1)',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              background: 'white',
-              transition: 'all 0.2s ease',
-            }}
+            className="border border-[#0e181f]/10 rounded-lg overflow-hidden bg-white transition-all duration-200"
           >
             <button
               onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                textAlign: 'left',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: '1rem',
-                fontWeight: '600',
-                color: '#0E181F',
-              }}
+              className="w-full p-4 text-left bg-transparent border-none cursor-pointer flex justify-between items-center text-base font-semibold text-[#0e181f]"
               aria-expanded={openIndex === index}
             >
               {faq.question}
-              <span 
-                style={{
-                  transform: openIndex === index ? 'rotate(180deg)' : 'none',
-                  transition: 'transform 0.2s ease',
-                }}
-              >
+              <span className={`transition-transform duration-200 ${openIndex === index ? 'rotate-180' : ''}`}>
                 ▼
               </span>
             </button>
             <div
-              style={{
-                padding: openIndex === index ? '1rem' : '0 1rem',
-                maxHeight: openIndex === index ? '500px' : '0',
-                overflow: 'hidden',
-                transition: 'all 0.3s ease',
-                opacity: openIndex === index ? 1 : 0,
-                color: '#666',
-                lineHeight: '1.5',
-              }}
+              className={`overflow-hidden transition-all duration-300 text-[#666] leading-relaxed ${
+                openIndex === index ? 'max-h-[500px] opacity-100 p-4' : 'max-h-0 opacity-0 px-4 py-0'
+              }`}
             >
               {faq.answer}
             </div>

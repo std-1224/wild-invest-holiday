@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 // Simple Navigation Component
-export const Navigation = ({
+export const Navbar = ({
   onLoginClick,
   isLoggedIn,
   onLogout,
@@ -19,10 +19,10 @@ export const Navigation = ({
     setIntroActive(true);
 
     // Start fade-out shortly before the 3s mark so the hide feels smooth
-    const startFadeOut = setTimeout(() => setIntroActive(false), 2600);
+    const startFadeOut = setTimeout(() => setIntroActive(false), 600);
 
     // Remove overlay after 3s
-    const remove = setTimeout(() => setShowIntro(false), 3000);
+    const remove = setTimeout(() => setShowIntro(false), 1000);
 
     return () => {
       clearTimeout(startFadeOut);
@@ -38,56 +38,41 @@ export const Navigation = ({
           role="dialog"
           aria-hidden={!showIntro}
           onClick={() => setShowIntro(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#fff",
-            zIndex: 9999,
-            cursor: "pointer",
-          }}
+          className="fixed inset-0 flex items-center justify-center bg-white z-[9999] cursor-pointer"
         >
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "opacity 360ms ease, transform 360ms ease",
-              opacity: introActive ? 1 : 0,
-              transform: introActive ? "scale(1)" : "scale(0.92)",
-              willChange: "opacity, transform",
-            }}
+            className={`flex items-center justify-center transition-all duration-[360ms] ease-in-out will-change-[opacity,transform] ${
+              introActive ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.92]'
+            }`}
           >
             <img
               src="/logo-wildthings.svg"
               alt="Wild Things"
-              style={{ width: 220, height: "auto", display: "block" }}
+              className="w-[220px] h-auto block"
             />
           </div>
         </div>
       )}
 
-      <nav className="nav">
-        <div className="nav-content">
+      <nav className="fixed top-0 left-0 right-0 bg-[#86dbdf]/90 backdrop-blur-[10px] border-b-4 border-[#ffcf00] z-50 py-[15px]">
+        <div className="max-w-[1200px] mx-auto flex justify-between items-center px-4">
           <div
-            className="logo-container"
+            className="flex items-center cursor-pointer"
             onClick={() => setCurrentPage("home")}
           >
             <img
               src="/logo-wildthings.svg"
               alt="Wild Things"
-              className="logo"
+              className="h-[90px] max-w-[90px]"
             />
           </div>
 
           {/* Desktop Navigation */}
-          <ul className="nav-links hidden lg:flex">
+          <ul className="hidden lg:flex list-none gap-8 m-0 p-0">
             <li>
               <a
                 href="#home"
-                className="nav-link"
+                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigate && onNavigate("home");
@@ -99,7 +84,7 @@ export const Navigation = ({
             <li>
               <a
                 href="#invest"
-                className="nav-link"
+                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigate && onNavigate("invest");
@@ -111,7 +96,7 @@ export const Navigation = ({
             <li>
               <a
                 href="#invest"
-                className="nav-link"
+                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigate && onNavigate("investor-portal");
@@ -123,7 +108,7 @@ export const Navigation = ({
             <li>
               <a
                 href="#invest"
-                className="nav-link"
+                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigate && onNavigate("holiday-homes");
@@ -135,7 +120,7 @@ export const Navigation = ({
             <li>
               <a
                 href="#locations"
-                className="nav-link"
+                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigate && onNavigate("locations");
@@ -147,7 +132,7 @@ export const Navigation = ({
             <li>
               <a
                 href="https://ibe12.rmscloud.com/7C958C5EB59D2E0A/1"
-                className="nav-link"
+                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -157,7 +142,7 @@ export const Navigation = ({
             <li>
               <a
                 href="https://wildthings.myshopify.com"
-                className="nav-link"
+                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -168,15 +153,8 @@ export const Navigation = ({
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden"
+            className="lg:hidden bg-transparent border-none text-[#0e181f] text-2xl cursor-pointer"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--dark-blue)",
-              fontSize: "1.5rem",
-              cursor: "pointer",
-            }}
           >
             ☰
           </button>
@@ -184,30 +162,25 @@ export const Navigation = ({
           {/* Desktop Auth Button */}
           <div className="hidden lg:block">
             {isLoggedIn ? (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1rem",
-                }}
-              >
+              <div className="flex items-center gap-4">
                 <button
                   onClick={() => onNavigate && onNavigate("portal")}
-                  className="btn btn-primary"
-                  style={{ padding: "0.5rem 1.5rem", fontSize: "0.85rem" }}
+                  className="px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
                 >
                   MY ACCOUNT
                 </button>
                 <button
                   onClick={onLogout}
-                  className="btn btn-secondary"
-                  style={{ padding: "0.5rem 1.5rem", fontSize: "0.85rem" }}
+                  className="px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
                 >
                   Logout
                 </button>
               </div>
             ) : (
-              <button onClick={onLoginClick} className="btn btn-primary">
+              <button
+                onClick={onLoginClick}
+                className="px-6 py-3 rounded-lg font-semibold text-base transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
+              >
                 Investor Login
               </button>
             )}
@@ -216,20 +189,12 @@ export const Navigation = ({
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div
-            className="lg:hidden"
-            style={{
-              background: "rgba(134, 219, 223, 0.95)",
-              backdropFilter: "blur(10px)",
-              padding: "1rem",
-              borderTop: "1px solid rgba(14, 24, 31, 0.1)",
-            }}
-          >
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              <li style={{ marginBottom: "0.5rem" }}>
+          <div className="lg:hidden bg-[#86dbdf]/95 backdrop-blur-[10px] p-4 border-t border-[#0e181f]/10">
+            <ul className="list-none p-0 m-0">
+              <li className="mb-2">
                 <a
                   href="#home"
-                  className="nav-link"
+                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate && onNavigate("home");
@@ -239,10 +204,10 @@ export const Navigation = ({
                   Home
                 </a>
               </li>
-              <li style={{ marginBottom: "0.5rem" }}>
+              <li className="mb-2">
                 <a
                   href="#invest"
-                  className="nav-link"
+                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate && onNavigate("invest");
@@ -252,10 +217,10 @@ export const Navigation = ({
                   Invest
                 </a>
               </li>
-              <li style={{ marginBottom: "0.5rem" }}>
+              <li className="mb-2">
                 <a
                   href="#invest"
-                  className="nav-link"
+                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate && onNavigate("investor-portal");
@@ -265,10 +230,10 @@ export const Navigation = ({
                   Invest Portal
                 </a>
               </li>
-              <li style={{ marginBottom: "0.5rem" }}>
+              <li className="mb-2">
                 <a
                   href="#invest"
-                  className="nav-link"
+                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate && onNavigate("holiday-homes");
@@ -278,10 +243,10 @@ export const Navigation = ({
                   Holiday
                 </a>
               </li>
-              <li style={{ marginBottom: "0.5rem" }}>
+              <li className="mb-2">
                 <a
                   href="#locations"
-                  className="nav-link"
+                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate && onNavigate("locations");
@@ -291,21 +256,20 @@ export const Navigation = ({
                   Locations
                 </a>
               </li>
-              <li style={{ marginBottom: "0.5rem" }}>
+              <li className="mb-2">
                 <a
                   href="https://ibe12.rmscloud.com/7C958C5EB59D2E0A/1"
-                  className="nav-link"
+                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   Book a Stay
                 </a>
               </li>
-              <li>
+              <li className="mb-2">
                 <a
-                  style={{ marginBottom: "0.5rem" }}
                   href="https://wildthings.myshopify.com"
-                  className="nav-link"
+                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

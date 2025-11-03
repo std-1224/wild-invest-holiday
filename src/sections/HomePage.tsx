@@ -21,9 +21,9 @@ export const HomePage = ({ cabins, onInvest, onInvestClick }: HomePageProps) => 
       <HeroSection onInvestClick={onInvestClick} />
       <TikTokCarousel />
       <MissionSection />
-      <div className="section">
-        <h2 className="section-title">Investment Opportunities</h2>
-        <div className="cabin-grid">
+      <div className="py-20 px-4">
+        <h2 className="text-5xl font-black italic text-center mb-16 text-[#0e181f] [text-shadow:1px_1px_2px_rgba(0,0,0,0.1)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">Investment Opportunities</h2>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8">
           {cabins.map((cabin) => (
             <CabinCard
               key={cabin.id}
@@ -34,13 +34,7 @@ export const HomePage = ({ cabins, onInvest, onInvestClick }: HomePageProps) => 
         </div>
 
         {/* FAQ Section */}
-        <div
-          style={{
-            marginTop: "4rem",
-            paddingTop: "2rem",
-            borderTop: "1px solid rgba(14, 24, 31, 0.1)",
-          }}
-        >
+        <div className="mt-16 pt-8 border-t border-[#0e181f]/10">
           <FAQAccordion />
         </div>
       </div>

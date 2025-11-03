@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Navigation } from "./components/Navigation";
+import { Navbar } from "./components/Navbar";
 import { InvestmentModal } from "./components/Modals/InvestmentModal";
 import { LoginModal } from "./components/Modals/LoginModal";
 import { HomePage } from "./sections/HomePage";
@@ -81,7 +81,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      <Navigation
+      <Navbar
         onLoginClick={handleLogin}
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}
@@ -152,6 +152,15 @@ export default function App() {
           />
         )}
       </div>
+
+      <footer
+        className="text-white py-12 px-4"
+        style={{ backgroundColor: colors.darkBlue }}
+      >
+        <div className="max-w-7xl mx-auto text-center">
+          <p>&copy; 2024 Wild Things Pty Ltd. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import { ROICalculatorPane } from "../../components/Panels/ROICalculatorPane";
 import { CabinCard } from "../../components/Cards/CabinCard";
-import "./InvestPage.css";
 
 interface InvestPageProps {
   cabins: Array<{
@@ -14,32 +13,32 @@ interface InvestPageProps {
 
 export const InvestPage = ({ cabins, onInvest }: InvestPageProps) => {
   return (
-    <div className="invest-page">
-      <div className="invest-container">
-        <h1 className="invest-title">
+    <div className="pt-[120px] min-h-screen bg-[#f5f5f5]">
+      <div className="max-w-[1400px] mx-auto px-5">
+        <h1 className="text-[clamp(3rem,8vw,5rem)] font-black italic text-[#0e181f] text-center mb-4 [text-shadow:2px_2px_4px_rgba(0,0,0,0.1)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
           INVEST IN A HOLIDAY HOME
         </h1>
-        <p className="invest-description">
+        <p className="text-xl text-center text-gray-600 mx-auto mb-12 max-w-[800px]">
           Invest in your own piece of paradise. Earn passive income while providing
           families with unforgettable outdoor experiences.
         </p>
 
         {/* Two Column Layout: Cabin Cards Left, ROI Calculator Right */}
-        <div className="layout-grid">
+        <div className="grid gap-4 items-start grid-cols-1 lg:grid-cols-[1fr_350px]">
           {/* Left Side: Compact Cabin Cards */}
-          <div className="cabin-cards-container">
+          <div className="flex flex-col gap-4">
             {cabins.map((cabin) => (
               <CabinCard key={cabin.id} cabin={cabin} onInvest={onInvest} />
             ))}
           </div>
 
           {/* Right Side: Compact ROI Calculator Panel */}
-          <div className="roi-calculator-wrapper">
-            <div className="roi-calculator-panel">
-              <h2 className="calculator-title">
+          <div className="relative mt-8 lg:sticky lg:top-[120px] lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto lg:mt-0">
+            <div className="bg-white rounded-xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[#ffcf00]">
+              <h2 className="text-xl font-black italic text-[#0e181f] text-center mb-2 font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
                 ROI CALCULATOR
               </h2>
-              <p className="calculator-subtitle">
+              <p className="text-center text-gray-600 mb-4 text-xs">
                 Calculate your potential returns
               </p>
               <ROICalculatorPane
