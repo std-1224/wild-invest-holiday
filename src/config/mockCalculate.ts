@@ -424,3 +424,32 @@ export const defaultNightlyRates = {
   "2BR": 200,
   "3BR": 250,
 };
+
+export const investmentSteps = [
+  { title: "Reservation", subtitle: "Week 0", icon: "💳", timeline: "Start" },
+  {
+    title: "Sign Purchase Agreement",
+    subtitle: "Week 1",
+    icon: "📝",
+    timeline: "1 week",
+  },
+  { title: "Pay Deposit", subtitle: "30%", icon: "💰", timeline: "2 weeks" },
+  {
+    title: "Build Complete",
+    subtitle: "30% - 8 weeks",
+    icon: "🏗️",
+    timeline: "10 weeks",
+  },
+  {
+    title: "Inspect Cabin",
+    subtitle: "Week 11",
+    icon: "🔍",
+    timeline: "11 weeks",
+  },
+  {
+    title: "Hand Over Keys",
+    subtitle: "50% - Week 12",
+    icon: "🗝️",
+    timeline: "12 weeks",
+  },
+];

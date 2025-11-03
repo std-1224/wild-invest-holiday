@@ -1,8 +1,9 @@
 import { HeroSection } from "./HeroSection";
 import { TikTokCarousel } from "../components/TikTokCarousel";
 import { MissionSection } from "./MissionSection";
-import { CabinCard } from "../components/Cards/CabinCard";
-import { FAQAccordion } from "../components/FAQAccordion";
+import { InvestTimeline } from "../components/InvestTimeline";
+import { InvestFaqs } from "../components/InvestFaqs";
+import { GoogleReviews } from "../components/GoogleReviews";
 
 interface HomePageProps {
   cabins: Array<{
@@ -15,29 +16,15 @@ interface HomePageProps {
   onInvestClick: () => void;
 }
 
-export const HomePage = ({ cabins, onInvest, onInvestClick }: HomePageProps) => {
+export const HomePage = ({ onInvestClick }: HomePageProps) => {
   return (
     <>
       <HeroSection onInvestClick={onInvestClick} />
-      <TikTokCarousel />
       <MissionSection />
-      <div className="py-20 px-4">
-        <h2 className="text-5xl font-black italic text-center mb-16 text-[#0e181f] [text-shadow:1px_1px_2px_rgba(0,0,0,0.1)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">Investment Opportunities</h2>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8">
-          {cabins.map((cabin) => (
-            <CabinCard
-              key={cabin.id}
-              cabin={cabin}
-              onInvest={onInvest}
-            />
-          ))}
-        </div>
-
-        {/* FAQ Section */}
-        <div className="mt-16 pt-8 border-t border-[#0e181f]/10">
-          <FAQAccordion />
-        </div>
-      </div>
+      <GoogleReviews />
+      <TikTokCarousel />
+      <InvestTimeline />
+      <InvestFaqs />
     </>
   );
 };

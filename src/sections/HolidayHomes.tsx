@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { Calculator } from "lucide-react";
-import { cabins, calculateROI, defaultNightlyRates, faqs, getExtrasForCabin } from "../config/mockCalculate";
+import {
+  cabins,
+  calculateROI,
+  defaultNightlyRates,
+  faqs,
+  getExtrasForCabin,
+} from "../config/mockCalculate";
+import { InvestTimeline } from "../components/InvestTimeline";
+import { InvestFaqs } from "../components/InvestFaqs";
 
 type CabinType = "1BR" | "2BR" | "3BR";
 
@@ -15,7 +23,6 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
   setSelectedCabinForInvestment,
   setSelectedCabin,
 }) => {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [roiInputs, setRoiInputs] = useState<{
     cabinType: CabinType;
     occupancyRate: number;
@@ -26,49 +33,23 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
     nightlyRate: 160,
   });
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
-  const toggleFaq = (index: number) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
 
-  const investmentSteps = [
-    { title: "Reservation", subtitle: "Week 0", icon: "💳", timeline: "Start" },
-    {
-      title: "Sign Purchase Agreement",
-      subtitle: "Week 1",
-      icon: "📝",
-      timeline: "1 week",
-    },
-    { title: "Pay Deposit", subtitle: "30%", icon: "💰", timeline: "2 weeks" },
-    {
-      title: "Build Complete",
-      subtitle: "30% - 8 weeks",
-      icon: "🏗️",
-      timeline: "10 weeks",
-    },
-    {
-      title: "Inspect Cabin",
-      subtitle: "Week 11",
-      icon: "🔍",
-      timeline: "11 weeks",
-    },
-    {
-      title: "Hand Over Keys",
-      subtitle: "50% - Week 12",
-      icon: "🗝️",
-      timeline: "12 weeks",
-    },
-  ];
-
-    const handleCabinTypeChange = (newCabinType: CabinType) => {
+  const handleCabinTypeChange = (newCabinType: CabinType) => {
     setRoiInputs({
       ...roiInputs,
       cabinType: newCabinType,
-      nightlyRate: defaultNightlyRates[newCabinType as keyof typeof defaultNightlyRates]
+      nightlyRate:
+        defaultNightlyRates[newCabinType as keyof typeof defaultNightlyRates],
     });
     setSelectedExtras([]); // Clear selected extras when changing cabin type
   };
 
-    const roiResults = calculateROI(roiInputs.cabinType, roiInputs.occupancyRate, roiInputs.nightlyRate, selectedExtras);
+  const roiResults = calculateROI(
+    roiInputs.cabinType,
+    roiInputs.occupancyRate,
+    roiInputs.nightlyRate,
+    selectedExtras
+  );
 
   return (
     <div className="pt-20 min-h-screen w-full max-w-full overflow-x-hidden bg-[#f5f5f5]">
@@ -86,60 +67,7 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
           <h2 className="text-3xl font-black mb-8 text-center italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
             YOUR INVESTMENT JOURNEY
           </h2>
-          <div className="hidden md:flex justify-between items-center gap-2">
-            {investmentSteps.map((step, index) => (
-              <React.Fragment key={index}>
-                <div className="timeline-step flex-[1_1_120px] min-w-[120px] text-center flex flex-col items-center">
-                  <div className="w-[60px] h-[60px] rounded-full bg-[#ffcf00] flex items-center justify-center text-[28px] mx-auto mb-2 border-[3px] border-[#0e181f] transition-all duration-300 cursor-pointer flex-shrink-0 hover:scale-110 hover:shadow-[0_8px_25px_rgba(255,207,0,0.4)]">
-                    {step.icon}
-                  </div>
-                  <h3 className="font-bold mb-1 text-sm text-[#0e181f] h-6 flex items-center justify-center text-center leading-[1.2]">
-                    {step.title}
-                  </h3>
-                  <p className="text-xs text-gray-600 mb-1 h-5 flex items-center justify-center text-center leading-[1.2]">
-                    {step.subtitle}
-                  </p>
-                  <div className="bg-[#86dbdf] text-[#0e181f] px-2 py-1 rounded-lg text-[10px] font-bold h-5 leading-[12px] flex items-center justify-center text-center">
-                    {step.timeline}
-                  </div>
-                </div>
-                {index < investmentSteps.length - 1 && (
-                  <div className="flex-[0_0_30px] h-0.5 bg-[#86dbdf] relative animate-pulse mb-[72px]">
-                    <div className="absolute -right-1.5 -top-1 w-0 h-0 border-l-[6px] border-l-[#86dbdf] border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent"></div>
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-
-          {/* Mobile vertical layout */}
-          <div className="md:hidden space-y-6">
-            {investmentSteps.map((step, index) => (
-              <React.Fragment key={index}>
-                <div className="timeline-step flex flex-col items-center text-center">
-                  <div className="w-20 h-20 rounded-full bg-[#ffcf00] flex items-center justify-center text-4xl mx-auto mb-3 border-4 border-[#0e181f] transition-all duration-300 cursor-pointer hover:scale-110 hover:shadow-[0_8px_25px_rgba(255,207,0,0.4)]">
-                    {step.icon}
-                  </div>
-                  <h3 className="font-bold mb-1 text-[#0e181f] h-7 flex items-center justify-center text-center leading-[1.2]">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-1 h-6 flex items-center justify-center text-center leading-[1.2]">
-                    {step.subtitle}
-                  </p>
-                  <div className="bg-[#86dbdf] text-[#0e181f] px-2 py-1 rounded-xl text-xs font-bold h-6 leading-4 flex items-center justify-center text-center">
-                    {step.timeline}
-                  </div>
-                </div>
-                {index < investmentSteps.length - 1 && (
-                  <div className="flex justify-center">
-                    <div className="w-[3px] h-10 bg-[#86dbdf] relative animate-pulse">
-                      <div className="absolute -bottom-2 -left-[5px] w-0 h-0 border-t-[8px] border-t-[#86dbdf] border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent"></div>
-                    </div>
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
+          <InvestTimeline />
           <div className="text-center mt-8">
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a
@@ -276,10 +204,7 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
           <div className="w-full md:sticky md:w-auto flex-[0_0_auto] min-w-[300px] md:top-[100px] max-w-full">
             <div className="bg-white rounded-lg shadow-xl p-6">
               <div className="flex items-center mb-6">
-                <Calculator
-                  size={28}
-                  className="text-[#ffcf00] mr-3"
-                />
+                <Calculator size={28} className="text-[#ffcf00] mr-3" />
                 <h2 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
                   ROI CALCULATOR
                 </h2>
@@ -294,32 +219,32 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                     {Object.entries(cabins).map(([key, cabin]) => {
                       const cabinKey = key as CabinType;
                       return (
-                      <div
-                        key={key}
-                        onClick={() => handleCabinTypeChange(cabinKey)}
-                        className={`cursor-pointer rounded-lg overflow-hidden transition-all ${
-                          roiInputs.cabinType === (key as CabinType)
-                            ? "border-[3px] border-[#ffcf00] shadow-[0_4px_12px_rgba(255,207,0,0.3)]"
-                            : "border-[3px] border-[#86dbdf]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 p-2">
-                          <img
-                            src={cabin.image}
-                            alt={cabin.name}
-                            className="w-20 h-[60px] object-cover rounded"
-                          />
-                          <div className="flex-1">
-                            <div className="font-bold text-sm text-[#0e181f]">
-                              {cabin.name}
-                            </div>
-                            <div className="text-base font-bold text-[#ffcf00]">
-                              ${cabin.price.toLocaleString("en-AU")} plus GST
+                        <div
+                          key={key}
+                          onClick={() => handleCabinTypeChange(cabinKey)}
+                          className={`cursor-pointer rounded-lg overflow-hidden transition-all ${
+                            roiInputs.cabinType === (key as CabinType)
+                              ? "border-[3px] border-[#ffcf00] shadow-[0_4px_12px_rgba(255,207,0,0.3)]"
+                              : "border-[3px] border-[#86dbdf]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 p-2">
+                            <img
+                              src={cabin.image}
+                              alt={cabin.name}
+                              className="w-20 h-[60px] object-cover rounded"
+                            />
+                            <div className="flex-1">
+                              <div className="font-bold text-sm text-[#0e181f]">
+                                {cabin.name}
+                              </div>
+                              <div className="text-base font-bold text-[#ffcf00]">
+                                ${cabin.price.toLocaleString("en-AU")} plus GST
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
+                      );
                     })}
                   </div>
                 </div>
@@ -411,7 +336,8 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                             roiInputs.nightlyRate,
                             [extra.id]
                           );
-                          const roiImpact = (withExtra.roi || 0) - (base.roi || 0);
+                          const roiImpact =
+                            (withExtra.roi || 0) - (base.roi || 0);
                           return (
                             <>
                               <div className="font-bold text-sm text-[#0e181f]">
@@ -541,9 +467,12 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                     <span>Management (20%):</span>
                     <span className="font-bold">
                       -$
-                      {roiResults.wildThingsCommissionAmount.toLocaleString("en-AU", {
-                        maximumFractionDigits: 0,
-                      })}
+                      {roiResults.wildThingsCommissionAmount.toLocaleString(
+                        "en-AU",
+                        {
+                          maximumFractionDigits: 0,
+                        }
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between text-[#ec874c]">
@@ -559,7 +488,9 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                     <span>Energy Costs:</span>
                     <span className="font-bold">
                       -$
-                      {(roiResults as any).totalEnergyCosts?.toLocaleString?.("en-AU") ?? "0"}
+                      {(roiResults as any).totalEnergyCosts?.toLocaleString?.(
+                        "en-AU"
+                      ) ?? "0"}
                     </span>
                   </div>
                   {(roiResults as any).annualCostSavings > 0 && (
@@ -567,7 +498,9 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                       <span>Cost Savings (Solar):</span>
                       <span className="font-bold">
                         +$
-                        {(roiResults as any).annualCostSavings?.toLocaleString?.("en-AU") ?? "0"}
+                        {(
+                          roiResults as any
+                        ).annualCostSavings?.toLocaleString?.("en-AU") ?? "0"}
                       </span>
                     </div>
                   )}
@@ -616,48 +549,7 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
           </div>
         </div>
       </div>
-
-    
-
-      {/* FAQ Section */}
-      <div className="max-w-7xl mx-auto mt-12">
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <h2 className="text-3xl font-black mb-8 text-center italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
-            INVESTOR FAQS
-          </h2>
-          <div className="space-y-4">
-            {faqs.map((faq, index) => (
-              <div
-                key={index}
-                className="rounded-lg overflow-hidden transition-all border-2 border-[#86dbdf]"
-              >
-                <button
-                  onClick={() => toggleFaq(index)}
-                  className={`w-full p-4 text-left font-bold transition-all hover:opacity-90 flex justify-between items-center text-[#0e181f] ${
-                    openFaq === index ? "bg-[#ffcf00]" : "bg-white"
-                  }`}
-                >
-                  <span>{faq.question}</span>
-                  <span
-                    className={`text-2xl transition-transform duration-300 ${
-                      openFaq === index ? "rotate-180" : "rotate-0"
-                    }`}
-                  >
-                    ▼
-                  </span>
-                </button>
-                {openFaq === index && (
-                  <div className="p-4 bg-[#86dbdf]/[0.07] border-t-2 border-[#86dbdf]">
-                    <p className="text-[#0e181f] leading-relaxed">
-                      {faq.answer}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <InvestFaqs />
     </div>
   );
 };
