@@ -9,6 +9,7 @@ import { InvestorPortal } from "./sections/InvestorPortal";
 import { HolidayHomesPage } from "./sections/HolidayHomes";
 import { colors, getExtrasForCabin } from "./config/mockCalculate";
 import { ReservationModal } from "./components/Modals/ReservationModal";
+import { ChatWidget } from "./components/ChatWidget";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -152,6 +153,8 @@ export default function App() {
           />
         )}
       </div>
+
+       <ChatWidget />
 
       <footer
         className="text-white py-12 px-4"
