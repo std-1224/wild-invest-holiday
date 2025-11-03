@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Navbar } from "./components/Navbar";
 import { InvestmentModal } from "./components/Modals/InvestmentModal";
-import { LoginModal } from "./components/Modals/LoginModal";
 import { HomePage } from "./sections/HomePage";
 import { LocationsPage } from "./sections/LocationsPage";
 import { InvestPage } from "./sections/Invest/InvestPage";
@@ -10,12 +9,10 @@ import { HolidayHomesPage } from "./sections/HolidayHomes";
 import { colors, getExtrasForCabin } from "./config/mockCalculate";
 import { ReservationModal } from "./components/Modals/ReservationModal";
 import { ChatWidget } from "./components/ChatWidget";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
-export default function App() {
+function AppContent() {
   const [currentPage, setCurrentPage] = useState("home");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [selectedCabin, setSelectedCabin] = useState<string | null>(null);
   const [showReservationModal, setShowReservationModal] = useState(false);
@@ -26,31 +23,19 @@ export default function App() {
 
   const extras = getExtrasForCabin("3BR"); // Default for ROI calculator
 
-  // Check for existing login on load
+  // Use the auth context
+  const {
+    isLoggedIn,
+    setIsLoggedIn,
+    showLoginModal,
+    logout,
+    setOnNavigateToPortal,
+  } = useAuth();
+
+  // Set the navigation callback for the auth context
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    const userData = localStorage.getItem("user");
-    if (token && userData) {
-      setIsLoggedIn(true);
-      setUser(JSON.parse(userData));
-    }
-  }, []);
-
-  const handleLogin = () => {
-    setShowLoginModal(true);
-  };
-
-  const handleLoginSuccess = (userData: any) => {
-    setIsLoggedIn(true);
-    setUser(userData);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
-    setIsLoggedIn(false);
-    setUser(null);
-  };
+    setOnNavigateToPortal(() => () => setCurrentPage("investor-portal"));
+  }, [setOnNavigateToPortal]);
 
   const handleCabinInvest = (cabin: any) => {
     setSelectedCabin(cabin);
@@ -83,10 +68,11 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh" }}>
       <Navbar
-        onLoginClick={handleLogin}
+        onLoginClick={showLoginModal}
         isLoggedIn={isLoggedIn}
-        onLogout={handleLogout}
+        onLogout={logout}
         onNavigate={setCurrentPage}
+        setCurrentPage={setCurrentPage}
       />
 
       <div style={{ marginTop: "124px" }}>
@@ -118,15 +104,6 @@ export default function App() {
             onInvestClick={() => setCurrentPage("invest")}
             setShowInvestmentModal={setShowInvestmentModal}
             setSelectedCabinForInvestment={setSelectedCabinForInvestment}
-          />
-        )}
-
-        {/* Login Modal */}
-        {showLoginModal && (
-          <LoginModal
-            isOpen={showLoginModal}
-            onClose={() => setShowLoginModal(false)}
-            onLoginSuccess={handleLoginSuccess}
           />
         )}
 
@@ -165,5 +142,13 @@ export default function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

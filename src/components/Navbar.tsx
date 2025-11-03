@@ -132,7 +132,7 @@ export const Navbar = ({
             <li>
               <a
                 href="https://ibe12.rmscloud.com/7C958C5EB59D2E0A/1"
-                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                className="text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -259,7 +259,7 @@ export const Navbar = ({
               <li className="mb-2">
                 <a
                   href="https://ibe12.rmscloud.com/7C958C5EB59D2E0A/1"
-                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  className="text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
