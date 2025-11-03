@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { cabins, getExtrasForCabin } from "../config/mockCalculate";
 import { AttitudeChangeModal } from "../components/Modals/AttitudeChangeModal";
+import { BoostModal } from "../components/Modals/BoostModal";
 
 type CabinType = "1BR" | "2BR" | "3BR";
 
@@ -1223,6 +1224,25 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
             }
           }}
           pendingAttitude={pendingAttitudeChange}
+        />
+
+        {/* Boost Modal */}
+        <BoostModal
+          isOpen={showBoostModal}
+          onClose={() => {
+            setShowBoostModal(false);
+            setSelectedInvestmentForBoost(null);
+          }}
+          selectedInvestment={selectedInvestmentForBoost}
+          savedPaymentMethods={savedPaymentMethods}
+          onAddPaymentMethod={(newCard) => {
+            if (newCard.isDefault) {
+              setSavedPaymentMethods(
+                savedPaymentMethods.map((pm) => ({ ...pm, isDefault: false }))
+              );
+            }
+            setSavedPaymentMethods([...savedPaymentMethods, newCard]);
+          }}
         />
       </div>
     </div>
