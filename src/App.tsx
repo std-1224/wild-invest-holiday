@@ -83,9 +83,8 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
 
         {currentPage === "holiday-homes" && (
           <HolidayHomesPage
-            setShowInvestmentModal={setShowInvestmentModal}
             setSelectedCabinForInvestment={setSelectedCabinForInvestment}
-            setSelectedCabin={setSelectedCabin}
+            onInvest={handleCabinInvest}
           />
         )}
 

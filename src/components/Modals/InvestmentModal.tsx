@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   calculateROI,
   getAvailableExtrasForCabin,
@@ -18,6 +18,9 @@ export const InvestmentModal = ({ cabin, onClose, onInvest }: any) => {
   const [depositAmount, setDepositAmount] = useState<number>(0);
   const [occupancyRate, setOccupancyRate] = useState<number>(66);
   const [nightlyRate, setNightlyRate] = useState<number>(200);
+
+  // Refs for cabin cards to enable auto-scrolling
+  const cabinRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const availableExtras = getAvailableExtrasForCabin(selectedCabinType);
   const roi = calculateROI(
@@ -80,6 +83,18 @@ export const InvestmentModal = ({ cabin, onClose, onInvest }: any) => {
     setSelectedExtras([]); // Clear extras when changing cabin type
   };
 
+  // Auto-scroll to selected cabin card when selection changes
+  useEffect(() => {
+    if (selectedCabinType && cabinRefs.current[selectedCabinType]) {
+      setTimeout(() => {
+        cabinRefs.current[selectedCabinType]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 100);
+    }
+  }, [selectedCabinType]);
+
   return (
     <div className="fixed inset-0 bg-black/50 flex flex-col z-[100]">
       {/* Main Content Area - Scrollable */}
@@ -105,6 +120,9 @@ export const InvestmentModal = ({ cabin, onClose, onInvest }: any) => {
               {(["1BR", "2BR", "3BR"] as CabinType[]).map((cabinType) => (
                 <div
                   key={cabinType}
+                  ref={(el) => {
+                    cabinRefs.current[cabinType] = el;
+                  }}
                   onClick={() => handleCabinTypeChange(cabinType)}
                   className={`rounded-2xl p-8 cursor-pointer transition-all duration-300 grid grid-cols-[300px_1fr] gap-8 items-center ${
                     selectedCabinType === cabinType

@@ -13,15 +13,13 @@ import { InvestFaqs } from "../components/InvestFaqs";
 type CabinType = "1BR" | "2BR" | "3BR";
 
 interface HolidayHomesProps {
-  setShowInvestmentModal: (value: boolean) => void;
-  setSelectedCabin: (value: string) => void;
+  onInvest: (cabin: any) => void;
   setSelectedCabinForInvestment: (value: string) => void;
 }
 
 export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
-  setShowInvestmentModal,
+  onInvest,
   setSelectedCabinForInvestment,
-  setSelectedCabin,
 }) => {
   const [roiInputs, setRoiInputs] = useState<{
     cabinType: CabinType;
@@ -188,7 +186,10 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                       <button
                         onClick={() => {
                           setSelectedCabinForInvestment(key);
-                          setShowInvestmentModal(true);
+                          onInvest({
+                            id: key,
+                            ...cabins[roiInputs.cabinType],
+                          });
                         }}
                         className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 mb-2 bg-[#ffcf00] text-[#0e181f]"
                       >
@@ -534,7 +535,10 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
               <button
                 onClick={() => {
                   setSelectedCabinForInvestment(roiInputs.cabinType);
-                  setShowInvestmentModal(true);
+                  onInvest({
+                    id: roiInputs.cabinType,
+                    ...cabins[roiInputs.cabinType],
+                  });
                 }}
                 className="w-full py-4 rounded-lg font-bold transition-all hover:opacity-90 mb-4 bg-[#ffcf00] text-[#0e181f] text-lg"
               >
