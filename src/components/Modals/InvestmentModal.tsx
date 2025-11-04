@@ -1,412 +1,1066 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
+  cabins,
   calculateROI,
-  getAvailableExtrasForCabin,
+  defaultNightlyRates,
+  getExtrasForCabin,
 } from "../../config/mockCalculate";
-import { CalendlyButton } from "../CalendlyButton";
 
-// Investment Modal Component - Tesla-style design
-export const InvestmentModal = ({ cabin, onClose, onInvest }: any) => {
-  type CabinType = "1BR" | "2BR" | "3BR";
+type CabinType = "1BR" | "2BR" | "3BR";
 
-  const [selectedCabinType, setSelectedCabinType] = useState<CabinType>(
-    (cabin.id as CabinType) || "1BR"
-  );
-  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
-  const [financingType, setFinancingType] = useState<"paid" | "financed">(
-    "paid"
-  );
-  const [depositAmount, setDepositAmount] = useState<number>(0);
-  const [occupancyRate, setOccupancyRate] = useState<number>(66);
-  const [nightlyRate, setNightlyRate] = useState<number>(200);
-
-  // Refs for cabin cards to enable auto-scrolling
-  const cabinRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-
-  const availableExtras = getAvailableExtrasForCabin(selectedCabinType);
-  const roi = calculateROI(
-    selectedCabinType,
-    occupancyRate,
-    nightlyRate,
-    selectedExtras,
-    financingType,
-    depositAmount
-  );
-
-  const cabinFeatures: Record<"1BR" | "2BR" | "3BR", string[]> = {
-    "1BR": [
-      "1 Bedroom",
-      "1 Bathroom",
-      "Kitchenette",
-      "Living Area",
-      "Outdoor Deck",
-      "Parking",
-    ],
-    "2BR": [
-      "2 Bedrooms",
-      "1 Bathroom",
-      "Full Kitchen",
-      "Living Area",
-      "Outdoor Deck",
-      "Parking",
-    ],
-    "3BR": [
-      "3 Bedrooms",
-      "2 Bathrooms",
-      "Full Kitchen",
-      "Living Area",
-      "Outdoor Deck",
-      "Parking",
-      "Laundry",
-    ],
+interface InvestmentModalProps {
+  showInvestmentModal: boolean;
+  setShowInvestmentModal: (show: boolean) => void;
+  selectedCabinForInvestment: string | null;
+  setSelectedCabinForInvestment: (cabin: string | null) => void;
+  floatingInvestmentData: {
+    selectedExtras?: string[];
+    paymentMethod?: string;
   };
+  userInvestments: any[];
+  setUserInvestments: (investments: any[]) => void;
+  setIsLoggedIn: (loggedIn: boolean) => void;
+  setCurrentPage: (page: string) => void;
+}
 
-  const cabinPrices: Record<"1BR" | "2BR" | "3BR", number> = {
-    "1BR": 110000,
-    "2BR": 135000,
-    "3BR": 160000,
-  };
+const colors = {
+  yellow: "#FFCF00",
+  darkBlue: "#0E181F",
+  aqua: "#86DBDF",
+  orange: "#EC874C",
+  peach: "#FFCDA3",
+  white: "#FFFFFF",
+  lightGray: "#F5F5F5",
+};
 
-  const cabinImages: Record<"1BR" | "2BR" | "3BR", string> = {
-    "1BR": "/1BR.jpg",
-    "2BR": "/2BR.jpg",
-    "3BR": "/3BR.jpg",
-  };
+export const InvestmentModal: React.FC<InvestmentModalProps> = ({
+  showInvestmentModal,
+  setShowInvestmentModal,
+  selectedCabinForInvestment,
+  floatingInvestmentData,
+  userInvestments,
+  setUserInvestments,
+  setIsLoggedIn,
+  setCurrentPage,
+}) => {
+  const [investmentData, setInvestmentData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    location: "Mansfield",
+    password: "",
+    confirmPassword: "",
+    agreeToTerms: false,
+  });
 
-  const cabinVideos: Record<"1BR" | "2BR" | "3BR", string> = {
-    "1BR": "/1br-cabin-video.mp4",
-    "2BR": "/2BR.mp4",
-    "3BR": "/3br-cabin-video.mp4",
-  };
-
-  const handleCabinTypeChange = (newCabinType: "1BR" | "2BR" | "3BR") => {
-    setSelectedCabinType(newCabinType);
-    setSelectedExtras([]); // Clear extras when changing cabin type
-  };
-
-  // Auto-scroll to selected cabin card when selection changes
-  useEffect(() => {
-    if (selectedCabinType && cabinRefs.current[selectedCabinType]) {
-      setTimeout(() => {
-        cabinRefs.current[selectedCabinType]?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }, 100);
+  // Initialize selectedExtras from floatingInvestmentData
+  const initializeExtras = () => {
+    const extrasObj: { [key: string]: boolean } = {};
+    if (floatingInvestmentData.selectedExtras) {
+      floatingInvestmentData.selectedExtras.forEach((extraId) => {
+        extrasObj[extraId] = true;
+      });
     }
-  }, [selectedCabinType]);
+    return extrasObj;
+  };
+
+  const [selectedExtras, setSelectedExtras] = useState(initializeExtras());
+
+  // Update extras when modal opens with floatingInvestmentData
+  useEffect(() => {
+    if (showInvestmentModal && floatingInvestmentData.selectedExtras) {
+      const extrasObj: { [key: string]: boolean } = {};
+      floatingInvestmentData.selectedExtras.forEach((extraId) => {
+        extrasObj[extraId] = true;
+      });
+      setSelectedExtras(extrasObj);
+    }
+  }, [showInvestmentModal, floatingInvestmentData.selectedExtras]);
+
+  // Early return after hooks
+  if (!showInvestmentModal || !selectedCabinForInvestment) {
+    return null;
+  }
+
+  const selectedCabin = selectedCabinForInvestment
+    ? cabins[selectedCabinForInvestment as CabinType]
+    : null;
+  const holdingDeposit = 100; // $100 holding deposit
+  const depositPercentage = 0.3; // 30% deposit
+  const calculatedDeposit = selectedCabin
+    ? Math.round(selectedCabin.price * depositPercentage)
+    : 0;
+  const balanceDue = selectedCabin ? calculatedDeposit : 0; // 30% becomes due after holding deposit
+
+  // Wild Things Account Balance (for existing owners)
+  const totalIncome = userInvestments.reduce(
+    (sum, investment) => sum + investment.totalIncome,
+    0
+  );
+  const wildThingsBalance = totalIncome * 0.3;
+  const isUsingAccountBalance =
+    floatingInvestmentData.paymentMethod === "account" &&
+    userInvestments.length > 0;
+
+  // Get cabin-specific extras
+  const extras = getExtrasForCabin(selectedCabinForInvestment as CabinType);
+
+  const toggleExtra = (extraId: string) => {
+    setSelectedExtras((prev) => ({
+      ...prev,
+      [extraId]: !prev[extraId],
+    }));
+  };
+
+  const calculateExtrasTotal = () => {
+    return extras.reduce((total, extra) => {
+      return total + (selectedExtras[extra.id] ? extra.price : 0);
+    }, 0);
+  };
+
+  const calculateTotalDeposit = () => {
+    return holdingDeposit + balanceDue + calculateExtrasTotal();
+  };
+
+  // Calculate ROI impact for individual extras
+  const calculateExtraROI = (extraId: string, cabinType: CabinType) => {
+    const baseROI = calculateROI(cabinType, 66, defaultNightlyRates[cabinType], []);
+    const withExtraROI = calculateROI(
+      cabinType,
+      66,
+      defaultNightlyRates[cabinType],
+      [extraId]
+    );
+
+    return {
+      baseROI: baseROI.roi,
+      withExtraROI: withExtraROI.roi,
+      roiImpact: withExtraROI.roi - baseROI.roi,
+      extra: getExtrasForCabin(cabinType).find((e) => e.id === extraId),
+    };
+  };
+
+  const handleInvestmentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Create investment account and process deposit
+    console.log("Investment Account Created:", investmentData);
+    console.log("Holding Deposit:", holdingDeposit);
+    console.log("Balance Due:", balanceDue);
+    console.log("Total Deposit:", calculateTotalDeposit());
+    console.log("Cabin Type:", selectedCabinForInvestment);
+
+    // Simulate account creation and login
+    setIsLoggedIn(true);
+    setShowInvestmentModal(false);
+
+    // Add to user investments
+    const newInvestment = {
+      id: userInvestments.length + 1,
+      cabinType: selectedCabinForInvestment,
+      location: investmentData.location,
+      purchaseDate: new Date().toISOString().split("T")[0],
+      purchasePrice: selectedCabin?.price || 0,
+      currentValue: selectedCabin?.price || 0,
+      totalIncome: 0,
+      monthlyIncome: 0,
+      status: "Pending Build",
+      nextPayment: "Build Complete (30%)",
+    };
+    setUserInvestments([...userInvestments, newInvestment]);
+
+    // Redirect to investor portal
+    setCurrentPage("investor-portal");
+  };
+
+  if (!showInvestmentModal || !selectedCabin) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex flex-col z-[100]">
-      {/* Main Content Area - Scrollable */}
-      <div className="bg-white flex-1 overflow-y-auto pb-[180px]">
-        <div className="max-w-[1200px] mx-auto p-8">
-          <button
-            onClick={onClose}
-            className="fixed top-4 right-4 bg-white border-2 border-[#86dbdf] rounded-full w-10 h-10 text-2xl cursor-pointer text-[#666] z-[101] flex items-center justify-center"
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto relative">
+        <button
+          onClick={() => setShowInvestmentModal(false)}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+          style={{ color: colors.darkBlue }}
+        >
+          <span className="text-2xl font-bold">×</span>
+        </button>
+        <h2
+          className="text-2xl font-bold mb-6 text-center italic"
+          style={{
+            fontFamily:
+              '"Eurostile Condensed", "Arial Black", Impact, sans-serif',
+            fontWeight: "900",
+            fontStyle: "italic",
+            color: colors.darkBlue,
+          }}
+        >
+          Reserve Your Investment
+        </h2>
+
+        {/* Cabin Image and Details */}
+        <div className="mb-6">
+          <img
+            src={selectedCabin.image}
+            alt={selectedCabin.name}
+            className="w-full h-48 object-cover rounded-lg mb-4"
+          />
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3
+                className="text-xl font-bold"
+                style={{ color: colors.darkBlue }}
+              >
+                {selectedCabin.name}
+              </h3>
+              <p className="text-sm" style={{ color: colors.darkBlue }}>
+                📍 {investmentData.location || "Mansfield"}, Victoria
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="mb-6 p-4 rounded-lg"
+          style={{
+            backgroundColor: `${colors.yellow}20`,
+            border: `2px solid ${colors.yellow}`,
+          }}
+        >
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="font-medium" style={{ color: colors.darkBlue }}>
+                Purchase Price
+              </p>
+              <p
+                className="text-xl font-bold"
+                style={{ color: colors.darkBlue }}
+              >
+                ${selectedCabin.price.toLocaleString()} plus GST
+              </p>
+            </div>
+            <div>
+              <p className="font-medium" style={{ color: colors.darkBlue }}>
+                Holding Deposit
+              </p>
+              <p
+                className="text-xl font-bold"
+                style={{ color: colors.yellow }}
+              >
+                ${holdingDeposit}
+              </p>
+            </div>
+            <div>
+              <p className="font-medium" style={{ color: colors.darkBlue }}>
+                30% Due Later
+              </p>
+              <p className="text-xl font-bold" style={{ color: colors.aqua }}>
+                ${balanceDue.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Extras Selection */}
+        <div className="mb-6">
+          <h3
+            className="text-lg font-bold mb-4"
+            style={{ color: colors.darkBlue }}
           >
-            ×
-          </button>
-
-          <h2 className="text-5xl font-black italic text-[#0e181f] mb-12 text-center font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
-            INVEST IN A HOLIDAY HOME
-          </h2>
-
-          {/* Cabin Selection Cards - Tesla Style */}
-          <div className="mb-16">
-            <h3 className="text-[1.75rem] font-bold text-[#0e181f] mb-8 text-center">
-              Select Your Cabin
-            </h3>
-            <div className="flex flex-col gap-6">
-              {(["1BR", "2BR", "3BR"] as CabinType[]).map((cabinType) => (
-                <div
-                  key={cabinType}
-                  ref={(el) => {
-                    cabinRefs.current[cabinType] = el;
+            Optional Investment Extras
+          </h3>
+          <div className="space-y-3">
+            {extras.map((extra) => (
+              <div key={extra.id}>
+                <label
+                  className="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all hover:shadow-md border-2"
+                  style={{
+                    backgroundColor: selectedExtras[extra.id]
+                      ? `${colors.yellow}20`
+                      : "white",
+                    borderColor: selectedExtras[extra.id]
+                      ? colors.yellow
+                      : colors.aqua,
                   }}
-                  onClick={() => handleCabinTypeChange(cabinType)}
-                  className={`rounded-2xl p-8 cursor-pointer transition-all duration-300 grid grid-cols-[300px_1fr] gap-8 items-center ${
-                    selectedCabinType === cabinType
-                      ? "bg-[#ffcf00] border-4 border-[#0e181f]"
-                      : "bg-white border-2 border-[#86dbdf]"
-                  }`}
                 >
-                  <video
-                    src={cabinVideos[cabinType]}
-                    poster={cabinImages[cabinType]}
-                    muted
-                    playsInline
-                    loop
-                    preload="metadata"
-                    className="w-full h-[200px] object-cover rounded-xl transition-all duration-300 cursor-pointer bg-black"
-                    onMouseEnter={(e) => {
-                      try {
-                        e.currentTarget.play();
-                      } catch (_) {}
-                      e.currentTarget.style.transform = "scale(1.05)";
-                      e.currentTarget.style.boxShadow =
-                        "0 8px 25px rgba(0,0,0,0.15)";
-                    }}
-                    onMouseLeave={(e) => {
-                      try {
-                        e.currentTarget.pause();
-                        e.currentTarget.currentTime = 0;
-                      } catch (_) {}
-                      e.currentTarget.style.transform = "scale(1)";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
-                    onError={(e) => {
-                      // Hide video if it fails; poster still shows
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                  <div>
-                    <h4 className="text-[2rem] font-black italic text-[#0e181f] mb-4 font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
-                      {cabinType === "1BR"
-                        ? "1 BEDROOM CABIN"
-                        : cabinType === "2BR"
-                        ? "2 BEDROOM CABIN"
-                        : "3 BEDROOM CABIN"}
-                    </h4>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <div className="text-[0.85rem] text-[#666] mb-1">
-                          Price
-                        </div>
-                        <div className="text-2xl font-bold text-[#0e181f]">
-                          ${cabinPrices[cabinType].toLocaleString("en-AU")}
-                        </div>
-                        <div className="text-xs text-[#666]">plus GST</div>
-                      </div>
-                      <div>
-                        <div className="text-[0.85rem] text-[#666] mb-1">
-                          Typical Nightly Rate
-                        </div>
-                        <div className="text-2xl font-bold text-[#0e181f]">
-                          ${nightlyRate}
-                        </div>
-                        <div className="text-xs text-[#666]">per night</div>
-                      </div>
-                      <div>
-                        <div className="text-[0.85rem] text-[#666] mb-1">
-                          Occupancy Rate
-                        </div>
-                        <div className="text-2xl font-bold text-[#0e181f]">
-                          {roi.effectiveOccupancyRate.toFixed(1)}%
-                        </div>
-                        <div className="text-xs text-[#666]">
-                          {roi.occupancyBoost > 0 &&
-                            `(+${roi.occupancyBoost}% boost)`}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[0.85rem] text-[#666] mb-1">
-                          Projected Annual ROI
-                        </div>
-                        <div className="text-2xl font-bold text-[#ffcf00]">
-                          {roi.roi.toFixed(1)}%
-                        </div>
-                        <div className="text-xs text-[#666]">annual return</div>
-                      </div>
+                  <div className="flex items-center gap-3 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedExtras[extra.id] || false}
+                      onChange={() => toggleExtra(extra.id)}
+                      className="w-5 h-5"
+                      style={{ accentColor: colors.yellow }}
+                    />
+                    <div>
+                      <p
+                        className="font-bold"
+                        style={{ color: colors.darkBlue }}
+                      >
+                        {extra.name}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {extra.impactDescription}
+                      </p>
+                      {(() => {
+                        const extraROI = calculateExtraROI(
+                          extra.id,
+                          selectedCabinForInvestment as CabinType
+                        );
+                        return (
+                          <div
+                            className="text-xs mt-1"
+                            style={{
+                              color:
+                                extraROI.roiImpact > 0
+                                  ? "#059669"
+                                  : extraROI.roiImpact < 0
+                                  ? "#EF4444"
+                                  : "#6B7280",
+                            }}
+                          >
+                            ROI Impact: {extraROI.roiImpact > 0 ? "+" : ""}
+                            {extraROI.roiImpact.toFixed(1)}%
+                            {extra.id === "solar" && (
+                              <span className="ml-1">
+                                (Eliminates $
+                                {((66 / 100) * 365 * 20).toLocaleString()}{" "}
+                                energy costs)
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
-                    {selectedCabinType === cabinType && (
-                      <div className="mt-4">
-                        <div className="text-[0.85rem] text-[#666] mb-2">
-                          Features:
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {cabinFeatures[cabinType]?.map((feature, index) => (
-                            <span
-                              key={index}
-                              className="bg-[#86dbdf] text-[#0e181f] py-1.5 px-3 rounded-md text-[0.85rem] font-medium"
-                            >
-                              {feature}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))}
+                  <div className="text-right">
+                    <p
+                      className="font-bold text-lg"
+                      style={{ color: colors.yellow }}
+                    >
+                      ${extra.price.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {extra.id === "insurance" || extra.id === "maintenance"
+                        ? "per year"
+                        : ""}
+                    </p>
+                  </div>
+                </label>
+
+                {/* Furniture Package Details - Unfurl when selected */}
+                {extra.id === "furniture" &&
+                  selectedExtras[extra.id] &&
+                  (extra as any).items && (
+                    <div
+                      className="ml-12 mt-2 p-4 rounded-lg border-l-4"
+                      style={{
+                        backgroundColor: `${colors.yellow}10`,
+                        borderColor: colors.yellow,
+                      }}
+                    >
+                      <p
+                        className="text-sm font-bold mb-2"
+                        style={{ color: colors.darkBlue }}
+                      >
+                        📦 Package Includes:
+                      </p>
+                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        {(extra as any).items.map((item: string, idx: number) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span style={{ color: colors.aqua }}>✓</span>
+                            <span style={{ color: colors.darkBlue }}>
+                              {item}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <form onSubmit={handleInvestmentSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{ color: colors.darkBlue }}
+              >
+                First Name
+              </label>
+              <input
+                type="text"
+                value={investmentData.firstName}
+                onChange={(e) =>
+                  setInvestmentData({
+                    ...investmentData,
+                    firstName: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                required
+              />
+            </div>
+            <div>
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{ color: colors.darkBlue }}
+              >
+                Last Name
+              </label>
+              <input
+                type="text"
+                value={investmentData.lastName}
+                onChange={(e) =>
+                  setInvestmentData({
+                    ...investmentData,
+                    lastName: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                required
+              />
             </div>
           </div>
 
-          {/* ROI Calculator Inputs - Stacked Vertically */}
-          <div className="mb-16">
-            <h3 className="text-[1.75rem] font-bold text-[#0e181f] mb-8 text-center">
-              Configure Your Investment
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{ color: colors.darkBlue }}
+              >
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={investmentData.email}
+                onChange={(e) =>
+                  setInvestmentData({
+                    ...investmentData,
+                    email: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                required
+              />
+            </div>
+            <div>
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{ color: colors.darkBlue }}
+              >
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={investmentData.phone}
+                onChange={(e) =>
+                  setInvestmentData({
+                    ...investmentData,
+                    phone: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: colors.darkBlue }}
+            >
+              Preferred Location
+            </label>
+            <select
+              value={investmentData.location}
+              onChange={(e) =>
+                setInvestmentData({
+                  ...investmentData,
+                  location: e.target.value,
+                })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+              required
+            >
+              <option value="Mansfield">Mansfield, Victoria</option>
+              <option value="Byron Bay">Byron Bay, NSW</option>
+            </select>
+          </div>
+
+          {/* Account Creation Fields */}
+          <div
+            className="mb-6 p-4 rounded-lg"
+            style={{
+              backgroundColor: `${colors.aqua}10`,
+              border: `1px solid ${colors.aqua}`,
+            }}
+          >
+            <h3
+              className="text-lg font-bold mb-4"
+              style={{ color: colors.darkBlue }}
+            >
+              Create Your Investment Account
             </h3>
-
-            <div className="flex flex-col gap-6">
-              {/* Nightly Rate */}
-              <div className="bg-[#f9f9f9] rounded-xl p-6 border border-[#eee]">
-                <label className="block mb-3 font-semibold text-base text-[#0e181f]">
-                  Typical Nightly Rental Amount ($)
-                </label>
-                <input
-                  type="number"
-                  value={nightlyRate}
-                  onChange={(e) => setNightlyRate(parseInt(e.target.value))}
-                  className="w-full p-4 border-2 border-[#86dbdf] rounded-lg text-[1.1rem] font-semibold"
-                />
-              </div>
-
-              {/* Occupancy Rate */}
-              <div className="bg-[#f9f9f9] rounded-xl p-6 border border-[#eee]">
-                <label className="block mb-3 font-semibold text-base text-[#0e181f]">
-                  Base Occupancy Rate (%)
-                </label>
-                <input
-                  type="number"
-                  value={occupancyRate}
-                  onChange={(e) => setOccupancyRate(parseInt(e.target.value))}
-                  className="w-full p-4 border-2 border-[#86dbdf] rounded-lg text-[1.1rem] font-semibold"
-                />
-              </div>
-
-              {/* Payment Method */}
-              <div className="bg-[#f9f9f9] rounded-xl p-6 border border-[#eee]">
-                <label className="block mb-3 font-semibold text-base text-[#0e181f]">
-                  Payment Method
-                </label>
-                <select
-                  value={financingType}
-                  onChange={(e) =>
-                    setFinancingType(e.target.value as "paid" | "financed")
-                  }
-                  className="w-full p-4 border-2 border-[#86dbdf] rounded-lg text-[1.1rem] font-semibold"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: colors.darkBlue }}
                 >
-                  <option value="paid">Fully Paid</option>
-                  <option value="financed">Financed</option>
-                </select>
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={investmentData.password}
+                  onChange={(e) =>
+                    setInvestmentData({
+                      ...investmentData,
+                      password: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: colors.darkBlue }}
+                >
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={investmentData.confirmPassword}
+                  onChange={(e) =>
+                    setInvestmentData({
+                      ...investmentData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                  required
+                />
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={investmentData.agreeToTerms}
+                  onChange={(e) =>
+                    setInvestmentData({
+                      ...investmentData,
+                      agreeToTerms: e.target.checked,
+                    })
+                  }
+                  className="mr-2"
+                  required
+                />
+                <span className="text-sm" style={{ color: colors.darkBlue }}>
+                  I agree to the Investment Terms & Conditions and Privacy
+                  Policy
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div
+            className="mb-6 p-6 rounded-xl shadow-lg"
+            style={{
+              backgroundColor: "white",
+              border: `1px solid ${colors.lightGray}`,
+            }}
+          >
+            <div className="flex items-center mb-6">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center mr-3"
+                style={{ backgroundColor: colors.aqua }}
+              >
+                <span className="text-white font-bold text-sm">$</span>
+              </div>
+              <h3
+                className="text-xl font-bold"
+                style={{
+                  color: colors.darkBlue,
+                  fontFamily:
+                    '"Eurostile Condensed", "Arial Black", Impact, sans-serif',
+                  fontStyle: "italic",
+                }}
+              >
+                Investment Summary
+              </h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm font-medium text-gray-600">
+                  Cabin Type
+                </span>
+                <span
+                  className="font-bold text-base"
+                  style={{ color: colors.darkBlue }}
+                >
+                  {selectedCabin.name}
+                </span>
               </div>
 
-              {/* Deposit Amount */}
-              {financingType === "financed" && (
-                <div className="bg-[#f9f9f9] rounded-xl p-6 border border-[#eee]">
-                  <label className="block mb-3 font-semibold text-base text-[#0e181f]">
-                    Deposit Amount ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(parseInt(e.target.value))}
-                    className="w-full p-4 border-2 border-[#86dbdf] rounded-lg text-[1.1rem] font-semibold"
-                    placeholder="Enter deposit amount"
-                  />
+              {/* Base Cabin Price */}
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm font-medium text-gray-600">
+                  Base Cabin Price
+                </span>
+                <div className="text-right">
+                  <div
+                    className="font-bold text-base"
+                    style={{ color: colors.darkBlue }}
+                  >
+                    $
+                    {selectedCabin.price.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </div>
+                  <div className="text-xs text-gray-500">plus GST</div>
+                </div>
+              </div>
+
+              {/* Extras Breakdown */}
+              {calculateExtrasTotal() > 0 && (
+                <>
+                  <div
+                    className="text-xs font-medium"
+                    style={{ color: colors.darkBlue }}
+                  >
+                    Selected Extras:
+                  </div>
+                  {getExtrasForCabin(selectedCabinForInvestment).map(
+                    (extra) =>
+                      selectedExtras[extra.id] && (
+                        <div
+                          key={extra.id}
+                          className="flex justify-between ml-4"
+                        >
+                          <span className="text-xs">{extra.name}:</span>
+                          <span
+                            className="text-xs font-bold"
+                            style={{ color: colors.yellow }}
+                          >
+                            $
+                            {extra.price.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}{" "}
+                            plus GST
+                          </span>
+                        </div>
+                      )
+                  )}
+                  <div className="flex justify-between border-t pt-1">
+                    <span className="font-medium">Total Extras:</span>
+                    <span
+                      className="font-bold"
+                      style={{ color: colors.yellow }}
+                    >
+                      $
+                      {calculateExtrasTotal().toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      plus GST
+                    </span>
+                  </div>
+                </>
+              )}
+
+              {/* Total Purchase Price */}
+              <div className="flex justify-between border-t pt-2">
+                <span className="font-bold">Total Purchase Price:</span>
+                <span className="font-bold text-lg">
+                  $
+                  {(
+                    selectedCabin.price + calculateExtrasTotal()
+                  ).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}{" "}
+                  plus GST
+                </span>
+              </div>
+
+              {/* Expected ROI Display */}
+              {(() => {
+                const selectedExtrasList = Object.keys(selectedExtras).filter(
+                  (key) => selectedExtras[key]
+                );
+                const expectedROI = calculateROI(
+                  selectedCabinForInvestment as CabinType,
+                  66,
+                  defaultNightlyRates[selectedCabinForInvestment as CabinType],
+                  selectedExtrasList
+                );
+                const baseROI = calculateROI(
+                  selectedCabinForInvestment as CabinType,
+                  66,
+                  defaultNightlyRates[selectedCabinForInvestment as CabinType],
+                  []
+                );
+                const roiImprovement = expectedROI.roi - baseROI.roi;
+                const annualIncomeImprovement =
+                  expectedROI.annualProfit - baseROI.annualProfit;
+
+                return (
+                  <div
+                    className="mt-4 p-4 rounded-lg border-2"
+                    style={{
+                      backgroundColor: `${colors.yellow}20`,
+                      borderColor: colors.yellow,
+                    }}
+                  >
+                    <div className="text-center">
+                      <h4
+                        className="font-bold text-lg mb-2"
+                        style={{ color: colors.darkBlue }}
+                      >
+                        Expected Annual ROI
+                      </h4>
+                      <div
+                        className="text-3xl font-bold mb-2"
+                        style={{ color: colors.orange }}
+                      >
+                        {expectedROI.roi.toFixed(1)}%
+                      </div>
+
+                      {/* ROI Improvement */}
+                      {roiImprovement > 0 && (
+                        <div
+                          className="text-sm mb-1"
+                          style={{ color: "#059669" }}
+                        >
+                          +{roiImprovement.toFixed(1)}% improvement with
+                          selected options
+                        </div>
+                      )}
+
+                      {/* Annual Income Improvement */}
+                      {annualIncomeImprovement > 0 && (
+                        <div
+                          className="text-sm font-bold mb-2"
+                          style={{ color: "#059669" }}
+                        >
+                          +$
+                          {annualIncomeImprovement.toLocaleString("en-AU", {
+                            maximumFractionDigits: 0,
+                          })}{" "}
+                          extra annual income
+                        </div>
+                      )}
+
+                      {/* Base vs Expected Income Comparison */}
+                      <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
+                        <div className="bg-white p-2 rounded">
+                          <div className="text-xs text-gray-600">
+                            Base Annual Income
+                          </div>
+                          <div
+                            className="font-bold"
+                            style={{ color: colors.darkBlue }}
+                          >
+                            $
+                            {baseROI.annualProfit.toLocaleString("en-AU", {
+                              maximumFractionDigits: 0,
+                            })}
+                          </div>
+                        </div>
+                        <div className="bg-white p-2 rounded">
+                          <div className="text-xs text-gray-600">
+                            With Selected Options
+                          </div>
+                          <div
+                            className="font-bold"
+                            style={{ color: colors.orange }}
+                          >
+                            $
+                            {expectedROI.annualProfit.toLocaleString("en-AU", {
+                              maximumFractionDigits: 0,
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-xs mt-2 text-gray-600">
+                        Based on 66% occupancy rate and dynamic pricing
+                      </div>
+                      {selectedExtrasList.length > 0 && (
+                        <div className="text-xs mt-1 text-gray-600">
+                          Includes {selectedExtrasList.length} selected option
+                          {selectedExtrasList.length !== 1 ? "s" : ""}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Wild Things Account Balance Deduction */}
+              {isUsingAccountBalance && wildThingsBalance > 0 && (
+                <div className="flex justify-between border-t pt-2">
+                  <span
+                    className="font-medium"
+                    style={{ color: colors.aqua }}
+                  >
+                    Less: Wild Things Account Balance:
+                  </span>
+                  <span
+                    className="font-bold text-lg"
+                    style={{ color: colors.aqua }}
+                  >
+                    -$
+                    {wildThingsBalance.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
                 </div>
               )}
 
-              {/* Premium Extras */}
-              <div className="bg-[#f9f9f9] rounded-xl p-6 border border-[#eee]">
-                <label className="block mb-3 font-semibold text-base text-[#0e181f]">
-                  Premium Extras
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  {availableExtras.map((extra) => (
-                    <label
-                      key={extra.id}
-                      className={`flex items-start p-4 rounded-lg cursor-pointer transition-all duration-200 ${
-                        selectedExtras.includes(extra.id)
-                          ? "bg-[#ffcf00] border-2 border-[#0e181f]"
-                          : "bg-white border-2 border-[#86dbdf]"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedExtras.includes(extra.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedExtras([...selectedExtras, extra.id]);
-                          } else {
-                            setSelectedExtras(
-                              selectedExtras.filter((id) => id !== extra.id)
-                            );
-                          }
-                        }}
-                        className="mr-3 mt-1"
-                      />
-                      <div>
-                        <div className="font-semibold mb-1 text-[0.95rem]">
-                          {extra.name}
-                        </div>
-                        <div className="text-[0.8rem] text-[#666] mb-1">
-                          {extra.nightlyImpact > 0 &&
-                            `+$${extra.nightlyImpact}/night`}
-                          {(extra.occupancyBoost ?? 0) > 0 &&
-                            ` +${extra.occupancyBoost}% occupancy`}
-                          {(extra.energySavings ?? 0) > 0 &&
-                            ` Save $${extra.energySavings}/year`}
-                        </div>
-                        <div className="font-bold text-[#0e181f]">
-                          ${extra.price.toLocaleString()}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
+              {/* Adjusted Total After Account Balance */}
+              {isUsingAccountBalance && wildThingsBalance > 0 && (
+                <div className="flex justify-between">
+                  <span className="font-bold">
+                    Adjusted Total Purchase Price:
+                  </span>
+                  <span className="font-bold text-lg">
+                    $
+                    {Math.max(
+                      0,
+                      selectedCabin.price +
+                        calculateExtrasTotal() -
+                        wildThingsBalance
+                    ).toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    plus GST
+                  </span>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              )}
 
-      {/* Sticky ROI Summary Footer - Tesla Style */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-[#ffcf00] py-6 px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-[100]">
-        <div className="max-w-[1200px] mx-auto flex justify-between items-center gap-8">
-          <div className="flex-1">
-            <div className="grid grid-cols-4 gap-6">
-              <div>
-                <div className="text-xs text-[#666] mb-1">Total Investment</div>
-                <div className="text-xl font-bold text-[#0e181f]">
-                  ${roi.actualInvestment.toLocaleString()}
+              {/* Payment Breakdown */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div
+                  className="text-sm font-bold mb-3"
+                  style={{ color: colors.darkBlue }}
+                >
+                  Payment Milestones
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div
+                        className="font-medium text-sm"
+                        style={{ color: colors.darkBlue }}
+                      >
+                        Holding Deposit
+                      </div>
+                      <div className="text-xs" style={{ color: colors.aqua }}>
+                        Due today
+                      </div>
+                    </div>
+                    <div
+                      className="font-bold text-sm"
+                      style={{ color: colors.yellow }}
+                    >
+                      $
+                      {Math.max(
+                        0,
+                        holdingDeposit -
+                          (isUsingAccountBalance
+                            ? Math.min(wildThingsBalance, holdingDeposit)
+                            : 0)
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-start">
+                    <div className="flex-shrink-0 mr-2">
+                      <div
+                        className="font-medium text-sm"
+                        style={{ color: colors.darkBlue }}
+                      >
+                        30% Deposit
+                      </div>
+                      <div className="text-xs" style={{ color: colors.aqua }}>
+                        Due at signing
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-bold text-sm whitespace-nowrap">
+                        $
+                        {Math.max(
+                          0,
+                          (selectedCabin.price +
+                            calculateExtrasTotal() -
+                            (isUsingAccountBalance ? wildThingsBalance : 0)) *
+                            0.3
+                        ).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                      <div className="text-xs">plus GST</div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-start">
+                    <div className="flex-shrink-0 mr-2">
+                      <div
+                        className="font-medium text-sm"
+                        style={{ color: colors.darkBlue }}
+                      >
+                        30% Progress Payment
+                      </div>
+                      <div className="text-xs" style={{ color: colors.aqua }}>
+                        Due at 50% completion
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-bold text-sm whitespace-nowrap">
+                        $
+                        {Math.max(
+                          0,
+                          (selectedCabin.price +
+                            calculateExtrasTotal() -
+                            (isUsingAccountBalance ? wildThingsBalance : 0)) *
+                            0.3
+                        ).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                      <div className="text-xs">plus GST</div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-start">
+                    <div className="flex-shrink-0 mr-2">
+                      <div
+                        className="font-medium text-sm"
+                        style={{ color: colors.darkBlue }}
+                      >
+                        40% Final Payment
+                      </div>
+                      <div className="text-xs" style={{ color: colors.aqua }}>
+                        Due at handover
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-bold text-sm whitespace-nowrap">
+                        $
+                        {Math.max(
+                          0,
+                          (selectedCabin.price +
+                            calculateExtrasTotal() -
+                            (isUsingAccountBalance ? wildThingsBalance : 0)) *
+                            0.4
+                        ).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                      <div className="text-xs">plus GST</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div>
-                <div className="text-xs text-[#666] mb-1">Annual Profit</div>
-                <div className="text-xl font-bold text-[#0e181f]">
-                  ${roi.annualProfit.toLocaleString()}
-                </div>
+
+              {/* Total Amount Due Today */}
+              <div className="flex justify-between border-t pt-2">
+                <span className="font-bold text-sm">
+                  Total Amount Due Today:
+                </span>
+                <span
+                  className="font-bold text-lg"
+                  style={{
+                    color:
+                      isUsingAccountBalance &&
+                      wildThingsBalance >= holdingDeposit
+                        ? colors.aqua
+                        : colors.yellow,
+                  }}
+                >
+                  $
+                  {Math.max(
+                    0,
+                    holdingDeposit -
+                      (isUsingAccountBalance
+                        ? Math.min(wildThingsBalance, holdingDeposit)
+                        : 0)
+                  ).toLocaleString()}
+                </span>
               </div>
-              <div>
-                <div className="text-xs text-[#666] mb-1">Monthly Profit</div>
-                <div className="text-xl font-bold text-[#0e181f]">
-                  ${roi.monthlyProfit.toLocaleString()}
+
+              {/* Account Balance Message */}
+              {isUsingAccountBalance && (
+                <div
+                  className="mt-2 p-3 rounded"
+                  style={{ backgroundColor: `${colors.aqua}20` }}
+                >
+                  <p className="text-xs" style={{ color: colors.darkBlue }}>
+                    <strong>
+                      Your Wild Things Account balance of $
+                      {wildThingsBalance.toLocaleString()}
+                    </strong>{" "}
+                    has been applied to reduce your total purchase price.
+                    {wildThingsBalance >= holdingDeposit ? (
+                      <> The holding deposit is fully covered.</>
+                    ) : (
+                      <>
+                        {" "}
+                        $
+                        {Math.max(
+                          0,
+                          holdingDeposit - wildThingsBalance
+                        ).toLocaleString()}{" "}
+                        holding deposit due today.
+                      </>
+                    )}
+                  </p>
                 </div>
-              </div>
-              <div>
-                <div className="text-xs text-[#666] mb-1">Annual ROI</div>
-                <div className="text-[2rem] font-bold text-[#ffcf00]">
-                  {roi.roi.toFixed(1)}%
-                </div>
-              </div>
+              )}
             </div>
           </div>
+
           <div className="flex gap-3">
-            <CalendlyButton
-              url="https://calendly.com/james-s-wildthings"
-              text="Book Inspection"
-              variant="outline"
-              size="md"
-            />
             <button
-              className="py-4 px-12 rounded-lg font-semibold text-base no-underline inline-block transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
-              onClick={() => {
-                alert("Investment process would start here!");
-                onInvest &&
-                  onInvest({
-                    ...cabin,
-                    id: selectedCabinType,
-                    price: cabinPrices[selectedCabinType],
-                  });
-                onClose();
+              type="submit"
+              className="flex-1 py-3 rounded-lg font-bold transition-all hover:opacity-90"
+              style={{
+                backgroundColor: colors.yellow,
+                color: colors.darkBlue,
               }}
             >
-              Proceed with Investment
+              Pay Holding Deposit
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowInvestmentModal(false)}
+              className="flex-1 py-3 rounded-lg font-bold transition-all hover:opacity-90"
+              style={{
+                backgroundColor: colors.darkBlue,
+                color: colors.white,
+              }}
+            >
+              Cancel Investment
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

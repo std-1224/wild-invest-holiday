@@ -6,7 +6,7 @@ import { LocationsPage } from "./sections/LocationsPage";
 import { InvestPage } from "./sections/Invest/InvestPage";
 import { InvestorPortal } from "./sections/InvestorPortal";
 import { HolidayHomesPage } from "./sections/HolidayHomes";
-import { colors, getExtrasForCabin } from "./config/mockCalculate";
+import { colors } from "./config/mockCalculate";
 import { ReservationModal } from "./components/Modals/ReservationModal";
 import { ChatWidget } from "./components/ChatWidget";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -18,20 +18,23 @@ interface AppContentProps {
 
 function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
-  const [selectedCabin, setSelectedCabin] = useState<string | null>(null);
   const [showReservationModal, setShowReservationModal] = useState(false);
 
   const [selectedCabinForInvestment, setSelectedCabinForInvestment] = useState<
     string | null
   >(null);
 
-  const extras = getExtrasForCabin("3BR"); // Default for ROI calculator
+  const [userInvestments, setUserInvestments] = useState<any[]>([]);
+  const [floatingInvestmentData] = useState<{
+    selectedExtras?: string[];
+    paymentMethod?: string;
+  }>({});
 
   // Use the auth context
   const { isLoggedIn, setIsLoggedIn, showLoginModal, logout } = useAuth();
 
   const handleCabinInvest = (cabin: any) => {
-    setSelectedCabin(cabin);
+    setSelectedCabinForInvestment(cabin.id);
     setShowInvestmentModal(true);
   };
 
@@ -78,7 +81,10 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
         )}
 
         {currentPage === "invest" && (
-          <InvestPage cabins={cabins} onInvest={handleCabinInvest} />
+          <InvestPage
+            onInvest={handleCabinInvest}
+            setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+          />
         )}
 
         {currentPage === "holiday-homes" && (
@@ -100,38 +106,33 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
         )}
 
         {/* Investment Modal */}
-        {showInvestmentModal && selectedCabin && (
-          <InvestmentModal
-            cabin={selectedCabin}
-            onClose={() => {
-              setShowInvestmentModal(false);
-              setSelectedCabin(null);
-            }}
-            onInvest={handleCabinInvest}
-          />
-        )}
-        {selectedCabin && (
-          <ReservationModal
-            // cabin={cabins[selectedCabin]}
-            // cabinType={selectedCabin}
-            // onClose={() => setSelectedCabin(null)}
-            // extras={extras}
-            setShowReservationModal={setShowReservationModal}
-            showReservationModal={showReservationModal}
-            setIsLoggedIn={setIsLoggedIn}
-            isLoggedIn={isLoggedIn}
-            userProfile={
-              isLoggedIn
-                ? {
-                    firstName: "John",
-                    lastName: "Doe",
-                    email: "john.doe@example.com",
-                    phone: "+61 400 000 000",
-                  }
-                : undefined
-            }
-          />
-        )}
+        <InvestmentModal
+          showInvestmentModal={showInvestmentModal}
+          setShowInvestmentModal={setShowInvestmentModal}
+          selectedCabinForInvestment={selectedCabinForInvestment}
+          setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+          floatingInvestmentData={floatingInvestmentData}
+          userInvestments={userInvestments}
+          setUserInvestments={setUserInvestments}
+          setIsLoggedIn={setIsLoggedIn}
+          setCurrentPage={setCurrentPage}
+        />
+        <ReservationModal
+          setShowReservationModal={setShowReservationModal}
+          showReservationModal={showReservationModal}
+          setIsLoggedIn={setIsLoggedIn}
+          isLoggedIn={isLoggedIn}
+          userProfile={
+            isLoggedIn
+              ? {
+                  firstName: "John",
+                  lastName: "Doe",
+                  email: "john.doe@example.com",
+                  phone: "+61 400 000 000",
+                }
+              : undefined
+          }
+        />
       </div>
 
       <ChatWidget />
