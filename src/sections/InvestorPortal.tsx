@@ -14,6 +14,11 @@ import { SavedPaymentMethods } from "../components/SavedPaymentMethods";
 import { BookingHistory } from "../components/BookingHistory";
 import { MarketingBoostManager } from "../components/MarketingBoostManager";
 import { CalendlyButton } from "../components/CalendlyButton";
+import { PayoutHistory, Payout } from "../components/PayoutHistory";
+import {
+  PayoutRequestModal,
+  PayoutData,
+} from "../components/Modals/PayoutRequestModal";
 
 type CabinType = "1BR" | "2BR" | "3BR";
 
@@ -286,6 +291,49 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
     },
   ];
 
+  // Payout System State
+  const [showPayoutRequestModal, setShowPayoutRequestModal] = useState(false);
+  const [payoutHistory, setPayoutHistory] = useState<Payout[]>([
+    {
+      id: "1",
+      date: "2024-10-15",
+      amount: 2500,
+      status: "completed",
+      bankDetails: {
+        accountName: "John Doe",
+        bsb: "123-456",
+        accountNumber: "12345678",
+      },
+      completedDate: "2024-10-18",
+    },
+    {
+      id: "2",
+      date: "2024-09-10",
+      amount: 1800,
+      status: "completed",
+      bankDetails: {
+        accountName: "John Doe",
+        bsb: "123-456",
+        accountNumber: "12345678",
+      },
+      completedDate: "2024-09-13",
+    },
+    {
+      id: "3",
+      date: "2024-11-01",
+      amount: 1200,
+      status: "processing",
+      bankDetails: {
+        accountName: "John Doe",
+        bsb: "123-456",
+        accountNumber: "12345678",
+      },
+    },
+  ]);
+
+  // Calculate Wild Things Account Balance (30% of total income)
+  const wildThingsAccountBalance = totalIncome * 0.3;
+
   // Mock booked dates for owner booking calendar
   const mockBookedDates = [
     {
@@ -419,18 +467,29 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     </p>
                   </div>
                 </div>
-                <div className="bg-white rounded-lg shadow-lg p-6 text-center flex flex-col justify-between min-h-[160px]">
+                <div className="bg-gradient-to-br from-[#ffcf00]/20 to-[#86dbdf]/20 rounded-lg shadow-lg p-6 text-center flex flex-col justify-between min-h-[160px] border-2 border-[#ffcf00]">
                   <h3 className="text-lg font-bold mb-2 text-[#0e181f] h-12 flex items-center justify-center">
-                    Wild Things Account
+                    Wild Things Account 💰
                   </h3>
                   <div>
                     <p className="text-3xl font-bold text-[#ffcf00] h-[45px] flex items-center justify-center">
-                      ${(totalIncome * 0.3).toLocaleString()}
+                      ${wildThingsAccountBalance.toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-600 mt-1 h-5">
                       available balance
                     </p>
                   </div>
+                  <button
+                    onClick={() => {
+                      setActiveTab("payments");
+                      setTimeout(() => {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }, 100);
+                    }}
+                    className="mt-2 text-xs text-[#86dbdf] hover:text-[#0e181f] font-semibold transition-all"
+                  >
+                    Request Payout →
+                  </button>
                 </div>
                 <div className="bg-white rounded-lg shadow-lg p-6 text-center flex flex-col justify-between min-h-[160px]">
                   <h3 className="text-lg font-bold mb-2 text-[#0e181f] h-12 flex items-center justify-center">
@@ -441,6 +500,70 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                       ${totalIncome.toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-600 mt-1 h-5">past year</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wild Things Account Info */}
+              <div className="bg-gradient-to-r from-[#ffcf00]/10 to-[#86dbdf]/10 rounded-lg shadow-lg p-6 mb-12 border-2 border-[#86dbdf]">
+                <div className="flex items-start gap-4">
+                  <div className="text-4xl">💰</div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold mb-2 text-[#0e181f]">
+                      Your Wild Things Account Balance
+                    </h3>
+                    <p className="text-sm text-gray-700 mb-3">
+                      Your Wild Things Account holds <strong>30% of your total
+                      income</strong> (${wildThingsAccountBalance.toLocaleString()})
+                      which can be used for:
+                    </p>
+                    <ul className="text-sm text-gray-700 space-y-2 mb-4">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#86dbdf] font-bold">✓</span>
+                        <span>
+                          <strong>Reinvesting:</strong> Use your balance to reduce
+                          the purchase price of additional cabins
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#86dbdf] font-bold">✓</span>
+                        <span>
+                          <strong>Payouts:</strong> Request to withdraw funds to
+                          your bank account (processed within 3-5 business days)
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[#86dbdf] font-bold">✓</span>
+                        <span>
+                          <strong>Automatic Coverage:</strong> When investing, your
+                          balance is automatically applied to reduce amounts due
+                        </span>
+                      </li>
+                    </ul>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          setActiveTab("payments");
+                          setTimeout(() => {
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }, 100);
+                        }}
+                        className="px-4 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#86dbdf] text-white text-sm"
+                      >
+                        Request Payout
+                      </button>
+                      <button
+                        onClick={() => {
+                          window.scrollTo({
+                            top: document.documentElement.scrollHeight,
+                            behavior: "smooth",
+                          });
+                        }}
+                        className="px-4 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f] text-sm"
+                      >
+                        Invest More
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -899,6 +1022,13 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
           {/* Payments Tab Content */}
           {activeTab === "payments" && (
             <div className="space-y-8">
+              {/* Payout History */}
+              <PayoutHistory
+                payouts={payoutHistory}
+                onRequestPayout={() => setShowPayoutRequestModal(true)}
+                availableBalance={wildThingsAccountBalance}
+              />
+
               <PaymentHistory payments={mockPayments} />
               <SavedPaymentMethods
                 paymentMethods={savedPaymentMethods}
@@ -1607,6 +1737,30 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
           }}
         />
       )}
+
+      {/* Payout Request Modal */}
+      <PayoutRequestModal
+        isOpen={showPayoutRequestModal}
+        onClose={() => setShowPayoutRequestModal(false)}
+        onSubmit={(payoutData: PayoutData) => {
+          // Create new payout request
+          const newPayout: Payout = {
+            id: (payoutHistory.length + 1).toString(),
+            date: new Date().toISOString().split("T")[0],
+            amount: payoutData.amount,
+            status: "pending",
+            bankDetails: payoutData.bankDetails,
+          };
+
+          setPayoutHistory([newPayout, ...payoutHistory]);
+          alert(
+            `Payout request submitted successfully!\n\nAmount: $${payoutData.amount.toLocaleString()}\nAccount: ${
+              payoutData.bankDetails.accountName
+            }\n\nYou will receive an email confirmation shortly.`
+          );
+        }}
+        availableBalance={wildThingsAccountBalance}
+      />
     </div>
   );
 };
