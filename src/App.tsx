@@ -69,6 +69,7 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
         onLogout={logout}
         onNavigate={setCurrentPage}
         setCurrentPage={setCurrentPage}
+        currentPage={currentPage}
       />
 
       <div style={{ marginTop: "124px" }}>

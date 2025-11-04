@@ -7,6 +7,7 @@ export const Navbar = ({
   onLogout,
   onNavigate,
   setCurrentPage,
+  currentPage,
 }: any) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // Intro overlay state: shows on first mount and hides after 3s
@@ -72,7 +73,11 @@ export const Navbar = ({
             <li>
               <a
                 href="#home"
-                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                className={
+                  currentPage === "home"
+                    ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                    : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                }
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigate && onNavigate("home");
@@ -84,7 +89,11 @@ export const Navbar = ({
             <li>
               <a
                 href="#invest"
-                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                className={
+                  currentPage === "invest"
+                    ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                    : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                }
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigate && onNavigate("invest");
@@ -96,7 +105,11 @@ export const Navbar = ({
             <li>
               <a
                 href="#invest"
-                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                className={
+                  currentPage === "investor-portal"
+                    ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                    : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                }
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigate && onNavigate("investor-portal");
@@ -120,7 +133,11 @@ export const Navbar = ({
             <li>
               <a
                 href="#locations"
-                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                className={
+                  currentPage === "locations"
+                    ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                    : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                }
                 onClick={(e) => {
                   e.preventDefault();
                   onNavigate && onNavigate("locations");
@@ -132,7 +149,7 @@ export const Navbar = ({
             <li>
               <a
                 href="https://ibe12.rmscloud.com/7C958C5EB59D2E0A/1"
-                className="text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                className="text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 underline decoration-[#FFCF00] decoration-2 underline-offset-4 hover:decoration-[#86dbdf] transition-colors duration-300"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -142,7 +159,7 @@ export const Navbar = ({
             <li>
               <a
                 href="https://wildthings.myshopify.com"
-                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                className="text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 underline decoration-[#FFCF00] decoration-2 underline-offset-4 hover:decoration-[#86dbdf] transition-colors duration-300"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -194,7 +211,11 @@ export const Navbar = ({
               <li className="mb-2">
                 <a
                   href="#home"
-                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  className={
+                    currentPage === "home"
+                      ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                      : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  }
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate && onNavigate("home");
@@ -207,7 +228,11 @@ export const Navbar = ({
               <li className="mb-2">
                 <a
                   href="#invest"
-                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  className={
+                    currentPage === "invest"
+                      ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                      : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  }
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate && onNavigate("invest");
@@ -220,7 +245,11 @@ export const Navbar = ({
               <li className="mb-2">
                 <a
                   href="#invest"
-                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  className={
+                    currentPage === "investor-portal"
+                      ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                      : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  }
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate && onNavigate("investor-portal");
@@ -246,7 +275,11 @@ export const Navbar = ({
               <li className="mb-2">
                 <a
                   href="#locations"
-                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  className={
+                    currentPage === "locations"
+                      ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                      : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  }
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate && onNavigate("locations");
@@ -259,7 +292,7 @@ export const Navbar = ({
               <li className="mb-2">
                 <a
                   href="https://ibe12.rmscloud.com/7C958C5EB59D2E0A/1"
-                  className="text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                  className="text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 underline decoration-[#FFCF00] decoration-2 underline-offset-4 hover:decoration-[#86dbdf] transition-colors duration-300"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -269,7 +302,7 @@ export const Navbar = ({
               <li className="mb-2">
                 <a
                   href="https://wildthings.myshopify.com"
-                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  className="text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 underline decoration-[#FFCF00] decoration-2 underline-offset-4 hover:decoration-[#86dbdf] transition-colors duration-300"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
