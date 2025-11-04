@@ -9,6 +9,7 @@ import {
 } from "../config/mockCalculate";
 import { InvestTimeline } from "../components/InvestTimeline";
 import { InvestFaqs } from "../components/InvestFaqs";
+import { CalendlyButton } from "../components/CalendlyButton";
 
 type CabinType = "1BR" | "2BR" | "3BR";
 
@@ -62,20 +63,15 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
 
         {/* Investment Timeline */}
         <div className="bg-white rounded-lg shadow-xl p-8 mb-12">
-          <h2 className="text-3xl font-black mb-8 text-center italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
-            YOUR INVESTMENT JOURNEY
-          </h2>
           <InvestTimeline />
           <div className="text-center mt-8">
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <a
-                href="https://calendly.com/james-s-wildthings"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all hover:opacity-90 bg-[#ec874c] text-white"
-              >
-                📅 Book an Inspection
-              </a>
+              <CalendlyButton
+                url="https://calendly.com/james-s-wildthings"
+                text="Book an Inspection"
+                variant="orange"
+                size="lg"
+              />
               <button
                 onClick={() => document.getElementById("chat-widget")?.click()}
                 className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all hover:opacity-90 bg-[#86dbdf] text-[#0e181f]"

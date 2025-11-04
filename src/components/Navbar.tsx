@@ -105,7 +105,7 @@ export const Navbar = ({
                 Invest Portal
               </a>
             </li>
-            {/* <li>
+            <li>
               <a
                 href="#invest"
                 className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
@@ -116,7 +116,7 @@ export const Navbar = ({
               >
                 Holiday
               </a>
-            </li> */}
+            </li>
             <li>
               <a
                 href="#locations"
@@ -230,7 +230,7 @@ export const Navbar = ({
                   Invest Portal
                 </a>
               </li>
-              {/* <li className="mb-2">
+              <li className="mb-2">
                 <a
                   href="#invest"
                   className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
@@ -242,7 +242,7 @@ export const Navbar = ({
                 >
                   Holiday
                 </a>
-              </li> */}
+              </li>
               <li className="mb-2">
                 <a
                   href="#locations"

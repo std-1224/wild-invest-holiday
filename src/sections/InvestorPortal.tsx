@@ -1,7 +1,19 @@
 import React, { useState } from "react";
-import { cabins, getExtrasForCabin, calculateROI } from "../config/mockCalculate";
+import {
+  cabins,
+  getExtrasForCabin,
+  calculateROI,
+} from "../config/mockCalculate";
 import { AttitudeChangeModal } from "../components/Modals/AttitudeChangeModal";
 import { BoostModal } from "../components/Modals/BoostModal";
+import { OwnerBookingCalendar } from "../components/OwnerBookingCalendar";
+import { OwnerBookingModal } from "../components/Modals/OwnerBookingModal";
+import { OccupancyTypeModal } from "../components/Modals/OccupancyTypeModal";
+import { PaymentHistory } from "../components/PaymentHistory";
+import { SavedPaymentMethods } from "../components/SavedPaymentMethods";
+import { BookingHistory } from "../components/BookingHistory";
+import { MarketingBoostManager } from "../components/MarketingBoostManager";
+import { CalendlyButton } from "../components/CalendlyButton";
 
 type CabinType = "1BR" | "2BR" | "3BR";
 
@@ -142,6 +154,13 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
     PaymentMethod[]
   >([
     { id: "1", last4: "4242", brand: "Visa", expiry: "12/25", isDefault: true },
+    {
+      id: "2",
+      last4: "5555",
+      brand: "Mastercard",
+      expiry: "06/26",
+      isDefault: false,
+    },
   ]);
 
   const totalValue = userInvestments.reduce(
@@ -157,13 +176,142 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
     0
   );
   const [investmentAttitude, setInvestmentAttitude] = useState("retain"); // 'retain' or 'payout'
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'settings'
+  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'bookings' | 'payments' | 'owner-booking' | 'settings'
   const [userProfile, setUserProfile] = useState({
     firstName: "John",
     lastName: "Doe",
     email: "john.doe@example.com",
     phone: "+61 400 000 000",
   });
+
+  // Owner Booking State
+  const [showOwnerBookingModal, setShowOwnerBookingModal] = useState(false);
+  const [showOccupancyTypeModal, setShowOccupancyTypeModal] = useState(false);
+  const [ownerDaysUsed, setOwnerDaysUsed] = useState(45);
+  const [ownerDaysLimit] = useState(180);
+  const [occupancyType, setOccupancyType] = useState<
+    "investment" | "permanent"
+  >("investment");
+
+  // Mock booking data
+  const mockBookings = [
+    {
+      id: "1",
+      guestName: "Sarah Johnson",
+      checkIn: "2024-10-15",
+      checkOut: "2024-10-18",
+      nights: 3,
+      guests: 2,
+      revenue: 855,
+      nightlyRate: 285,
+      status: "completed" as const,
+      bookingDate: "2024-09-20",
+    },
+    {
+      id: "2",
+      guestName: "Michael Chen",
+      checkIn: "2024-11-05",
+      checkOut: "2024-11-09",
+      nights: 4,
+      guests: 4,
+      revenue: 1140,
+      nightlyRate: 285,
+      status: "completed" as const,
+      bookingDate: "2024-10-10",
+    },
+    {
+      id: "3",
+      guestName: "Emma Wilson",
+      checkIn: "2024-12-20",
+      checkOut: "2024-12-27",
+      nights: 7,
+      guests: 3,
+      revenue: 2800,
+      nightlyRate: 400,
+      status: "upcoming" as const,
+      bookingDate: "2024-11-01",
+    },
+  ];
+
+  // Mock payment data
+  const mockPayments = [
+    {
+      id: "1",
+      date: "2024-10-01",
+      description: "Monthly Payment - Cabin #1",
+      amount: 2500,
+      status: "completed" as const,
+      method: "Bank Transfer",
+      invoiceUrl: "#",
+      type: "payment" as const,
+    },
+    {
+      id: "2",
+      date: "2024-09-01",
+      description: "Monthly Payment - Cabin #1",
+      amount: 2500,
+      status: "completed" as const,
+      method: "Bank Transfer",
+      invoiceUrl: "#",
+      type: "payment" as const,
+    },
+    {
+      id: "3",
+      date: "2024-08-15",
+      description: "Deposit - Cabin #1",
+      amount: 25000,
+      status: "completed" as const,
+      method: "Bank Transfer",
+      invoiceUrl: "#",
+      type: "deposit" as const,
+    },
+  ];
+
+  // Mock Marketing Boost data
+  const [marketingBoostActive, setMarketingBoostActive] = useState(true);
+  const mockMarketingBoostBilling = [
+    {
+      id: "1",
+      date: "2024-11-01",
+      amount: 199,
+      status: "paid" as const,
+      invoiceUrl: "#",
+    },
+    {
+      id: "2",
+      date: "2024-10-01",
+      amount: 199,
+      status: "paid" as const,
+      invoiceUrl: "#",
+    },
+  ];
+
+  // Mock booked dates for owner booking calendar
+  const mockBookedDates = [
+    {
+      date: "2024-11-15",
+      type: "guest" as const,
+      guestName: "John Smith",
+      nights: 3,
+    },
+    {
+      date: "2024-11-16",
+      type: "guest" as const,
+      guestName: "John Smith",
+      nights: 3,
+    },
+    {
+      date: "2024-11-17",
+      type: "guest" as const,
+      guestName: "John Smith",
+      nights: 3,
+    },
+    { date: "2024-12-20", type: "owner" as const, nights: 5 },
+    { date: "2024-12-21", type: "owner" as const, nights: 5 },
+    { date: "2024-12-22", type: "owner" as const, nights: 5 },
+    { date: "2024-12-23", type: "owner" as const, nights: 5 },
+    { date: "2024-12-24", type: "owner" as const, nights: 5 },
+  ];
 
   return (
     <div className="min-h-screen pb-8 w-full max-w-full overflow-x-hidden bg-[#f5f5f5]">
@@ -184,6 +332,32 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 }`}
               >
                 Overview
+              </button>
+              <button
+                onClick={() => setActiveTab("bookings")}
+                className={`px-6 py-2 rounded-lg font-bold transition-all text-[#0e181f] ${
+                  activeTab === "bookings" ? "bg-[#ffcf00]" : "bg-[#f5f5f5]"
+                }`}
+              >
+                Bookings & Revenue
+              </button>
+              <button
+                onClick={() => setActiveTab("owner-booking")}
+                className={`px-6 py-2 rounded-lg font-bold transition-all text-[#0e181f] ${
+                  activeTab === "owner-booking"
+                    ? "bg-[#ffcf00]"
+                    : "bg-[#f5f5f5]"
+                }`}
+              >
+                Owner Booking
+              </button>
+              <button
+                onClick={() => setActiveTab("payments")}
+                className={`px-6 py-2 rounded-lg font-bold transition-all text-[#0e181f] ${
+                  activeTab === "payments" ? "bg-[#ffcf00]" : "bg-[#f5f5f5]"
+                }`}
+              >
+                Payments
               </button>
               <button
                 onClick={() => setActiveTab("settings")}
@@ -221,9 +395,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                         .reduce((sum, inv) => sum + inv.purchasePrice, 0)
                         .toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-600 mt-1 h-5">
-                      plus GST
-                    </p>
+                    <p className="text-xs text-gray-600 mt-1 h-5">plus GST</p>
                   </div>
                 </div>
                 <div className="bg-white rounded-lg shadow-lg p-6 text-center flex flex-col justify-between min-h-[160px]">
@@ -268,9 +440,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     <p className="text-3xl font-bold text-[#86dbdf] h-[45px] flex items-center justify-center">
                       ${totalIncome.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-600 mt-1 h-5">
-                      past year
-                    </p>
+                    <p className="text-xs text-gray-600 mt-1 h-5">past year</p>
                   </div>
                 </div>
               </div>
@@ -352,9 +522,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                       <p className="text-xs text-gray-600 mb-1">
                         Referrals Made
                       </p>
-                      <p className="text-4xl font-bold text-[#ec874c]">
-                        0
-                      </p>
+                      <p className="text-4xl font-bold text-[#ec874c]">0</p>
                       <p className="text-xs text-gray-600 mt-1">$0 earned</p>
                     </div>
                   </div>
@@ -439,9 +607,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                             </p>
                           </div>
                           <div className="text-center">
-                            <p
-                              className="text-sm font-medium mb-1 text-[#0e181f]"
-                            >
+                            <p className="text-sm font-medium mb-1 text-[#0e181f]">
                               Total Income
                             </p>
                             <p className="text-xl font-bold text-[#86dbdf]">
@@ -620,25 +786,19 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                               <p className="font-bold text-xs text-[#0e181f]">
                                 Wild
                               </p>
-                              <p className="text-xs text-[#ec874c]">
-                                $500/mo
-                              </p>
+                              <p className="text-xs text-[#ec874c]">$500/mo</p>
                             </div>
                             <div className="bg-white rounded p-1 sm:p-2 text-center border border-[#86dbdf]">
                               <p className="font-bold text-xs text-[#0e181f]">
                                 Wilder
                               </p>
-                              <p className="text-xs text-[#ec874c]">
-                                $1k/mo
-                              </p>
+                              <p className="text-xs text-[#ec874c]">$1k/mo</p>
                             </div>
                             <div className="bg-white rounded p-1 sm:p-2 text-center border border-[#86dbdf]">
                               <p className="font-bold text-xs text-[#0e181f]">
                                 Wildest
                               </p>
-                              <p className="text-xs text-[#ec874c]">
-                                $2k/mo
-                              </p>
+                              <p className="text-xs text-[#ec874c]">$2k/mo</p>
                             </div>
                           </div>
                         </div>
@@ -648,6 +808,136 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 </div>
               </div>
             </>
+          )}
+
+          {/* Bookings & Revenue Tab Content */}
+          {activeTab === "bookings" && (
+            <div className="space-y-8">
+              <BookingHistory
+                bookings={mockBookings}
+                cabinType={userInvestments[0]?.cabinType || "2BR"}
+              />
+            </div>
+          )}
+
+          {/* Owner Booking Tab Content */}
+          {activeTab === "owner-booking" && (
+            <div className="space-y-8">
+              <OwnerBookingCalendar
+                cabinId={userInvestments[0]?.id || 1}
+                cabinType={userInvestments[0]?.cabinType || "2BR"}
+                bookedDates={mockBookedDates}
+                ownerDaysUsed={ownerDaysUsed}
+                ownerDaysLimit={ownerDaysLimit}
+                onCreateBooking={(startDate, endDate) => {
+                  const start = new Date(startDate);
+                  const end = new Date(endDate);
+                  const nights = Math.ceil(
+                    (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+                  );
+                  setOwnerDaysUsed(ownerDaysUsed + nights);
+                  alert(`Owner booking created! ${nights} nights booked.`);
+                }}
+                onCancelBooking={(date) => {
+                  const booking = mockBookedDates.find(
+                    (b) => b.date === date && b.type === "owner"
+                  );
+                  if (booking && booking.nights) {
+                    setOwnerDaysUsed(ownerDaysUsed - booking.nights);
+                    alert(
+                      `Owner booking cancelled! ${booking.nights} days returned to your allowance.`
+                    );
+                  }
+                }}
+              />
+
+              {/* Occupancy Type Manager */}
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+                      OCCUPANCY TYPE
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Current:{" "}
+                      <span className="font-bold">
+                        {occupancyType === "investment"
+                          ? "Investment Property"
+                          : "Permanent Residence"}
+                      </span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowOccupancyTypeModal(true)}
+                    className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] rounded-lg font-semibold hover:opacity-90 transition-all"
+                  >
+                    Change Type
+                  </button>
+                </div>
+              </div>
+
+              {/* Calendly Integration */}
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h3 className="text-2xl font-black mb-4 italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+                  SCHEDULE A MEETING
+                </h3>
+                <p className="text-gray-700 mb-4">
+                  Need help with your owner bookings or have questions? Schedule
+                  a meeting with our team.
+                </p>
+                <CalendlyButton
+                  url="https://calendly.com/wild-things/owner-consultation"
+                  text="Schedule Owner Consultation"
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Payments Tab Content */}
+          {activeTab === "payments" && (
+            <div className="space-y-8">
+              <PaymentHistory payments={mockPayments} />
+              <SavedPaymentMethods
+                paymentMethods={savedPaymentMethods}
+                onAddPaymentMethod={() => {
+                  alert("In production, this would open Stripe payment form");
+                }}
+                onRemovePaymentMethod={(id) => {
+                  setSavedPaymentMethods(
+                    savedPaymentMethods.filter((pm) => pm.id !== id)
+                  );
+                }}
+                onSetDefault={(id) => {
+                  setSavedPaymentMethods(
+                    savedPaymentMethods.map((pm) => ({
+                      ...pm,
+                      isDefault: pm.id === id,
+                    }))
+                  );
+                }}
+              />
+              <MarketingBoostManager
+                isActive={marketingBoostActive}
+                monthlyFee={199}
+                nextBillingDate="2024-12-01"
+                billingHistory={mockMarketingBoostBilling}
+                onPause={() => {
+                  setMarketingBoostActive(false);
+                  alert("Marketing Boost paused");
+                }}
+                onCancel={() => {
+                  setMarketingBoostActive(false);
+                  alert("Marketing Boost cancelled");
+                }}
+                onResume={() => {
+                  setMarketingBoostActive(true);
+                  alert("Marketing Boost resumed");
+                }}
+              />
+            </div>
           )}
 
           {/* Account Settings Tab Content */}
@@ -787,7 +1077,9 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     <div
                       key={method.id}
                       className={`flex items-center justify-between p-4 rounded-lg border-2 ${
-                        method.isDefault ? "border-[#ffcf00]" : "border-[#f5f5f5]"
+                        method.isDefault
+                          ? "border-[#ffcf00]"
+                          : "border-[#f5f5f5]"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -1141,9 +1433,10 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                           <span className="font-bold text-[#0e181f]">
                             $
                             {(() => {
-                              const cabinPrice = cabins[
-                                floatingInvestmentData.selectedCabin as keyof typeof cabins
-                              ].price;
+                              const cabinPrice =
+                                cabins[
+                                  floatingInvestmentData.selectedCabin as keyof typeof cabins
+                                ].price;
                               const availableExtras = getExtrasForCabin(
                                 floatingInvestmentData.selectedCabin
                               );
@@ -1154,7 +1447,9 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                                   )
                                 )
                                 .reduce((sum, e) => sum + e.price, 0);
-                              return (cabinPrice + extrasTotal).toLocaleString();
+                              return (
+                                cabinPrice + extrasTotal
+                              ).toLocaleString();
                             })()}
                           </span>
                         </div>
@@ -1273,6 +1568,45 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
           }}
         />
       </div>
+
+      {/* Modals */}
+      {showOwnerBookingModal && (
+        <OwnerBookingModal
+          cabinId={userInvestments[0]?.id || 1}
+          cabinType={userInvestments[0]?.cabinType || "2BR"}
+          cabinName={`${userInvestments[0]?.cabinType || "2BR"} Cabin - ${
+            userInvestments[0]?.location || "Mansfield"
+          }`}
+          onClose={() => setShowOwnerBookingModal(false)}
+          onConfirm={(booking) => {
+            const nights = Math.ceil(
+              (new Date(booking.endDate).getTime() -
+                new Date(booking.startDate).getTime()) /
+                (1000 * 60 * 60 * 24)
+            );
+            setOwnerDaysUsed(ownerDaysUsed + nights);
+            setShowOwnerBookingModal(false);
+            alert(`Owner booking created! ${nights} nights booked.`);
+          }}
+          ownerDaysRemaining={ownerDaysLimit - ownerDaysUsed}
+        />
+      )}
+
+      {showOccupancyTypeModal && (
+        <OccupancyTypeModal
+          currentType={occupancyType}
+          cabinName={`${userInvestments[0]?.cabinType || "2BR"} Cabin - ${
+            userInvestments[0]?.location || "Mansfield"
+          }`}
+          onClose={() => setShowOccupancyTypeModal(false)}
+          onSubmitRequest={(newType, reason) => {
+            setShowOccupancyTypeModal(false);
+            alert(
+              `Occupancy type change request submitted!\nNew Type: ${newType}\nReason: ${reason}\n\nYou will receive an email when your request is reviewed.`
+            );
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@ import {
   calculateROI,
   getAvailableExtrasForCabin,
 } from "../../config/mockCalculate";
+import { CalendlyButton } from "../CalendlyButton";
 
 // Investment Modal Component - Tesla-style design
 export const InvestmentModal = ({ cabin, onClose, onInvest }: any) => {
@@ -175,9 +176,7 @@ export const InvestmentModal = ({ cabin, onClose, onInvest }: any) => {
                         <div className="text-2xl font-bold text-[#0e181f]">
                           ${cabinPrices[cabinType].toLocaleString("en-AU")}
                         </div>
-                        <div className="text-xs text-[#666]">
-                          plus GST
-                        </div>
+                        <div className="text-xs text-[#666]">plus GST</div>
                       </div>
                       <div>
                         <div className="text-[0.85rem] text-[#666] mb-1">
@@ -186,9 +185,7 @@ export const InvestmentModal = ({ cabin, onClose, onInvest }: any) => {
                         <div className="text-2xl font-bold text-[#0e181f]">
                           ${nightlyRate}
                         </div>
-                        <div className="text-xs text-[#666]">
-                          per night
-                        </div>
+                        <div className="text-xs text-[#666]">per night</div>
                       </div>
                       <div>
                         <div className="text-[0.85rem] text-[#666] mb-1">
@@ -209,9 +206,7 @@ export const InvestmentModal = ({ cabin, onClose, onInvest }: any) => {
                         <div className="text-2xl font-bold text-[#ffcf00]">
                           {roi.roi.toFixed(1)}%
                         </div>
-                        <div className="text-xs text-[#666]">
-                          annual return
-                        </div>
+                        <div className="text-xs text-[#666]">annual return</div>
                       </div>
                     </div>
                     {selectedCabinType === cabinType && (
@@ -363,54 +358,54 @@ export const InvestmentModal = ({ cabin, onClose, onInvest }: any) => {
           <div className="flex-1">
             <div className="grid grid-cols-4 gap-6">
               <div>
-                <div className="text-xs text-[#666] mb-1">
-                  Total Investment
-                </div>
+                <div className="text-xs text-[#666] mb-1">Total Investment</div>
                 <div className="text-xl font-bold text-[#0e181f]">
                   ${roi.actualInvestment.toLocaleString()}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-[#666] mb-1">
-                  Annual Profit
-                </div>
+                <div className="text-xs text-[#666] mb-1">Annual Profit</div>
                 <div className="text-xl font-bold text-[#0e181f]">
                   ${roi.annualProfit.toLocaleString()}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-[#666] mb-1">
-                  Monthly Profit
-                </div>
+                <div className="text-xs text-[#666] mb-1">Monthly Profit</div>
                 <div className="text-xl font-bold text-[#0e181f]">
                   ${roi.monthlyProfit.toLocaleString()}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-[#666] mb-1">
-                  Annual ROI
-                </div>
+                <div className="text-xs text-[#666] mb-1">Annual ROI</div>
                 <div className="text-[2rem] font-bold text-[#ffcf00]">
                   {roi.roi.toFixed(1)}%
                 </div>
               </div>
             </div>
           </div>
-          <button
-            className="py-4 px-12 rounded-lg font-semibold text-base no-underline inline-block transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
-            onClick={() => {
-              alert("Investment process would start here!");
-              onInvest &&
-                onInvest({
-                  ...cabin,
-                  id: selectedCabinType,
-                  price: cabinPrices[selectedCabinType],
-                });
-              onClose();
-            }}
-          >
-            Proceed with Investment
-          </button>
+          <div className="flex gap-3">
+            <CalendlyButton
+              url="https://calendly.com/james-s-wildthings"
+              text="Book Inspection"
+              variant="outline"
+              size="md"
+            />
+            <button
+              className="py-4 px-12 rounded-lg font-semibold text-base no-underline inline-block transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
+              onClick={() => {
+                alert("Investment process would start here!");
+                onInvest &&
+                  onInvest({
+                    ...cabin,
+                    id: selectedCabinType,
+                    price: cabinPrices[selectedCabinType],
+                  });
+                onClose();
+              }}
+            >
+              Proceed with Investment
+            </button>
+          </div>
         </div>
       </div>
     </div>

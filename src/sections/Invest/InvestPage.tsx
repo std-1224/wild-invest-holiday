@@ -1,5 +1,6 @@
 import { ROICalculatorPane } from "../../components/Panels/ROICalculatorPane";
 import { CabinCard } from "../../components/Cards/CabinCard";
+import { CalendlyButton } from "../../components/CalendlyButton";
 
 interface InvestPageProps {
   cabins: Array<{
@@ -18,10 +19,26 @@ export const InvestPage = ({ cabins, onInvest }: InvestPageProps) => {
         <h1 className="text-[clamp(3rem,8vw,5rem)] font-black italic text-[#0e181f] text-center mb-4 [text-shadow:2px_2px_4px_rgba(0,0,0,0.1)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
           INVEST IN A HOLIDAY HOME
         </h1>
-        <p className="text-xl text-center text-gray-600 mx-auto mb-12 max-w-[800px]">
-          Invest in your own piece of paradise. Earn passive income while providing
-          families with unforgettable outdoor experiences.
+        <p className="text-xl text-center text-gray-600 mx-auto mb-8 max-w-[800px]">
+          Invest in your own piece of paradise. Earn passive income while
+          providing families with unforgettable outdoor experiences.
         </p>
+
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+          <CalendlyButton
+            url="https://calendly.com/james-s-wildthings"
+            text="Schedule Investment Consultation"
+            variant="primary"
+            size="lg"
+          />
+          <button
+            onClick={() => document.getElementById("chat-widget")?.click()}
+            className="px-8 py-4 rounded-lg font-bold text-lg transition-all hover:opacity-90 bg-[#86dbdf] text-white"
+          >
+            💬 Chat with James
+          </button>
+        </div>
 
         {/* Two Column Layout: Cabin Cards Left, ROI Calculator Right */}
         <div className="grid gap-4 items-start grid-cols-1 lg:grid-cols-[1fr_350px]">

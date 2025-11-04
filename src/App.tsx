@@ -119,11 +119,22 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
             setShowReservationModal={setShowReservationModal}
             showReservationModal={showReservationModal}
             setIsLoggedIn={setIsLoggedIn}
+            isLoggedIn={isLoggedIn}
+            userProfile={
+              isLoggedIn
+                ? {
+                    firstName: "John",
+                    lastName: "Doe",
+                    email: "john.doe@example.com",
+                    phone: "+61 400 000 000",
+                  }
+                : undefined
+            }
           />
         )}
       </div>
 
-       <ChatWidget />
+      <ChatWidget />
 
       <footer
         className="text-white py-12 px-4"

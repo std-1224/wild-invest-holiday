@@ -25,6 +25,13 @@ interface ReservationModalProps {
   setShowReservationModal: (value: boolean) => void;
   showReservationModal: boolean;
   setIsLoggedIn: (value: boolean) => void;
+  isLoggedIn?: boolean;
+  userProfile?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
 }
 
 // Reservation Modal with Account Creation
@@ -32,12 +39,14 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
   setShowReservationModal,
   showReservationModal,
   setIsLoggedIn,
+  isLoggedIn = false,
+  userProfile,
 }) => {
   const [reservationData, setReservationData] = useState<ReservationData>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
+    firstName: userProfile?.firstName || "",
+    lastName: userProfile?.lastName || "",
+    email: userProfile?.email || "",
+    phone: userProfile?.phone || "",
     checkIn: "",
     checkOut: "",
     guests: 1,
@@ -51,11 +60,18 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
     confirmPassword: "",
     agreeToTerms: false,
   });
-  const [reservationExtras, setReservationExtras] = useState<ReservationExtras>({});
+  const [reservationExtras, setReservationExtras] = useState<ReservationExtras>(
+    {}
+  );
 
   const handleReservationSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setStep(2); // Move to account creation step
+    if (isLoggedIn) {
+      // Skip account creation if already logged in
+      setStep(3);
+    } else {
+      setStep(2); // Move to account creation step
+    }
   };
 
   const handleAccountCreation = (e: React.FormEvent) => {
@@ -101,6 +117,18 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
             <h2 className="text-2xl font-black mb-6 text-center italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
               Book Your Stay
             </h2>
+            {isLoggedIn && (
+              <div className="mb-4 p-3 bg-[#ffcf00]/[0.2] border border-[#ffcf00] rounded-lg">
+                <p className="text-sm text-[#0e181f]">
+                  ✓{" "}
+                  <strong>
+                    Logged in as {userProfile?.firstName}{" "}
+                    {userProfile?.lastName}
+                  </strong>{" "}
+                  - Your details are pre-filled below.
+                </p>
+              </div>
+            )}
             <form onSubmit={handleReservationSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -116,7 +144,10 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                         firstName: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${
+                      isLoggedIn ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
+                    readOnly={isLoggedIn}
                     required
                   />
                 </div>
@@ -133,7 +164,10 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                         lastName: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${
+                      isLoggedIn ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
+                    readOnly={isLoggedIn}
                     required
                   />
                 </div>
@@ -153,7 +187,10 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                         email: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${
+                      isLoggedIn ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
+                    readOnly={isLoggedIn}
                     required
                   />
                 </div>
@@ -170,7 +207,10 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                         phone: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${
+                      isLoggedIn ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
+                    readOnly={isLoggedIn}
                     required
                   />
                 </div>
@@ -287,7 +327,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                   value={reservationData.specialRequests}
                   onChange={(e) =>
                     setReservationData({
-                        ...reservationData,
+                      ...reservationData,
                       specialRequests: e.target.value,
                     })
                   }
@@ -348,7 +388,8 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                           onChange={() =>
                             setReservationExtras((prev) => ({
                               ...prev,
-                              [extra.id]: !prev[extra.id as keyof ReservationExtras],
+                              [extra.id]:
+                                !prev[extra.id as keyof ReservationExtras],
                             }))
                           }
                           className="w-5 h-5 accent-[#ffcf00]"
@@ -393,7 +434,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span>Guests:</span>
-                      <span className="font-bold">{reservationData.guests}</span>
+                    <span className="font-bold">{reservationData.guests}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Nights:</span>
