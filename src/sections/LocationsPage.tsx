@@ -2,7 +2,7 @@ interface LocationsPageProps {}
 
 export const LocationsPage = ({}: LocationsPageProps) => {
   return (
-    <div className="pt-[120px] min-h-screen bg-[#f5f5f5]">
+    <div className="min-h-screen bg-[#f5f5f5]">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-5">
         <h1 className="text-[clamp(2rem,8vw,5rem)] font-black italic text-[#0e181f] text-center mb-8 sm:mb-16 [text-shadow:2px_2px_4px_rgba(0,0,0,0.1)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
           OUR LOCATIONS
@@ -28,7 +28,7 @@ export const LocationsPage = ({}: LocationsPageProps) => {
                 hiking, and mountain adventures.
               </p>
               {/* Attractions icons grid */}
-              <div className="flex flex-wrap gap-2 sm:gap-3 items-center mt-2 mb-4">
+              <div className="flex flex-wrap gap-3 sm:gap-4 md:gap-5 items-center mt-4 mb-6">
                 {[
                   { key: "water-skiing", label: "Water Skiing", src: "/water-ski.svg" },
                   { key: "playground", label: "Playground", src: "/playground.svg" },
@@ -43,7 +43,8 @@ export const LocationsPage = ({}: LocationsPageProps) => {
                 ].map((item) => (
                   <div
                     key={item.key}
-                    className="flex flex-col items-center w-[70px] sm:w-[90px] text-[0.7rem] sm:text-[0.8rem] text-[#0e181f]"
+                    className="flex flex-col items-center w-[85px] sm:w-[100px] md:w-[110px] text-[0.75rem] sm:text-[0.85rem] md:text-[0.9rem] text-[#0e181f] font-medium cursor-pointer transition-transform duration-300 hover:scale-110 focus:scale-110"
+                    tabIndex={0}
                   >
                     <img
                       src={item.src}
@@ -53,7 +54,7 @@ export const LocationsPage = ({}: LocationsPageProps) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = "/attractions/default.png";
                       }}
-                      className="w-[56px] h-[56px] sm:w-[72px] sm:h-[72px] object-contain mb-1.5"
+                      className="w-[70px] h-[70px] sm:w-[85px] sm:h-[85px] md:w-[95px] md:h-[95px] object-contain mb-2 transition-all duration-300"
                     />
                     <div className="text-center leading-tight">{item.label}</div>
                   </div>
