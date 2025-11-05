@@ -102,22 +102,24 @@ export const Navbar = ({
                 Invest
               </a>
             </li>
-            <li>
-              <a
-                href="#invest"
-                className={
-                  currentPage === "investor-portal"
-                    ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
-                    : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
-                }
-                onClick={(e) => {
-                  e.preventDefault();
-                  onNavigate && onNavigate("investor-portal");
-                }}
-              >
-                Invest Portal
-              </a>
-            </li>
+            {isLoggedIn && (
+              <li>
+                <a
+                  href="#investor-portal"
+                  className={
+                    currentPage === "investor-portal"
+                      ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                      : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                  }
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigate && onNavigate("investor-portal");
+                  }}
+                >
+                  Investor Portal
+                </a>
+              </li>
+            )}
             {/* <li>
               <a
                 href="#invest"
@@ -215,23 +217,25 @@ export const Navbar = ({
                   Invest
                 </a>
               </li>
-              <li className="mb-2">
-                <a
-                  href="#invest"
-                  className={
-                    currentPage === "investor-portal"
-                      ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
-                      : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
-                  }
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onNavigate && onNavigate("investor-portal");
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  Invest Portal
-                </a>
-              </li>
+              {isLoggedIn && (
+                <li className="mb-2">
+                  <a
+                    href="#investor-portal"
+                    className={
+                      currentPage === "investor-portal"
+                        ? "text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 no-underline"
+                        : "text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onNavigate && onNavigate("investor-portal");
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    Investor Portal
+                  </a>
+                </li>
+              )}
               {/* <li className="mb-2">
                 <a
                   href="#invest"
