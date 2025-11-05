@@ -159,7 +159,7 @@ export const Navbar = ({
             <li>
               <a
                 href="https://wildthings.myshopify.com"
-                className="text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 underline decoration-[#FFCF00] decoration-2 underline-offset-4 hover:decoration-[#86dbdf] transition-colors duration-300"
+                className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -175,33 +175,6 @@ export const Navbar = ({
           >
             ☰
           </button>
-
-          {/* Desktop Auth Button */}
-          <div className="hidden lg:block">
-            {isLoggedIn ? (
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => onNavigate && onNavigate("portal")}
-                  className="px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
-                >
-                  MY ACCOUNT
-                </button>
-                <button
-                  onClick={onLogout}
-                  className="px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={onLoginClick}
-                className="px-6 py-3 rounded-lg font-semibold text-base transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
-              >
-                Investor Login
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Mobile Menu */}
@@ -302,7 +275,7 @@ export const Navbar = ({
               <li className="mb-2">
                 <a
                   href="https://wildthings.myshopify.com"
-                  className="text-[#FFCF00] text-[18px] font-black italic bg-transparent border-none cursor-pointer [font-family:'Eurostile_Condensed','Arial_Black',Impact,sans-serif] [text-shadow:2px_2px_0px_#0E181F] p-0 m-0 underline decoration-[#FFCF00] decoration-2 underline-offset-4 hover:decoration-[#86dbdf] transition-colors duration-300"
+                  className="text-[#0e181f] no-underline font-semibold text-lg transition-colors duration-300 hover:text-[#ffcf00]"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -313,6 +286,37 @@ export const Navbar = ({
           </div>
         )}
       </nav>
+
+      {/* Investor Login Tab - Top Right (Fixed Position) */}
+      {!isLoggedIn && (
+        <button
+          onClick={onLoginClick}
+          className="fixed top-0 right-5 px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md z-[1000] transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
+          style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
+        >
+          Investor Login
+        </button>
+      )}
+
+      {/* Logged In User Actions - Top Right (Fixed Position) */}
+      {isLoggedIn && (
+        <div className="fixed top-0 right-5 flex gap-2 z-[1000]">
+          <button
+            onClick={() => onNavigate && onNavigate("investor-portal")}
+            className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
+            style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
+          >
+            MY ACCOUNT
+          </button>
+          <button
+            onClick={onLogout}
+            className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
+            style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
+          >
+            Logout
+          </button>
+        </div>
+      )}
     </>
   );
 };
