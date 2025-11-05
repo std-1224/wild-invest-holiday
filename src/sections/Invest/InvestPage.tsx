@@ -10,7 +10,7 @@ import { InvestTimeline } from "../../components/InvestTimeline";
 import { InvestFaqs } from "../../components/InvestFaqs";
 import { CalendlyButton } from "../../components/CalendlyButton";
 
-type CabinType = "1BR" | "2BR" | "3BR";
+type CabinType = "1BR" | "2BR";
 
 interface HolidayHomesProps {
   onInvest: (cabin: any) => void;

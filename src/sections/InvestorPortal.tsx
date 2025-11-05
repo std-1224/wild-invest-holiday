@@ -20,7 +20,7 @@ import {
   PayoutData,
 } from "../components/Modals/PayoutRequestModal";
 
-type CabinType = "1BR" | "2BR" | "3BR";
+type CabinType = "1BR" | "2BR";
 
 interface Investment {
   cabinType: CabinType;

@@ -67,7 +67,6 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
             >
               <option value="1BR">1 Bedroom - $110,000</option>
               <option value="2BR">2 Bedroom - $135,000</option>
-              <option value="3BR">3 Bedroom - $160,000</option>
             </select>
           </div>
 

@@ -6,7 +6,7 @@ import {
   getExtrasForCabin,
 } from "../../config/mockCalculate";
 
-type CabinType = "1BR" | "2BR" | "3BR";
+type CabinType = "1BR" | "2BR";
 
 interface InvestmentModalProps {
   showInvestmentModal: boolean;

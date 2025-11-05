@@ -2,14 +2,14 @@ export const getAvailableExtrasForCabin = (cabinType: any) => [
   {
     id: "offgrid",
     name: "Off Grid Pack",
-    price: 30000,
+    price: 20000,
     nightlyImpact: 0,
     energySavings: 2400,
   }, // $200/month energy savings
   {
     id: "furniture",
     name: "Premium Furniture Package",
-    price: 15000,
+    price: 10000,
     nightlyImpact: 30,
   },
   { id: "linen", name: "Linen Pack", price: 1000, nightlyImpact: 5 },
@@ -19,7 +19,7 @@ export const getAvailableExtrasForCabin = (cabinType: any) => [
     price: 2000,
     nightlyImpact: 8,
   },
-  { id: "decking", name: "Decking", price: 5000, nightlyImpact: 12 },
+  { id: "decking", name: "Decking", price: 10000, nightlyImpact: 12 },
   {
     id: "marketingBoost",
     name: "Marketing Boost Package",
@@ -62,7 +62,6 @@ export const calculateROI = (...args: any[]) => {
   const cabinPrices: any = {
     "1BR": 110000,
     "2BR": 135000,
-    "3BR": 160000,
   };
   const availableExtras = getAvailableExtrasForCabin(cabinType);
 
@@ -173,33 +172,21 @@ export const cabinFeatures = {
     "Outdoor Deck",
     "Parking",
   ],
-  "3BR": [
-    "3 Bedrooms",
-    "2 Bathrooms",
-    "Full Kitchen",
-    "Living Area",
-    "Outdoor Deck",
-    "Parking",
-    "Laundry",
-  ],
 };
 
 export const cabinPrices = {
   "1BR": 110000,
   "2BR": 135000,
-  "3BR": 160000,
 };
 
 export const cabinImages = {
   "1BR": "/1BR.jpg",
   "2BR": "/2BR.jpg",
-  "3BR": "/3BR.jpg",
 };
 
 export const cabinVideos = {
   "1BR": "/1br-cabin-video.mp4",
   "2BR": "/2BR.mp4",
-  "3BR": "/3br-cabin-video.mp4",
 };
 
 export const colors = {
@@ -243,64 +230,52 @@ export const cabins = {
 };
 
 // Available extras for purchase
-// Extras with cabin-specific pricing for solar
+// Extras with cabin-specific pricing
 export const getExtrasForCabin = (cabinType: any) => {
-  const solarPrice =
-    cabinType === "1BR" ? 20000 : cabinType === "2BR" ? 30000 : 40000;
+  // Cabin-specific pricing
+  const furniturePrice = cabinType === "1BR" ? 10000 : 15000;
+  const linenPrice = cabinType === "1BR" ? 1000 : 2000;
+  const deckingPrice = cabinType === "1BR" ? 10000 : 15000;
+  const entertainmentPrice = cabinType === "1BR" ? 1000 : 2000;
+
   return [
     {
       id: "furniture",
-      name: "Premium Furniture Package",
-      price: 12000,
+      name: "Furniture Pack",
+      price: furniturePrice,
       nightlyImpact: 25,
       impactDescription: "+$25/night - Premium appeal increases rates",
       annualCostSavings: 0,
     },
     {
-      id: "appliances",
-      name: "High-End Appliances",
-      price: 5000,
-      nightlyImpact: 15,
-      impactDescription: "+$15/night - Luxury amenities attract premium guests",
+      id: "linen",
+      name: "Linen Pack",
+      price: linenPrice,
+      nightlyImpact: 5,
+      impactDescription: "+$5/night - Luxury comfort attracts guests",
       annualCostSavings: 0,
     },
     {
       id: "solar",
-      name: "Off Grid Solar & Battery Package",
-      price: solarPrice,
-      nightlyImpact: 0, // Solar doesn't increase nightly rate
+      name: "Off Grid Pack (Solar & Battery)",
+      price: 20000,
+      nightlyImpact: 0,
       impactDescription:
         "No impact on nightly rate - Eliminates $20/night energy costs",
-      annualCostSavings: 0, // Will be calculated based on occupancy
-    },
-    {
-      id: "insurance",
-      name: "Insurance Package",
-      price: 1200,
-      nightlyImpact: 0,
-      impactDescription: "No impact on nightly rate",
       annualCostSavings: 0,
     },
     {
-      id: "maintenance",
-      name: "Annual Maintenance Package",
-      price: 800,
-      nightlyImpact: 0,
-      impactDescription: "No impact on nightly rate",
-      annualCostSavings: 0,
-    },
-    {
-      id: "decor",
-      name: "Professional Interior Decor",
-      price: 2500,
+      id: "decking",
+      name: "Decking",
+      price: deckingPrice,
       nightlyImpact: 12,
-      impactDescription: "+$12/night - Enhanced aesthetics increase appeal",
+      impactDescription: "+$12/night - Enhanced outdoor space increases appeal",
       annualCostSavings: 0,
     },
     {
       id: "outdoor",
-      name: "Outdoor Furniture Set",
-      price: 2000,
+      name: "Outdoor Furniture Pack",
+      price: 1500,
       nightlyImpact: 8,
       impactDescription: "+$8/night - Outdoor luxury adds value",
       annualCostSavings: 0,
@@ -308,33 +283,9 @@ export const getExtrasForCabin = (cabinType: any) => {
     {
       id: "entertainment",
       name: "Entertainment System",
-      price: 1500,
+      price: entertainmentPrice,
       nightlyImpact: 10,
       impactDescription: "+$10/night - Premium entertainment increases rates",
-      annualCostSavings: 0,
-    },
-    {
-      id: "linen",
-      name: "Premium Linen Package",
-      price: 800,
-      nightlyImpact: 5,
-      impactDescription: "+$5/night - Luxury comfort attracts guests",
-      annualCostSavings: 0,
-    },
-    {
-      id: "bbq",
-      name: "BBQ & Outdoor Kitchen",
-      price: 1200,
-      nightlyImpact: 8,
-      impactDescription: "+$8/night - Outdoor cooking adds appeal",
-      annualCostSavings: 0,
-    },
-    {
-      id: "firepit",
-      name: "Fire Pit & Seating Area",
-      price: 900,
-      nightlyImpact: 6,
-      impactDescription: "+$6/night - Cozy atmosphere increases bookings",
       annualCostSavings: 0,
     },
   ];
@@ -422,7 +373,6 @@ export const faqs = [
 export const defaultNightlyRates = {
   "1BR": 160,
   "2BR": 200,
-  "3BR": 250,
 };
 
 export const investmentSteps = [
