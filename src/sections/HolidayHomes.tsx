@@ -144,7 +144,7 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                       <div className="text-3xl font-bold mb-4 text-[#ffcf00]">
                         ${cabin.price.toLocaleString("en-AU")}
                         <span className="text-sm ml-2 text-[#0e181f]">
-                          plus GST
+                          + GST
                         </span>
                       </div>
 
@@ -236,7 +236,7 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                                 {cabin.name}
                               </div>
                               <div className="text-base font-bold text-[#ffcf00]">
-                                ${cabin.price.toLocaleString("en-AU")} plus GST
+                                ${cabin.price.toLocaleString("en-AU")} + GST
                               </div>
                             </div>
                           </div>
@@ -457,7 +457,7 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                       {roiResults.grossAnnualRevenue.toLocaleString("en-AU", {
                         maximumFractionDigits: 0,
                       })}{" "}
-                      plus GST
+                      + GST
                     </span>
                   </div>
                   <div className="flex justify-between text-[#ec874c]">

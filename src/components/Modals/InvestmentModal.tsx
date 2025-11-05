@@ -237,7 +237,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                 className="text-xl font-bold"
                 style={{ color: colors.darkBlue }}
               >
-                ${selectedCabin.price.toLocaleString()} plus GST
+                ${selectedCabin.price.toLocaleString()} + GST
               </p>
             </div>
             <div>
@@ -626,7 +626,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                       maximumFractionDigits: 2,
                     })}
                   </div>
-                  <div className="text-xs text-gray-500">plus GST</div>
+                  <div className="text-xs text-gray-500">+ GST</div>
                 </div>
               </div>
 
@@ -656,7 +656,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}{" "}
-                            plus GST
+                            + GST
                           </span>
                         </div>
                       )
@@ -672,7 +672,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}{" "}
-                      plus GST
+                      + GST
                     </span>
                   </div>
                 </>
@@ -689,7 +689,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}{" "}
-                  plus GST
+                  + GST
                 </span>
               </div>
 
@@ -846,7 +846,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}{" "}
-                    plus GST
+                    + GST
                   </span>
                 </div>
               )}
@@ -914,7 +914,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                           maximumFractionDigits: 2,
                         })}
                       </div>
-                      <div className="text-xs">plus GST</div>
+                      <div className="text-xs">+ GST</div>
                     </div>
                   </div>
 
@@ -944,7 +944,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                           maximumFractionDigits: 2,
                         })}
                       </div>
-                      <div className="text-xs">plus GST</div>
+                      <div className="text-xs">+ GST</div>
                     </div>
                   </div>
 
@@ -974,7 +974,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                           maximumFractionDigits: 2,
                         })}
                       </div>
-                      <div className="text-xs">plus GST</div>
+                      <div className="text-xs">+ GST</div>
                     </div>
                   </div>
                 </div>

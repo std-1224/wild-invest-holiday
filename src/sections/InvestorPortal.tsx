@@ -443,7 +443,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                         .reduce((sum, inv) => sum + inv.purchasePrice, 0)
                         .toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-600 mt-1 h-5">plus GST</p>
+                    <p className="text-xs text-gray-600 mt-1 h-5">+ GST</p>
                   </div>
                 </div>
                 <div className="bg-white rounded-lg shadow-lg p-6 text-center flex flex-col justify-between min-h-[160px]">
@@ -704,7 +704,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                             <p className="text-xl font-bold text-[#0e181f]">
                               ${investment.purchasePrice.toLocaleString()}
                             </p>
-                            <p className="text-xs text-gray-600">plus GST</p>
+                            <p className="text-xs text-gray-600">+ GST</p>
                           </div>
                           <div className="text-center">
                             <p className="text-sm font-medium mb-1 text-[#0e181f]">
@@ -713,7 +713,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                             <p className="text-xl font-bold text-[#ffcf00]">
                               ${investment.currentValue.toLocaleString()}
                             </p>
-                            <p className="text-xs text-gray-600">plus GST</p>
+                            <p className="text-xs text-gray-600">+ GST</p>
                           </div>
                           <div className="text-center">
                             <p className="text-sm font-medium mb-1 text-[#0e181f]">
@@ -1341,7 +1341,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                         {cabin.name}
                       </h4>
                       <p className="font-bold text-sm text-[#ffcf00]">
-                        ${cabin.price.toLocaleString()} plus GST
+                        ${cabin.price.toLocaleString()} + GST
                       </p>
                       <div className="mt-2 pt-2 border-t border-gray-200">
                         {(() => {
@@ -1421,7 +1421,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                           </span>
                         </div>
                         <span className="text-sm font-bold text-[#0e181f]">
-                          ${extra.price.toLocaleString()} plus GST
+                          ${extra.price.toLocaleString()} + GST
                         </span>
                       </label>
                     ))}

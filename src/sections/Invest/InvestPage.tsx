@@ -143,7 +143,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                       <div className="text-3xl font-bold mb-4 text-[#ffcf00]">
                         ${cabin.price.toLocaleString("en-AU")}
                         <span className="text-sm ml-2 text-[#0e181f]">
-                          plus GST
+                           + GST
                         </span>
                       </div>
 
@@ -170,7 +170,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                       <div className="space-y-2 mb-4 text-sm text-[#0e181f]">
                         <div className="flex items-center">
                           <div className="w-2 h-2 rounded-full bg-[#86dbdf] mr-2"></div>
-                          <span>${cabin.siteFee}/week site fee</span>
+                          <span>${cabin.siteFee} + GST site fee per week</span>
                         </div>
                         <div className="flex items-center">
                           <div className="w-2 h-2 rounded-full bg-[#86dbdf] mr-2"></div>
@@ -235,7 +235,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                                 {cabin.name}
                               </div>
                               <div className="text-base font-bold text-[#ffcf00]">
-                                ${cabin.price.toLocaleString("en-AU")} plus GST
+                                ${cabin.price.toLocaleString("en-AU")} + GST
                               </div>
                             </div>
                           </div>
@@ -456,7 +456,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                       {roiResults.grossAnnualRevenue.toLocaleString("en-AU", {
                         maximumFractionDigits: 0,
                       })}{" "}
-                      plus GST
+                      + GST
                     </span>
                   </div>
                   <div className="flex justify-between text-[#ec874c]">

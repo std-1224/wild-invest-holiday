@@ -6,9 +6,7 @@ export const MissionSection = () => (
         OUR MISSION
       </h2>
       <p className="text-xl leading-relaxed text-white mb-8">
-        We are on a mission to create havens where everyone can come to
-        disconnect from the world, from technology, and reconnect with family
-        and nature.
+        We create affordable holiday destinations for families to disconnect from the world and reconnect with each other.
       </p>
       <div className="flex justify-center gap-8 flex-wrap">
         <div className="text-center">

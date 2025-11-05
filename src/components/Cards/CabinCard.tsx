@@ -6,7 +6,7 @@ export const CabinCard = ({ cabin, onInvest }: any) => (
     <div className="p-8">
       <h3 className="text-2xl font-black italic text-[#0e181f] mb-4 font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">{cabin.name.toUpperCase()}</h3>
       <div className="text-[2rem] font-bold text-[#ffcf00] mb-6 [text-shadow:1px_1px_2px_rgba(0,0,0,0.1)]">
-        ${cabin.price.toLocaleString("en-AU")} plus GST
+        ${cabin.price.toLocaleString("en-AU")} + GST
       </div>
       <button
         onClick={() => onInvest && onInvest(cabin)}

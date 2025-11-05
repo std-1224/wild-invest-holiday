@@ -11,12 +11,11 @@ export const HeroSection = ({ onInvestClick }: any) => (
     />
     <div className="absolute top-0 left-0 w-full h-full bg-[#0e181f]/40 z-[2] pointer-events-none"></div>
     <div className="relative z-[3] text-center text-white max-w-[800px] px-4">
-      <h1 className="text-[clamp(3rem,8vw,5rem)] font-black italic mb-6 text-[#ffcf00] [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+      <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black italic mb-6 text-[#ffcf00] [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
         RECONNECT WITH THE WILD
       </h1>
       <p className="text-xl mb-8 opacity-90">
-        Invest in sustainable holiday homes and create lasting memories in
-        nature
+        Disconnect from the world and reconnect with family and friends
       </p>
       <div className="flex gap-4 flex-wrap justify-center">
         <a

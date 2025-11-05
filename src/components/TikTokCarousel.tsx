@@ -24,7 +24,7 @@ export const TikTokCarousel = () => {
   const videos: TikTokVideo[] = [
     {
       id: 1,
-      username: "@wildthingsaustralia",
+      username: "@wildthingsparks",
       description:
         "Experience breathtaking mountain views and outdoor adventures 🏔️ #wildthings #adventure",
       likes: "12.5K",
@@ -35,7 +35,7 @@ export const TikTokCarousel = () => {
     },
     {
       id: 2,
-      username: "@wildthingsaustralia",
+      username: "@wildthingsparks",
       description:
         "Discover the beauty of nature in our pristine locations 🌲 #nature #cabinlife",
       likes: "18.2K",
@@ -46,7 +46,7 @@ export const TikTokCarousel = () => {
     },
     {
       id: 3,
-      username: "@wildthingsaustralia",
+      username: "@wildthingsparks",
       description:
         "Experience the perfect blend of comfort and adventure 🏕️ #cabin #getaway",
       likes: "25.8K",
@@ -57,7 +57,7 @@ export const TikTokCarousel = () => {
     },
     {
       id: 4,
-      username: "@wildthingsaustralia",
+      username: "@wildthingsparks",
       description:
         "Watch stunning sunsets from your private cabin deck 🌅 #sunset #views",
       likes: "31.4K",
@@ -68,7 +68,7 @@ export const TikTokCarousel = () => {
     },
     {
       id: 5,
-      username: "@wildthingsaustralia",
+      username: "@wildthingsparks",
       description:
         "Get up close with Australia's amazing wildlife 🦘 #wildlife #australia",
       likes: "42.7K",
@@ -213,7 +213,7 @@ export const TikTokCarousel = () => {
                 {/* Bottom Info */}
                 <div className="absolute bottom-20 left-4 right-20 z-10">
                   <div className="text-white">
-                    <h3 className="font-bold text-lg mb-2">{video.username}</h3>
+                    <a className="font-bold text-lg mb-2" href="https://www.tiktok.com/@wildthingsparks">{video.username}</a>
                     <p className="text-sm mb-3">{video.description}</p>
                     <div className="flex items-center gap-2">
                       <Music className="w-4 h-4" />
@@ -231,7 +231,7 @@ export const TikTokCarousel = () => {
                         : "bg-red-500 text-white"
                     }`}
                   >
-                    @wildthingsaustralia
+                    @wildthingsparks
                   </button>
                 </div>
               </div>

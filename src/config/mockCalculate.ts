@@ -215,8 +215,8 @@ export const colors = {
 export const cabins = {
   "1BR": {
     name: "1 Bedroom Cabin",
-    price: 110000,
-    siteFee: 100,
+    price: 190000,
+    siteFee: 134,
     bedrooms: 1,
     image: "/1BR.jpg",
     rentOffPeak: 150,
@@ -224,22 +224,22 @@ export const cabins = {
   },
   "2BR": {
     name: "2 Bedroom Cabin",
-    price: 170000,
-    siteFee: 130,
+    price: 320000,
+    siteFee: 268,
     bedrooms: 2,
     image: "/2BR.jpg",
     rentOffPeak: 200,
     rentPeak: 500,
   },
-  "3BR": {
-    name: "3 Bedroom Cabin",
-    price: 250000,
-    siteFee: 150,
-    bedrooms: 3,
-    image: "/3BR.jpg",
-    rentOffPeak: 300,
-    rentPeak: 700,
-  },
+  // "3BR": {
+  //   name: "3 Bedroom Cabin",
+  //   price: 250000,
+  //   siteFee: 150,
+  //   bedrooms: 3,
+  //   image: "/3BR.jpg",
+  //   rentOffPeak: 300,
+  //   rentPeak: 700,
+  // },
 };
 
 // Available extras for purchase
@@ -426,30 +426,29 @@ export const defaultNightlyRates = {
 };
 
 export const investmentSteps = [
-  { title: "Reservation", subtitle: "Week 0", icon: "💳", timeline: "Start" },
+  { title: "Reservation", subtitle: "$100 deposit", icon: "💳", timeline: "Today" },
   {
     title: "Sign Purchase Agreement",
-    subtitle: "Week 1",
+    subtitle: "%30 deposit",
     icon: "📝",
-    timeline: "1 week",
+    timeline: "Tomorrow",
   },
-  { title: "Pay Deposit", subtitle: "30%", icon: "💰", timeline: "2 weeks" },
   {
-    title: "Build Complete",
-    subtitle: "30% - 8 weeks",
+    title: "Finish building",
+    subtitle: "30% deposit",
     icon: "🏗️",
-    timeline: "10 weeks",
+    timeline: "8 weeks",
   },
   {
-    title: "Inspect Cabin",
-    subtitle: "Week 11",
+    title: "Inspect Home",
+    subtitle: "",
     icon: "🔍",
-    timeline: "11 weeks",
+    timeline: "91 weeks",
   },
   {
-    title: "Hand Over Keys",
-    subtitle: "50% - Week 12",
+    title: "Own your home",
+    subtitle: "40% deposit",
     icon: "🗝️",
-    timeline: "12 weeks",
+    timeline: "10 weeks",
   },
 ];
