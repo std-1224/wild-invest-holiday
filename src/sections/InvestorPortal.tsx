@@ -67,6 +67,8 @@ interface InvestorPortalProps {
   onInvestClick: (value: string) => void;
   setSelectedCabinForInvestment: (value: string) => void;
   setShowInvestmentModal: (value: boolean) => void;
+  userInvestments: any[];
+  setUserInvestments: (investments: any[]) => void;
 }
 
 // Investor Portal Component
@@ -75,8 +77,12 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   onInvestClick,
   setShowInvestmentModal,
   setSelectedCabinForInvestment,
+  userInvestments: propUserInvestments,
+  setUserInvestments: propSetUserInvestments,
 }) => {
-  const [userInvestments, setUserInvestments] = useState<Investment[]>([
+  // Merge prop investments with mock data for display purposes
+  // If there are no investments from props, show mock data
+  const mockInvestments: Investment[] = [
     {
       id: 1,
       cabinType: "2BR",
@@ -137,7 +143,32 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
         "2024-12-31",
       ],
     },
-  ]);
+  ];
+
+  // Convert prop investments to full Investment objects with default values
+  const convertedPropInvestments: Investment[] = propUserInvestments.map((inv, index) => ({
+    id: inv.id || mockInvestments.length + index + 1,
+    cabinType: inv.cabinType || "2BR",
+    location: inv.location || "Mansfield",
+    purchaseDate: inv.purchaseDate || new Date().toISOString().split("T")[0],
+    purchasePrice: inv.purchasePrice || 0,
+    currentValue: inv.currentValue || inv.purchasePrice || 0,
+    totalIncome: inv.totalIncome || 0,
+    monthlyIncome: inv.monthlyIncome || 0,
+    averagePerNight: inv.averagePerNight || 0,
+    status: inv.status || "Pending Build",
+    nextPayment: inv.nextPayment || "TBD",
+    occupancyRate: inv.occupancyRate || 0,
+    nightsBooked: inv.nightsBooked || 0,
+    roi: inv.roi || 0,
+    bookedDates: inv.bookedDates || [],
+  }));
+
+  // ALWAYS show mock data + new investments combined
+  // This way users see both demo cabins and their new reservations
+  const userInvestments = [...mockInvestments, ...convertedPropInvestments];
+
+  const setUserInvestments = propSetUserInvestments;
 
   const [showAttitudeChangeModal, setShowAttitudeChangeModal] = useState(false);
   const [pendingAttitudeChange, setPendingAttitudeChange] = useState<

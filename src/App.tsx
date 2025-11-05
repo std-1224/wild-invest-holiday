@@ -103,6 +103,8 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
             onInvestClick={() => setCurrentPage("invest")}
             setShowInvestmentModal={setShowInvestmentModal}
             setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+            userInvestments={userInvestments}
+            setUserInvestments={setUserInvestments}
           />
         )}
 
