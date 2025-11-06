@@ -24,6 +24,14 @@ export const InvestTimeline = () => {
         <p className="text-[#0e181f] text-lg">
           From reservation to keys in hand — 12 weeks to ownership
         </p>
+        <a
+          href="https://wildthingsim.netlify.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f] no-underline"
+        >
+          📄 Information Memorandum
+        </a>
       </div>
 
       {/* Desktop Timeline */}
@@ -85,7 +93,9 @@ export const InvestTimeline = () => {
                 {/* Subtitle */}
                 <p
                   className={`text-xs mb-1 h-5 flex items-center justify-center text-center leading-[1.2] transition-all duration-300 ${
-                    isActive || isHovered ? "text-[#0e181f] font-semibold" : "text-gray-600"
+                    isActive || isHovered
+                      ? "text-[#0e181f] font-semibold"
+                      : "text-gray-600"
                   }`}
                 >
                   {step.subtitle}
@@ -114,7 +124,11 @@ export const InvestTimeline = () => {
                       isPast ? "bg-[#86dbdf]" : "bg-gray-300"
                     }`}
                     style={{
-                      width: isPast ? "100%" : index === activeStep ? "50%" : "0%",
+                      width: isPast
+                        ? "100%"
+                        : index === activeStep
+                        ? "50%"
+                        : "0%",
                       transition: "width 0.7s ease-in-out",
                     }}
                   ></div>

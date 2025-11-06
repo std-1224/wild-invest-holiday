@@ -77,14 +77,6 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
               >
                 💬 Chat with James
               </button>
-              <a
-                href="https://wildthingsim.netlify.app/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f] no-underline"
-              >
-                📄 Information Memorandum
-              </a>
             </div>
           </div>
         </div>

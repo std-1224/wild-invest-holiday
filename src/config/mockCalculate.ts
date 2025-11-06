@@ -393,7 +393,7 @@ export const investmentSteps = [
     title: "Inspect Home",
     subtitle: "",
     icon: "🔍",
-    timeline: "91 weeks",
+    timeline: "9 weeks",
   },
   {
     title: "Own your home",
