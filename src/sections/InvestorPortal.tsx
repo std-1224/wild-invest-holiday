@@ -368,28 +368,28 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   // Mock booked dates for owner booking calendar
   const mockBookedDates = [
     {
-      date: "2024-11-15",
+      date: "2025-11-15",
       type: "guest" as const,
       guestName: "John Smith",
       nights: 3,
     },
     {
-      date: "2024-11-16",
+      date: "2025-11-16",
       type: "guest" as const,
       guestName: "John Smith",
       nights: 3,
     },
     {
-      date: "2024-11-17",
+      date: "2025-11-17",
       type: "guest" as const,
       guestName: "John Smith",
       nights: 3,
     },
-    { date: "2024-12-20", type: "owner" as const, nights: 5 },
-    { date: "2024-12-21", type: "owner" as const, nights: 5 },
-    { date: "2024-12-22", type: "owner" as const, nights: 5 },
-    { date: "2024-12-23", type: "owner" as const, nights: 5 },
-    { date: "2024-12-24", type: "owner" as const, nights: 5 },
+    { date: "2025-12-20", type: "owner" as const, nights: 5 },
+    { date: "2025-12-21", type: "owner" as const, nights: 5 },
+    { date: "2025-12-22", type: "owner" as const, nights: 5 },
+    { date: "2025-12-23", type: "owner" as const, nights: 5 },
+    { date: "2025-12-24", type: "owner" as const, nights: 5 },
   ];
 
   return (
