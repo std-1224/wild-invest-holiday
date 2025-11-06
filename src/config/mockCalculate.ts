@@ -379,7 +379,7 @@ export const investmentSteps = [
   { title: "Reservation", subtitle: "$100 deposit", icon: "💳", timeline: "Today" },
   {
     title: "Sign Purchase Agreement",
-    subtitle: "%30 deposit",
+    subtitle: "30% deposit",
     icon: "📝",
     timeline: "Tomorrow",
   },
