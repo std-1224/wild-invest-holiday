@@ -46,16 +46,6 @@
       "source": "/api/rms/webhook",
       "destination": "/api/rms-webhook"
     }
-  ],
-  "env": {
-    "VITE_STRIPE_PUBLISHABLE_KEY": "@vite_stripe_publishable_key",
-    "VITE_STRIPE_SECRET_KEY": "@vite_stripe_secret_key",
-    "VITE_AWS_REGION": "@vite_aws_region",
-    "VITE_AWS_USER_POOL_ID": "@vite_aws_user_pool_id",
-    "VITE_AWS_USER_POOL_CLIENT_ID": "@vite_aws_user_pool_client_id",
-    "VITE_RMS_API_URL": "@vite_rms_api_url",
-    "VITE_RMS_API_KEY": "@vite_rms_api_key",
-    "VITE_RMS_TENANT_ID": "@vite_rms_tenant_id"
-  }
+  ]
 }
 
