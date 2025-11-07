@@ -1,57 +1,48 @@
-// Lambda Function: List Stripe Payment Methods
+// Vercel Serverless Function: List Stripe Payment Methods
 // Retrieves all saved payment methods for a customer
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 
 // Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const stripe = new Stripe(process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-11-20.acacia',
 });
 
 /**
- * Lambda Handler
+ * Vercel Serverless Function Handler
  */
-export const handler = async (
-  event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
   // CORS headers
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET,OPTIONS',
-  };
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
 
   // Handle OPTIONS request for CORS
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
   try {
     // Validate request method
-    if (event.httpMethod !== 'GET') {
-      return {
-        statusCode: 405,
-        headers,
-        body: JSON.stringify({ error: 'Method not allowed' }),
-      };
+    if (req.method !== 'POST') {
+      return res.status(405).json({
+        success: false,
+        error: 'Method not allowed'
+      });
     }
 
-    // Get query parameters
-    const customerId = event.queryStringParameters?.customerId;
-    const type = event.queryStringParameters?.type || 'card';
+    // Get request body
+    const { customerId, type = 'card' } = req.body;
 
     if (!customerId) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Customer ID is required' }),
-      };
+      return res.status(400).json({
+        success: false,
+        error: 'Customer ID is required'
+      });
     }
 
     console.log('Listing payment methods for customer:', customerId);
@@ -75,32 +66,24 @@ export const handler = async (
 
     console.log(`Found ${paymentMethods.data.length} payment methods`);
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        paymentMethods: paymentMethods.data.map((pm) => ({
-          id: pm.id,
-          type: pm.type,
-          card: pm.card,
-          billing_details: pm.billing_details,
-          created: pm.created,
-          isDefault: pm.id === defaultPaymentMethodId,
-        })),
-      }),
-    };
+    return res.status(200).json({
+      success: true,
+      paymentMethods: paymentMethods.data.map((pm) => ({
+        id: pm.id,
+        type: pm.type,
+        card: pm.card,
+        billing_details: pm.billing_details,
+        created: pm.created,
+        isDefault: pm.id === defaultPaymentMethodId,
+      })),
+    });
   } catch (error: any) {
     console.error('Error listing payment methods:', error);
 
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to list payment methods',
-      }),
-    };
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to list payment methods',
+    });
   }
-};
+}
 

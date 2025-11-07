@@ -1,11 +1,11 @@
-// Lambda Function: Save Stripe Payment Method
+// Vercel Serverless Function: Save Stripe Payment Method
 // Attaches a payment method to a customer and optionally sets it as default
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 
 // Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const stripe = new Stripe(process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-11-20.acacia',
 });
 
@@ -19,64 +19,47 @@ interface SavePaymentMethodRequest {
 }
 
 /**
- * Lambda Handler
+ * Vercel Serverless Function Handler
  */
-export const handler = async (
-  event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
   // CORS headers
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST,OPTIONS',
-  };
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
 
   // Handle OPTIONS request for CORS
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
   try {
     // Validate request method
-    if (event.httpMethod !== 'POST') {
-      return {
-        statusCode: 405,
-        headers,
-        body: JSON.stringify({ error: 'Method not allowed' }),
-      };
+    if (req.method !== 'POST') {
+      return res.status(405).json({
+        success: false,
+        error: 'Method not allowed'
+      });
     }
 
-    // Parse request body
-    if (!event.body) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Request body is required' }),
-      };
-    }
-
-    const request: SavePaymentMethodRequest = JSON.parse(event.body);
+    // Get request body
+    const request: SavePaymentMethodRequest = req.body;
 
     // Validate required fields
     if (!request.paymentMethodId) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Payment method ID is required' }),
-      };
+      return res.status(400).json({
+        success: false,
+        error: 'Payment method ID is required'
+      });
     }
 
     if (!request.customerId) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Customer ID is required' }),
-      };
+      return res.status(400).json({
+        success: false,
+        error: 'Customer ID is required'
+      });
     }
 
     console.log('Saving payment method:', {
@@ -106,43 +89,31 @@ export const handler = async (
       console.log('Payment method set as default');
     }
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        paymentMethod: {
-          id: paymentMethod.id,
-          type: paymentMethod.type,
-          card: paymentMethod.card,
-          billing_details: paymentMethod.billing_details,
-          created: paymentMethod.created,
-        },
-      }),
-    };
+    return res.status(200).json({
+      success: true,
+      paymentMethod: {
+        id: paymentMethod.id,
+        type: paymentMethod.type,
+        card: paymentMethod.card,
+        billing_details: paymentMethod.billing_details,
+        created: paymentMethod.created,
+      },
+    });
   } catch (error: any) {
     console.error('Error saving payment method:', error);
 
     // Handle Stripe-specific errors
     if (error.type === 'StripeInvalidRequestError') {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          error: error.message,
-        }),
-      };
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
     }
 
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to save payment method',
-      }),
-    };
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to save payment method',
+    });
   }
-};
+}
 
