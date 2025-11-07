@@ -3,48 +3,8 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/api/stripe/list-payment-methods",
-      "destination": "/api/stripe-list-payment-methods"
-    },
-    {
-      "source": "/api/stripe/save-payment-method",
-      "destination": "/api/stripe-save-payment-method"
-    },
-    {
-      "source": "/api/stripe/create-payment-intent",
-      "destination": "/api/stripe-create-payment-intent"
-    },
-    {
-      "source": "/api/stripe/set-default-payment-method",
-      "destination": "/api/stripe-set-default-payment-method"
-    },
-    {
-      "source": "/api/stripe/remove-payment-method",
-      "destination": "/api/stripe-remove-payment-method"
-    },
-    {
-      "source": "/api/stripe/create-subscription",
-      "destination": "/api/stripe-create-subscription"
-    },
-    {
-      "source": "/api/stripe/webhook",
-      "destination": "/api/stripe-webhook"
-    },
-    {
-      "source": "/api/rms/availability",
-      "destination": "/api/rms-availability"
-    },
-    {
-      "source": "/api/rms/create-booking",
-      "destination": "/api/rms-create-booking"
-    },
-    {
-      "source": "/api/rms/cancel-booking",
-      "destination": "/api/rms-cancel-booking"
-    },
-    {
-      "source": "/api/rms/webhook",
-      "destination": "/api/rms-webhook"
+      "source": "/api/:path*",
+      "destination": "/api"
     }
   ]
 }
