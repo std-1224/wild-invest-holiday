@@ -25,8 +25,44 @@ export const SavedPaymentMethods = ({
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const getCardIcon = (brand: string) => {
-    // In a real app, you'd use actual card brand icons
-    return <CreditCard className="w-6 h-6 text-[#86dbdf]" />;
+    const brandLower = brand.toLowerCase();
+
+    // Map brand names to icon file names
+    let iconName = '';
+
+    if (brandLower === 'visa') {
+      iconName = 'visa';
+    } else if (brandLower === 'mastercard') {
+      iconName = 'mastercard';
+    } else if (brandLower === 'amex' || brandLower === 'american express') {
+      iconName = 'amex';
+    } else if (brandLower === 'discover') {
+      iconName = 'discover';
+    } else if (brandLower === 'jcb') {
+      iconName = 'jcb';
+    } else if (brandLower === 'diners' || brandLower === 'diners club') {
+      iconName = 'diners';
+    } else if (brandLower === 'unionpay') {
+      iconName = 'unionpay';
+    }
+
+    // If we have a matching icon, use it
+    if (iconName) {
+      return (
+        <img
+          src={`/card-icons/${iconName}.svg`}
+          alt={brand}
+          className="w-12 h-8 object-contain"
+        />
+      );
+    }
+
+    // Default/Unknown - use generic credit card icon
+    return (
+      <div className="w-12 h-8 bg-gray-600 rounded flex items-center justify-center">
+        <CreditCard className="w-6 h-6 text-white" />
+      </div>
+    );
   };
 
   const handleDelete = (id: string) => {
@@ -38,6 +74,23 @@ export const SavedPaymentMethods = ({
       setTimeout(() => setConfirmDelete(null), 3000);
     }
   };
+
+  const formatBrandName = (brand: string) => {
+    const brandLower = brand.toLowerCase();
+
+    if (brandLower === 'visa') return 'Visa';
+    if (brandLower === 'mastercard') return 'Mastercard';
+    if (brandLower === 'amex' || brandLower === 'american express') return 'American Express';
+    if (brandLower === 'discover') return 'Discover';
+    if (brandLower === 'jcb') return 'JCB';
+    if (brandLower === 'diners' || brandLower === 'diners club') return 'Diners Club';
+    if (brandLower === 'unionpay') return 'UnionPay';
+
+    // Capitalize first letter for unknown brands
+    return brand.charAt(0).toUpperCase() + brand.slice(1);
+  };
+
+  console.log("paymentMethods: ", paymentMethods)
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -87,7 +140,7 @@ export const SavedPaymentMethods = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-bold text-[#0e181f]">
-                        {method.brand} •••• {method.last4}
+                        {formatBrandName(method.brand)} •••• {method.last4}
                       </h4>
                       {method.isDefault && (
                         <span className="flex items-center gap-1 px-2 py-0.5 bg-[#ffcf00] text-[#0e181f] rounded text-xs font-semibold">
