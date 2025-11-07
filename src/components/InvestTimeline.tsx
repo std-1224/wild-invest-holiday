@@ -22,7 +22,7 @@ export const InvestTimeline = () => {
           YOUR INVESTMENT JOURNEY
         </h2>
         <p className="text-[#0e181f] text-lg">
-          From reservation to keys in hand — 12 weeks to ownership
+          From reservation to keys in hand — 10 weeks to ownership
         </p>
         <a
           href="https://wildthingsim.netlify.app/"
