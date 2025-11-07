@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   cabins,
   getExtrasForCabin,
@@ -11,6 +11,7 @@ import { OwnerBookingModal } from "../components/Modals/OwnerBookingModal";
 import { OccupancyTypeModal } from "../components/Modals/OccupancyTypeModal";
 import { PaymentHistory } from "../components/PaymentHistory";
 import { SavedPaymentMethods } from "../components/SavedPaymentMethods";
+import { AddPaymentMethodModal } from "../components/AddPaymentMethodModal";
 import { BookingHistory } from "../components/BookingHistory";
 import { MarketingBoostManager } from "../components/MarketingBoostManager";
 import { CalendlyButton } from "../components/CalendlyButton";
@@ -19,6 +20,7 @@ import {
   PayoutRequestModal,
   PayoutData,
 } from "../components/Modals/PayoutRequestModal";
+import { stripeClient } from "../api/stripe";
 
 type CabinType = "1BR" | "2BR";
 
@@ -186,18 +188,91 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
       paymentMethod: "external",
     });
 
-  const [savedPaymentMethods, setSavedPaymentMethods] = useState<
-    PaymentMethod[]
-  >([
-    { id: "1", last4: "4242", brand: "Visa", expiry: "12/25", isDefault: true },
-    {
-      id: "2",
-      last4: "5555",
-      brand: "Mastercard",
-      expiry: "06/26",
-      isDefault: false,
-    },
-  ]);
+  // Stripe Payment Methods State
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [showAddPaymentMethodModal, setShowAddPaymentMethodModal] = useState(false);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+
+  // Mock Stripe Customer ID (in production, this would come from user authentication)
+  const stripeCustomerId = "cus_mock_customer_id";
+
+  // Load payment methods from Stripe on mount
+  useEffect(() => {
+    loadPaymentMethods();
+  }, []);
+
+  const loadPaymentMethods = async () => {
+    setLoadingPaymentMethods(true);
+    try {
+      const response = await stripeClient.listPaymentMethods({
+        customerId: stripeCustomerId,
+        type: 'card',
+      });
+
+      if (response.success && response.paymentMethods) {
+        // Convert Stripe payment methods to UI format
+        const formattedMethods: PaymentMethod[] = response.paymentMethods.map((pm: any) => ({
+          id: pm.id,
+          last4: pm.card?.last4 || '0000',
+          brand: pm.card?.brand || 'Unknown',
+          expiry: pm.card ? `${String(pm.card.exp_month).padStart(2, '0')}/${String(pm.card.exp_year).slice(-2)}` : '00/00',
+          isDefault: pm.isDefault || false,
+          stripePaymentMethodId: pm.id,
+        }));
+        setSavedPaymentMethods(formattedMethods);
+      }
+    } catch (error) {
+      console.error('Error loading payment methods:', error);
+      // Fallback to mock data if Stripe is not configured
+      setSavedPaymentMethods([
+        { id: "1", last4: "4242", brand: "Visa", expiry: "12/25", isDefault: true },
+        { id: "2", last4: "5555", brand: "Mastercard", expiry: "06/26", isDefault: false },
+      ]);
+    } finally {
+      setLoadingPaymentMethods(false);
+    }
+  };
+
+  const handleAddPaymentMethod = () => {
+    setShowAddPaymentMethodModal(true);
+  };
+
+  const handleRemovePaymentMethod = async (id: string) => {
+    try {
+      const response = await stripeClient.removePaymentMethod({
+        paymentMethodId: id,
+      });
+
+      if (response.success) {
+        // Reload payment methods
+        await loadPaymentMethods();
+      } else {
+        alert(response.error || 'Failed to remove payment method');
+      }
+    } catch (error: any) {
+      console.error('Error removing payment method:', error);
+      alert(error.message || 'Failed to remove payment method');
+    }
+  };
+
+  const handleSetDefaultPaymentMethod = async (id: string) => {
+    try {
+      const response = await stripeClient.setDefaultPaymentMethod({
+        customerId: stripeCustomerId,
+        paymentMethodId: id,
+      });
+
+      if (response.success) {
+        // Reload payment methods
+        await loadPaymentMethods();
+      } else {
+        alert(response.error || 'Failed to set default payment method');
+      }
+    } catch (error: any) {
+      console.error('Error setting default payment method:', error);
+      alert(error.message || 'Failed to set default payment method');
+    }
+  };
 
   const totalValue = userInvestments.reduce(
     (sum, investment) => sum + investment.currentValue,
@@ -980,9 +1055,13 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               <OwnerBookingCalendar
                 cabinId={userInvestments[0]?.id || 1}
                 cabinType={userInvestments[0]?.cabinType || "2BR"}
-                bookedDates={mockBookedDates}
-                ownerDaysUsed={ownerDaysUsed}
-                ownerDaysLimit={ownerDaysLimit}
+                ownerId={userProfile.email} // Using email as ownerId for now
+                useRMSIntegration={true} // ✅ RMS INTEGRATION ENABLED
+                // When RMS is enabled, these props are optional (fetched from RMS)
+                bookedDates={mockBookedDates} // Fallback if RMS fails
+                ownerDaysUsed={ownerDaysUsed} // Fallback if RMS fails
+                ownerDaysLimit={ownerDaysLimit} // Fallback if RMS fails
+                // Callbacks still work as fallback for non-RMS mode
                 onCreateBooking={(startDate, endDate) => {
                   const start = new Date(startDate);
                   const end = new Date(endDate);
@@ -1063,22 +1142,9 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               <PaymentHistory payments={mockPayments} />
               <SavedPaymentMethods
                 paymentMethods={savedPaymentMethods}
-                onAddPaymentMethod={() => {
-                  alert("In production, this would open Stripe payment form");
-                }}
-                onRemovePaymentMethod={(id) => {
-                  setSavedPaymentMethods(
-                    savedPaymentMethods.filter((pm) => pm.id !== id)
-                  );
-                }}
-                onSetDefault={(id) => {
-                  setSavedPaymentMethods(
-                    savedPaymentMethods.map((pm) => ({
-                      ...pm,
-                      isDefault: pm.id === id,
-                    }))
-                  );
-                }}
+                onAddPaymentMethod={handleAddPaymentMethod}
+                onRemovePaymentMethod={handleRemovePaymentMethod}
+                onSetDefault={handleSetDefaultPaymentMethod}
               />
               <MarketingBoostManager
                 isActive={marketingBoostActive}
@@ -1264,15 +1330,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                       <div className="flex gap-2">
                         {!method.isDefault && (
                           <button
-                            onClick={() => {
-                              setSavedPaymentMethods(
-                                savedPaymentMethods.map((pm) => ({
-                                  ...pm,
-                                  isDefault: pm.id === method.id,
-                                }))
-                              );
-                              alert("Default payment method updated!");
-                            }}
+                            onClick={() => handleSetDefaultPaymentMethod(method.id)}
                             className="text-sm text-blue-600 hover:underline"
                           >
                             Set as Default
@@ -1281,11 +1339,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                         <button
                           onClick={() => {
                             if (confirm("Remove this payment method?")) {
-                              setSavedPaymentMethods(
-                                savedPaymentMethods.filter(
-                                  (pm) => pm.id !== method.id
-                                )
-                              );
+                              handleRemovePaymentMethod(method.id);
                             }
                           }}
                           className="text-sm text-red-600 hover:underline"
@@ -1297,19 +1351,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                   ))}
                 </div>
                 <button
-                  onClick={() => {
-                    const newCard = {
-                      id: (savedPaymentMethods.length + 1).toString(),
-                      last4: "1234",
-                      brand: "Mastercard",
-                      expiry: "06/26",
-                      isDefault: savedPaymentMethods.length === 0,
-                    };
-                    setSavedPaymentMethods([...savedPaymentMethods, newCard]);
-                    alert(
-                      "New card added! (In production, this would open Stripe payment form)"
-                    );
-                  }}
+                  onClick={handleAddPaymentMethod}
                   className="w-full py-3 rounded-lg font-bold border-2 border-dashed border-[#86dbdf] text-[#0e181f] transition-all hover:bg-gray-50"
                 >
                   + Add New Payment Method
@@ -1791,6 +1833,16 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
           );
         }}
         availableBalance={wildThingsAccountBalance}
+      />
+
+      {/* Add Payment Method Modal */}
+      <AddPaymentMethodModal
+        isOpen={showAddPaymentMethodModal}
+        onClose={() => setShowAddPaymentMethodModal(false)}
+        onSuccess={() => {
+          loadPaymentMethods();
+        }}
+        customerId={stripeCustomerId}
       />
     </div>
   );
