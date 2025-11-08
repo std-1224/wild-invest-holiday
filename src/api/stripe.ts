@@ -47,12 +47,6 @@ class StripeAPIClient {
     // Base URL for Lambda functions (API Gateway)
     this.baseURL = env.VITE_API_URL || '/api';
 
-    console.log("🔑 Stripe Config:", {
-      publishableKey: this.config.publishableKey ? `${this.config.publishableKey.slice(0, 20)}...` : 'EMPTY',
-      baseURL: this.baseURL,
-    });
-    console.log('📋 import.meta.env:', env);
-
     if (!this.config.publishableKey) {
       console.warn("⚠️ Stripe publishable key not configured.");
     }

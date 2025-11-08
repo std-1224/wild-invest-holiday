@@ -90,8 +90,6 @@ export const SavedPaymentMethods = ({
     return brand.charAt(0).toUpperCase() + brand.slice(1);
   };
 
-  console.log("paymentMethods: ", paymentMethods)
-
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
       {/* Header */}
