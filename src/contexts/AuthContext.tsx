@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { AuthLoginModal } from "../components/Modals/AuthLoginModal";
 import { AuthRegisterModal } from "../components/Modals/AuthRegisterModal";
 import { ForgotPasswordModal } from "../components/Modals/ForgotPasswordModal";
 import { ResetPasswordModal } from "../components/Modals/ResetPasswordModal";
 import { VerificationModal } from "../components/Modals/VerificationModal";
 import { AccountExistsModal } from "../components/Modals/AccountExistsModal";
+import apiClient from "../api/client";
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -14,6 +15,7 @@ interface AuthContextType {
   showForgotPasswordModal: () => void;
   login: () => void;
   logout: () => void;
+  currentUser: any;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,7 +37,20 @@ export const AuthProvider = ({
   children,
   onNavigateToPortal,
 }: AuthProviderProps) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(apiClient.isAuthenticated());
+  const [currentUser, setCurrentUser] = useState(apiClient.getUser());
+
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = () => {
+      const authenticated = apiClient.isAuthenticated();
+      const user = apiClient.getUser();
+      setIsLoggedIn(authenticated);
+      setCurrentUser(user);
+    };
+
+    checkAuth();
+  }, []);
   const [activeModal, setActiveModal] = useState<
     | "login"
     | "register"
@@ -46,8 +61,8 @@ export const AuthProvider = ({
     | null
   >(null);
   const [resetPasswordEmail, setResetPasswordEmail] = useState("");
-  const [verificationEmail, setVerificationEmail] = useState("");
-  const [existingAccountEmail, setExistingAccountEmail] = useState("");
+  const [verificationEmail] = useState("");
+  const [existingAccountEmail] = useState("");
 
   const showLoginModal = () => setActiveModal("login");
   const showRegisterModal = () => setActiveModal("register");
@@ -56,18 +71,22 @@ export const AuthProvider = ({
 
   const login = () => {
     setIsLoggedIn(true);
+    setCurrentUser(apiClient.getUser());
     closeAllModals();
     onNavigateToPortal?.();
   };
 
   const logout = () => {
+    apiClient.logout();
     setIsLoggedIn(false);
+    setCurrentUser(null);
   };
 
   const handleRegister = () => {
     // In a real app, you might want to show verification modal first
     // For now, we'll just log in directly
     setIsLoggedIn(true);
+    setCurrentUser(apiClient.getUser());
     closeAllModals();
     onNavigateToPortal?.();
   };
@@ -98,6 +117,7 @@ export const AuthProvider = ({
     showForgotPasswordModal,
     login,
     logout,
+    currentUser,
   };
 
   return (

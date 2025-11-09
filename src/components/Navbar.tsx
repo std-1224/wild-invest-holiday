@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import apiClient from "../api/client";
 
 // Simple Navigation Component
 export const Navbar = ({
@@ -9,6 +10,7 @@ export const Navbar = ({
   setCurrentPage,
   currentPage,
 }: any) => {
+  const currentUser = apiClient.getUser();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // Intro overlay state: shows on first mount and hides after 3s
   const [showIntro, setShowIntro] = useState(true);
@@ -102,7 +104,7 @@ export const Navbar = ({
                 Invest
               </a>
             </li>
-            {/* {isLoggedIn && ( */}
+            {isLoggedIn && (
               <li>
                 <a
                   href="#investor-portal"
@@ -119,7 +121,7 @@ export const Navbar = ({
                   Investor Portal
                 </a>
               </li>
-            {/* )} */}
+            )}
             {/* <li>
               <a
                 href="#invest"
@@ -217,7 +219,7 @@ export const Navbar = ({
                   Invest
                 </a>
               </li>
-              {/* {isLoggedIn && ( */}
+              {isLoggedIn && (
                 <li className="mb-2">
                   <a
                     href="#investor-portal"
@@ -235,7 +237,7 @@ export const Navbar = ({
                     Investor Portal
                   </a>
                 </li>
-              {/* )} */}
+              )}
               {/* <li className="mb-2">
                 <a
                   href="#invest"
@@ -305,6 +307,12 @@ export const Navbar = ({
       {/* Logged In User Actions - Top Right (Fixed Position) */}
       {isLoggedIn && (
         <div className="fixed top-0 right-5 flex gap-2 z-[1000]">
+          {currentUser && (
+            <div className="px-4 py-2 bg-[#0e181f] text-[#ffcf00] border-none rounded-b-lg font-bold text-xs shadow-md flex items-center gap-2">
+              <span>👋</span>
+              <span>{currentUser.email || `${currentUser.name}`}</span>
+            </div>
+          )}
           <button
             onClick={() => onNavigate && onNavigate("investor-portal")}
             className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"

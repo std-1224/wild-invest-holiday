@@ -1,7 +1,7 @@
 // Wild Things API Client
 // Handles all backend communication
 
-const API_BASE_URL = 'https://y9q1sgxym1.execute-api.ap-southeast-2.amazonaws.com/staging';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 class WildThingsAPI {
   constructor() {
@@ -37,37 +37,155 @@ class WildThingsAPI {
   }
 
   // Authentication methods
+  /**
+   * Register a new user
+   * @param {Object} userData - User registration data
+   * @param {string} userData.firstName - User's first name
+   * @param {string} userData.lastName - User's last name
+   * @param {string} userData.email - User's email
+   * @param {string} userData.password - User's password
+   * @param {string} [userData.referralCode] - Optional referral code
+   * @returns {Promise<Object>} Response with token and user data
+   */
   async registerUser(userData) {
-    const response = await this.request('/auth/register', {
+    const response = await this.request('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
-    
-    if (response.authToken) {
-      this.authToken = response.authToken;
-      localStorage.setItem('authToken', response.authToken);
+
+    if (response.token) {
+      this.authToken = response.token;
+      localStorage.setItem('authToken', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
     }
-    
+
     return response;
   }
 
+  /**
+   * Login user
+   * @param {Object} credentials - Login credentials
+   * @param {string} credentials.email - User's email
+   * @param {string} credentials.password - User's password
+   * @returns {Promise<Object>} Response with token and user data
+   */
   async loginUser(credentials) {
-    const response = await this.request('/auth/login', {
+    const response = await this.request('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    
-    if (response.authToken) {
-      this.authToken = response.authToken;
-      localStorage.setItem('authToken', response.authToken);
+
+    if (response.token) {
+      this.authToken = response.token;
+      localStorage.setItem('authToken', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
     }
-    
+
     return response;
   }
 
+  /**
+   * Request password reset
+   * @param {string} email - User's email
+   * @returns {Promise<Object>} Response message
+   */
+  async forgotPassword(email) {
+    return this.request('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  /**
+   * Reset password using token
+   * @param {string} token - Reset token from email
+   * @param {string} password - New password
+   * @returns {Promise<Object>} Response with token and user data
+   */
+  async resetPassword(token, password) {
+    const response = await this.request('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+
+    if (response.token) {
+      this.authToken = response.token;
+      localStorage.setItem('authToken', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+    }
+
+    return response;
+  }
+
+  /**
+   * Get current user profile
+   * @returns {Promise<Object>} User profile data
+   */
+  async getProfile() {
+    return this.request('/api/auth/me');
+  }
+
+  /**
+   * Update user profile
+   * @param {Object} profileData - Profile data to update
+   * @param {string} [profileData.firstName] - User's first name
+   * @param {string} [profileData.lastName] - User's last name
+   * @param {string} [profileData.email] - User's email
+   * @param {string} [profileData.phone] - User's phone number
+   * @returns {Promise<Object>} Response with updated user data
+   */
+  async updateProfile(profileData) {
+    const response = await this.request('/api/auth/update-profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
+
+    // Update stored user data
+    if (response.user) {
+      localStorage.setItem('user', JSON.stringify(response.user));
+    }
+
+    return response;
+  }
+
+  /**
+   * Change user password
+   * @param {Object} passwordData - Password change data
+   * @param {string} passwordData.currentPassword - Current password
+   * @param {string} passwordData.newPassword - New password
+   * @returns {Promise<Object>} Response message
+   */
+  async changePassword(passwordData) {
+    return this.request('/api/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(passwordData),
+    });
+  }
+
+  /**
+   * Logout user
+   */
   logout() {
     this.authToken = null;
     localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+  }
+
+  /**
+   * Check if user is authenticated
+   * @returns {boolean} True if user has a token
+   */
+  isAuthenticated() {
+    return !!this.authToken;
+  }
+
+  /**
+   * Get stored user data
+   * @returns {Object|null} User data or null
+   */
+  getUser() {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
   }
 
   // Investment methods
@@ -318,6 +436,9 @@ class WildThingsAPI {
     return this.request('/health');
   }
 }
+
+// Export the class for direct instantiation
+export { WildThingsAPI };
 
 // Create singleton instance
 const apiClient = new WildThingsAPI();

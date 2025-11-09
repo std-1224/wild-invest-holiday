@@ -1,0 +1,500 @@
+/**
+ * Authentication Handlers
+ * Handles user registration, login, password reset
+ */
+import { connectDB } from '../lib/db.js';
+import { generateToken } from '../lib/jwt.js';
+import User from '../models/User.js';
+import crypto from 'crypto';
+import { Resend } from 'resend';
+
+// Initialize Resend (only if API key is provided)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+/**
+ * POST /api/auth/register
+ * Register a new user
+ */
+export async function handleRegister(req, res) {
+  try {
+    await connectDB();
+
+    const { firstName, lastName, email, password, referralCode } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide all required fields',
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'User with this email already exists',
+      });
+    }
+
+    // Validate referral code if provided
+    if (referralCode) {
+      // TODO: Implement referral code validation logic
+      // For now, we'll just store it
+    }
+
+    // Create user
+    const user = await User.create({
+      name: `${firstName} ${lastName}`,
+      email: email.toLowerCase(),
+      password,
+      referralCode: referralCode || null,
+    });
+
+    // Generate JWT token
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('❌ Registration error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Registration failed',
+    });
+  }
+}
+
+/**
+ * POST /api/auth/login
+ * Login user
+ */
+export async function handleLogin(req, res) {
+  try {
+    await connectDB();
+
+    const { email, password } = req.body;
+
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide email and password',
+      });
+    }
+
+    // Find user and include password field
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password',
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await user.comparePassword(password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password',
+      });
+    }
+
+    // Generate JWT token
+    const token = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('❌ Login error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Login failed',
+    });
+  }
+}
+
+/**
+ * POST /api/auth/forgot-password
+ * Send password reset email
+ */
+export async function handleForgotPassword(req, res) {
+  try {
+    await connectDB();
+
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide an email address',
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (!user) {
+      // Don't reveal if user exists or not for security
+      return res.status(200).json({
+        success: true,
+        message: 'If an account exists with this email, a password reset link has been sent',
+      });
+    }
+
+    // Generate reset token
+    const resetToken = user.generateResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset URL
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+    // Send email if Resend is configured
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+          to: user.email,
+          subject: 'Password Reset Request - Wild Things',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #0e181f;">Password Reset Request</h2>
+              <p>Hi ${user.name},</p>
+              <p>You requested to reset your password. Click the button below to reset it:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" 
+                   style="background-color: #ffcf00; color: #0e181f; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                  Reset Password
+                </a>
+              </div>
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="color: #86dbdf; word-break: break-all;">${resetUrl}</p>
+              <p style="color: #666; font-size: 14px;">This link will expire in 10 minutes.</p>
+              <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+              <p style="color: #999; font-size: 12px;">Wild Things - Your Investment Partner</p>
+            </div>
+          `,
+        });
+
+        console.log('✅ Password reset email sent to:', user.email);
+      } catch (emailError) {
+        console.error('❌ Email sending error:', emailError);
+        // Continue anyway - token is saved
+      }
+    } else {
+      // Development mode - log token to console
+      console.log('🔑 Password reset token (development mode):', resetToken);
+      console.log('🔗 Reset URL:', resetUrl);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'If an account exists with this email, a password reset link has been sent',
+    });
+  } catch (error) {
+    console.error('❌ Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to process password reset request',
+    });
+  }
+}
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password using token
+ */
+export async function handleResetPassword(req, res) {
+  try {
+    await connectDB();
+
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide token and new password',
+      });
+    }
+
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    // Find user with valid token
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or expired reset token',
+      });
+    }
+
+    // Set new password
+    user.password = password;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpire = null;
+    await user.save();
+
+    // Generate new JWT token
+    const jwtToken = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful',
+      token: jwtToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error('❌ Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset password',
+    });
+  }
+}
+
+/**
+ * GET /api/auth/me
+ * Get current user profile
+ */
+export async function handleGetProfile(req, res) {
+  try {
+    await connectDB();
+
+    // Extract token from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authorized',
+      });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Verify token
+    const { verifyToken } = await import('../lib/jwt.js');
+    const decoded = verifyToken(token);
+
+    // Get user
+    const user = await User.findById(decoded.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        referralCode: user.referralCode,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error('❌ Get profile error:', error);
+    res.status(401).json({
+      success: false,
+      error: 'Not authorized',
+    });
+  }
+}
+
+/**
+ * PUT /api/auth/update-profile
+ * Update user profile
+ */
+export async function handleUpdateProfile(req, res) {
+  try {
+    await connectDB();
+
+    // Get token from header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authorized',
+      });
+    }
+
+    const token = authHeader.substring(7);
+
+    // Verify token
+    const { verifyToken } = await import('../lib/jwt.js');
+    const decoded = verifyToken(token);
+
+    // Get user
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+      });
+    }
+
+    const { firstName, lastName, email, phone } = req.body;
+
+    // Update fields if provided
+    if (firstName || lastName) {
+      user.name = `${firstName || user.name.split(' ')[0]} ${lastName || user.name.split(' ').slice(1).join(' ')}`;
+    }
+
+    if (email && email !== user.email) {
+      // Check if new email is already taken
+      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email already in use',
+        });
+      }
+      user.email = email.toLowerCase();
+    }
+
+    if (phone !== undefined) {
+      user.phone = phone;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        referralCode: user.referralCode,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error('❌ Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to update profile',
+    });
+  }
+}
+
+/**
+ * PUT /api/auth/change-password
+ * Change user password
+ */
+export async function handleChangePassword(req, res) {
+  try {
+    await connectDB();
+
+    // Get token from header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authorized',
+      });
+    }
+
+    const token = authHeader.substring(7);
+
+    // Verify token
+    const { verifyToken } = await import('../lib/jwt.js');
+    const decoded = verifyToken(token);
+
+    // Get user
+    const user = await User.findById(decoded.id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate required fields
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide current and new password',
+      });
+    }
+
+    // Validate new password length
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'New password must be at least 6 characters',
+      });
+    }
+
+    // Check current password
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        error: 'Current password is incorrect',
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+  } catch (error) {
+    console.error('❌ Change password error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to change password',
+    });
+  }
+}
+

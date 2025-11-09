@@ -23,6 +23,7 @@ import {
 import { stripeClient } from "../api/stripe";
 import { XeroInvoices } from "../components/XeroInvoices";
 import { XeroConnect } from "../components/XeroConnect";
+import apiClient from "../api/client";
 
 type CabinType = "1BR" | "2BR";
 
@@ -59,13 +60,6 @@ interface PaymentMethod {
   isDefault: boolean;
 }
 
-interface UserProfile {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-}
-
 interface InvestorPortalProps {
   setIsLoggedIn: (value: boolean) => void;
   onInvestClick: (value: string) => void;
@@ -82,7 +76,6 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   setShowInvestmentModal,
   setSelectedCabinForInvestment,
   userInvestments: propUserInvestments,
-  setUserInvestments: propSetUserInvestments,
 }) => {
   // Merge prop investments with mock data for display purposes
   // If there are no investments from props, show mock data
@@ -172,7 +165,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   // This way users see both demo cabins and their new reservations
   const userInvestments = [...mockInvestments, ...convertedPropInvestments];
 
-  const setUserInvestments = propSetUserInvestments;
+  // Load user profile from API (must be before referralCode)
+  const currentUser = apiClient.getUser();
 
   const [showAttitudeChangeModal, setShowAttitudeChangeModal] = useState(false);
   const [pendingAttitudeChange, setPendingAttitudeChange] = useState<
@@ -181,7 +175,10 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   const [showBoostModal, setShowBoostModal] = useState(false);
   const [selectedInvestmentForBoost, setSelectedInvestmentForBoost] =
     useState<Investment | null>(null);
-  const [referralCode, setReferralCode] = useState("");
+
+  // Get referral code from current user
+  const referralCode = currentUser?.referralCode || "";
+
   const [floatingInvestmentData, setFloatingInvestmentData] =
     useState<FloatingInvestmentData>({
       selectedCabin: null,
@@ -193,7 +190,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   // Stripe Payment Methods State
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
   const [showAddPaymentMethodModal, setShowAddPaymentMethodModal] = useState(false);
-  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+  const [, setLoadingPaymentMethods] = useState(false);
 
   // Mock Stripe Customer ID (in production, this would come from user authentication)
   const stripeCustomerId = "cus_mock_customer_id";
@@ -344,36 +341,40 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
     return brand.charAt(0).toUpperCase() + brand.slice(1);
   };
 
-  const totalValue = userInvestments.reduce(
-    (sum, investment) => sum + investment.currentValue,
-    0
-  );
   const totalIncome = userInvestments.reduce(
     (sum, investment) => sum + investment.totalIncome,
-    0
-  );
-  const monthlyIncome = userInvestments.reduce(
-    (sum, investment) => sum + investment.monthlyIncome,
     0
   );
   const [investmentAttitude, setInvestmentAttitude] = useState("retain"); // 'retain' or 'payout'
   const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'bookings' | 'payments' | 'owner-booking' | 'settings'
   const [xeroRefreshKey, setXeroRefreshKey] = useState(0); // Key to force XeroConnect refresh
+
+  // Initialize user profile from current user
   const [userProfile, setUserProfile] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    phone: "+61 400 000 000",
+    firstName: currentUser?.firstName || currentUser?.name?.split(' ')[0] || "",
+    lastName: currentUser?.lastName || currentUser?.name?.split(' ').slice(1).join(' ') || "",
+    email: currentUser?.email || "",
+    phone: currentUser?.phone || "",
   });
+
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
 
   // Owner Booking State
   const [showOwnerBookingModal, setShowOwnerBookingModal] = useState(false);
   const [showOccupancyTypeModal, setShowOccupancyTypeModal] = useState(false);
   const [ownerDaysUsed, setOwnerDaysUsed] = useState(45);
   const [ownerDaysLimit] = useState(180);
-  const [occupancyType, setOccupancyType] = useState<
-    "investment" | "permanent"
-  >("investment");
+  const [occupancyType] = useState<"investment" | "permanent">("investment");
 
   // Mock booking data
   const mockBookings = [
@@ -510,6 +511,71 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
 
   // Calculate Wild Things Account Balance (30% of total income)
   const wildThingsAccountBalance = totalIncome * 0.3;
+
+  // Handle profile update
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    setProfileError("");
+    setProfileSuccess("");
+
+    try {
+      // Call API to update user profile
+      await apiClient.updateProfile(userProfile);
+
+      setProfileSuccess("Profile updated successfully!");
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setProfileSuccess(""), 3000);
+    } catch (error: any) {
+      setProfileError(error.message || "Failed to update profile");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // Handle password change
+  const handleChangePassword = async () => {
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    // Validate passwords
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordError("All fields are required");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError("New password must be at least 6 characters");
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError("New passwords do not match");
+      return;
+    }
+
+    try {
+      // Call API to change password
+      await apiClient.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      });
+
+      setPasswordSuccess("Password changed successfully!");
+
+      // Clear form
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setPasswordSuccess(""), 3000);
+    } catch (error: any) {
+      setPasswordError(error.message || "Failed to change password");
+    }
+  };
 
   // Mock booked dates for owner booking calendar
   const mockBookedDates = [
@@ -1126,13 +1192,9 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               <OwnerBookingCalendar
                 cabinId={userInvestments[0]?.id || 1}
                 cabinType={userInvestments[0]?.cabinType || "2BR"}
-                ownerId={userProfile.email} // Using email as ownerId for now
-                useRMSIntegration={true} // ✅ RMS INTEGRATION ENABLED
-                // When RMS is enabled, these props are optional (fetched from RMS)
-                bookedDates={mockBookedDates} // Fallback if RMS fails
-                ownerDaysUsed={ownerDaysUsed} // Fallback if RMS fails
-                ownerDaysLimit={ownerDaysLimit} // Fallback if RMS fails
-                // Callbacks still work as fallback for non-RMS mode
+                bookedDates={mockBookedDates}
+                ownerDaysUsed={ownerDaysUsed}
+                ownerDaysLimit={ownerDaysLimit}
                 onCreateBooking={(startDate, endDate) => {
                   const start = new Date(startDate);
                   const end = new Date(endDate);
@@ -1256,6 +1318,19 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 <h3 className="text-2xl font-black mb-6 italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
                   Personal Information
                 </h3>
+
+                {/* Success/Error Messages */}
+                {profileSuccess && (
+                  <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                    ✅ {profileSuccess}
+                  </div>
+                )}
+                {profileError && (
+                  <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                    ❌ {profileError}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold mb-2 text-[#0e181f]">
@@ -1270,7 +1345,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                           firstName: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg"
+                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg focus:outline-none focus:border-[#ffcf00]"
+                      disabled={savingProfile}
                     />
                   </div>
                   <div>
@@ -1286,7 +1362,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                           lastName: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg"
+                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg focus:outline-none focus:border-[#ffcf00]"
+                      disabled={savingProfile}
                     />
                   </div>
                   <div>
@@ -1302,7 +1379,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                           email: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg"
+                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg focus:outline-none focus:border-[#ffcf00]"
+                      disabled={savingProfile}
                     />
                   </div>
                   <div>
@@ -1318,16 +1396,32 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                           phone: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg"
+                      placeholder="+61 400 000 000"
+                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg focus:outline-none focus:border-[#ffcf00]"
+                      disabled={savingProfile}
                     />
                   </div>
                 </div>
-                <button
-                  onClick={() => alert("Profile updated successfully!")}
-                  className="mt-4 px-6 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f]"
-                >
-                  Save Changes
-                </button>
+
+                <div className="mt-6 flex items-center gap-4">
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={savingProfile}
+                    className="px-6 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {savingProfile ? "Saving..." : "Save Changes"}
+                  </button>
+
+                  {/* Display current user's referral code */}
+                  {currentUser?.referralCode && (
+                    <div className="flex items-center gap-2 ml-auto">
+                      <span className="text-sm text-gray-600">Your Referral Code:</span>
+                      <span className="px-3 py-1 bg-[#ec874c] text-white rounded-lg font-bold">
+                        {currentUser.referralCode}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Change Password */}
@@ -1335,6 +1429,19 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 <h3 className="text-2xl font-black mb-6 italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
                   Change Password
                 </h3>
+
+                {/* Success/Error Messages */}
+                {passwordSuccess && (
+                  <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg max-w-md">
+                    ✅ {passwordSuccess}
+                  </div>
+                )}
+                {passwordError && (
+                  <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg max-w-md">
+                    ❌ {passwordError}
+                  </div>
+                )}
+
                 <div className="space-y-4 max-w-md">
                   <div>
                     <label className="block text-sm font-bold mb-2 text-[#0e181f]">
@@ -1342,8 +1449,15 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     </label>
                     <input
                       type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          currentPassword: e.target.value,
+                        })
+                      }
                       placeholder="Enter current password"
-                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg"
+                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg focus:outline-none focus:border-[#ffcf00]"
                     />
                   </div>
                   <div>
@@ -1352,8 +1466,15 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     </label>
                     <input
                       type="password"
-                      placeholder="Enter new password"
-                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg"
+                      value={passwordData.newPassword}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          newPassword: e.target.value,
+                        })
+                      }
+                      placeholder="Enter new password (min 6 characters)"
+                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg focus:outline-none focus:border-[#ffcf00]"
                     />
                   </div>
                   <div>
@@ -1362,13 +1483,20 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     </label>
                     <input
                       type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
                       placeholder="Confirm new password"
-                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg"
+                      className="w-full px-3 py-2 border-2 border-[#86dbdf] rounded-lg focus:outline-none focus:border-[#ffcf00]"
                     />
                   </div>
                   <button
-                    onClick={() => alert("Password changed successfully!")}
-                    className="px-6 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#86dbdf] text-[#0e181f]"
+                    onClick={handleChangePassword}
+                    className="px-6 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#86dbdf] text-white"
                   >
                     Update Password
                   </button>

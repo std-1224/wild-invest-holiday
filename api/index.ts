@@ -8,6 +8,15 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { XeroClient } from 'xero-node';
 import { saveTokenSet, getTokenSet, hasValidTokens } from './lib/xero-token-store.js';
+import {
+  handleRegister,
+  handleLogin,
+  handleForgotPassword,
+  handleResetPassword,
+  handleGetProfile,
+  handleUpdateProfile,
+  handleChangePassword,
+} from './handlers/auth.js';
 
 // Initialize Stripe
 const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
@@ -17,9 +26,6 @@ if (!stripeKey) {
 const stripe = new Stripe(stripeKey, {
   apiVersion: '2024-11-20.acacia' as any,
 });
-
-// Mock Stripe Customer ID (same as dev-server.js)
-const MOCK_CUSTOMER_ID = 'cus_mock_customer_id';
 
 // In-memory storage (simulates DynamoDB)
 // Note: In serverless, this resets on each cold start
@@ -51,7 +57,7 @@ export default async function handler(
   try {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
 
     // Handle OPTIONS request for CORS
@@ -80,7 +86,24 @@ export default async function handler(
     }
 
     // Route to appropriate handler
-    if (path.includes('/stripe/save-payment-method')) {
+    // Auth routes
+    if (path.includes('/auth/register')) {
+      return await handleRegister(req, res);
+    } else if (path.includes('/auth/login')) {
+      return await handleLogin(req, res);
+    } else if (path.includes('/auth/forgot-password')) {
+      return await handleForgotPassword(req, res);
+    } else if (path.includes('/auth/reset-password')) {
+      return await handleResetPassword(req, res);
+    } else if (path.includes('/auth/update-profile')) {
+      return await handleUpdateProfile(req, res);
+    } else if (path.includes('/auth/change-password')) {
+      return await handleChangePassword(req, res);
+    } else if (path.includes('/auth/me')) {
+      return await handleGetProfile(req, res);
+    }
+    // Stripe routes
+    else if (path.includes('/stripe/save-payment-method')) {
       return await handleSavePaymentMethod(req, res);
     } else if (path.includes('/stripe/list-payment-methods')) {
       return await handleListPaymentMethods(req, res);
@@ -92,7 +115,9 @@ export default async function handler(
       return await handleCreatePaymentIntent(req, res);
     } else if (path.includes('/stripe/create-subscription')) {
       return await handleCreateSubscription(req, res);
-    } else if (path.includes('/xero-auth') || path.includes('/xero/auth')) {
+    }
+    // Xero routes
+    else if (path.includes('/xero-auth') || path.includes('/xero/auth')) {
       return await handleXeroAuth(req, res);
     } else if (path.includes('/xero-callback') || path.includes('/xero/callback')) {
       return await handleXeroCallback(req, res);

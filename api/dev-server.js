@@ -11,6 +11,15 @@ import cors from 'cors';
 import Stripe from 'stripe';
 import { XeroClient } from 'xero-node';
 import { saveTokenSet, getTokenSet, hasValidTokens } from './lib/xero-token-store.js';
+import {
+  handleRegister,
+  handleLogin,
+  handleForgotPassword,
+  handleResetPassword,
+  handleGetProfile,
+  handleUpdateProfile,
+  handleChangePassword,
+} from './handlers/auth.js';
 
 const app = express();
 const PORT = 3001;
@@ -19,29 +28,79 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-// Mock Stripe Customer ID
-const MOCK_CUSTOMER_ID = 'cus_mock_customer_id';
-
 // In-memory storage (simulates DynamoDB)
-const mockPaymentMethods = [
-  // {
-  //   id: 'pm_1',
-  //   object: 'payment_method',
-  //   card: {
-  //     brand: 'visa',
-  //     last4: '4242',
-  //     exp_month: 12,
-  //     exp_year: 2025,
-  //   },
-  //   customer: MOCK_CUSTOMER_ID,
-  // },
-];
+const mockPaymentMethods = [];
 
 let defaultPaymentMethodId = 'pm_1';
 
-// Mock payments storage
-const mockPayments = [];
 const mockSubscriptions = [];
+
+// ============================================================================
+// AUTH API ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /api/auth/register
+ * Register a new user
+ */
+app.post('/api/auth/register', async (req, res) => {
+  console.log('📝 Register User:', req.body.email);
+  await handleRegister(req, res);
+});
+
+/**
+ * POST /api/auth/login
+ * Login user
+ */
+app.post('/api/auth/login', async (req, res) => {
+  console.log('🔐 Login User:', req.body.email);
+  await handleLogin(req, res);
+});
+
+/**
+ * POST /api/auth/forgot-password
+ * Send password reset email
+ */
+app.post('/api/auth/forgot-password', async (req, res) => {
+  console.log('🔑 Forgot Password:', req.body.email);
+  await handleForgotPassword(req, res);
+});
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password using token
+ */
+app.post('/api/auth/reset-password', async (req, res) => {
+  console.log('🔄 Reset Password');
+  await handleResetPassword(req, res);
+});
+
+/**
+ * GET /api/auth/me
+ * Get current user profile
+ */
+app.get('/api/auth/me', async (req, res) => {
+  console.log('👤 Get Profile');
+  await handleGetProfile(req, res);
+});
+
+/**
+ * PUT /api/auth/update-profile
+ * Update user profile
+ */
+app.put('/api/auth/update-profile', async (req, res) => {
+  console.log('✏️ Update Profile:', req.body.email);
+  await handleUpdateProfile(req, res);
+});
+
+/**
+ * PUT /api/auth/change-password
+ * Change user password
+ */
+app.put('/api/auth/change-password', async (req, res) => {
+  console.log('🔒 Change Password');
+  await handleChangePassword(req, res);
+});
 
 // ============================================================================
 // STRIPE API ENDPOINTS
@@ -135,8 +194,8 @@ app.post('/api/stripe/save-payment-method', async (req, res) => {
  * POST /api/stripe/list-payment-methods
  * List all payment methods for a customer
  */
-app.post('/api/stripe/list-payment-methods', (req, res) => {
-  const { customerId } = req.body;
+app.post('/api/stripe/list-payment-methods', (_req, res) => {
+  // customerId not used in mock implementation
 
   // Return payment methods in the same format as the Lambda function
   // with nested card object to match Stripe API structure
@@ -203,7 +262,7 @@ app.post('/api/stripe/remove-payment-method', (req, res) => {
  * Create a subscription for recurring payments
  */
 app.post('/api/stripe/create-subscription', (req, res) => {
-  const { customerId, priceId, paymentMethodId, trialPeriodDays, metadata } = req.body;
+  const { customerId, priceId, trialPeriodDays } = req.body;
 
   console.log('🔄 Create Subscription:', { customerId, priceId, trialPeriodDays });
 
@@ -288,7 +347,7 @@ app.post('/api/stripe/webhook', (req, res) => {
  * GET /api/xero-auth
  * Redirect to Xero authorization page
  */
-app.get('/api/xero-auth', async (req, res) => {
+app.get('/api/xero-auth', async (_req, res) => {
   console.log('🔐 Xero Authorization Request');
 
   try {
@@ -335,7 +394,7 @@ app.get('/api/xero-callback', async (req, res) => {
   console.log('🔄 Xero OAuth Callback:', req.query);
 
   try {
-    const { code, state, error, error_description } = req.query;
+    const { code, error, error_description } = req.query;
 
     // Handle OAuth errors
     if (error) {
@@ -501,7 +560,6 @@ app.post('/api/xero/pay-invoice', async (req, res) => {
       currency,
       customerId,
       paymentMethodId,
-      xeroContactId,
       description,
     } = req.body;
 
@@ -622,5 +680,15 @@ app.post('/api/xero/pay-invoice', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log('\n🚀 Wild Things Development API Server');
+  console.log(`📡 Server running on http://localhost:${PORT}`);
+  console.log(`\n✅ Available endpoints:`);
+  console.log(`   - POST /api/auth/register`);
+  console.log(`   - POST /api/auth/login`);
+  console.log(`   - POST /api/auth/forgot-password`);
+  console.log(`   - POST /api/auth/reset-password`);
+  console.log(`   - GET  /api/auth/me`);
+  console.log(`   - GET  /api/health`);
+  console.log(`   - Stripe endpoints...`);
+  console.log(`   - Xero endpoints...\n`);
 });
 

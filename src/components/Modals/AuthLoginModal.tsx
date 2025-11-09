@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { WildThingsAPI } from "../../api/client";
 
 interface AuthLoginModalProps {
   isOpen: boolean;
@@ -17,12 +18,28 @@ export const AuthLoginModal = ({
 }: AuthLoginModalProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login - in real app, this would call your auth API
-    if (email && password) {
-      onLogin();
+    setError("");
+    setLoading(true);
+
+    try {
+      const api = new WildThingsAPI();
+      const response = await api.loginUser({ email, password });
+
+      if (response.success) {
+        // Login successful
+        onLogin();
+      } else {
+        setError(response.error || "Login failed");
+      }
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please check your credentials.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,6 +60,12 @@ export const AuthLoginModal = ({
         <h2 className="text-2xl font-bold mb-6 text-center italic font-[family-name:var(--font-eurostile,'Eurostile_Condensed','Arial_Black',Impact,sans-serif)] text-[#0e181f]">
           Login to Your Account
         </h2>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleLogin}>
           <div className="mb-4">
@@ -85,14 +108,16 @@ export const AuthLoginModal = ({
           <div className="flex gap-3">
             <button
               type="submit"
-              className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f]"
+              disabled={loading}
+              className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#0e181f] text-white"
+              disabled={loading}
+              className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#0e181f] text-white disabled:opacity-50"
             >
               Cancel
             </button>
