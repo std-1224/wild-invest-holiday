@@ -34,6 +34,14 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
   // Use the auth context
   const { isLoggedIn, setIsLoggedIn, showLoginModal, logout } = useAuth();
 
+  // Protect investor portal - redirect to home if not logged in
+  useEffect(() => {
+    if (currentPage === "investor-portal" && !isLoggedIn) {
+      setCurrentPage("home");
+      showLoginModal(); // Show login modal to prompt user to login
+    }
+  }, [currentPage, isLoggedIn, showLoginModal]);
+
   const handleCabinInvest = (cabin: any) => {
     setSelectedCabinForInvestment(cabin.id);
     setShowInvestmentModal(true);
@@ -158,7 +166,7 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
 }
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState("investor-portal");
+  const [currentPage, setCurrentPage] = useState("home");
 
   // Check if this is a Xero callback
   useEffect(() => {
