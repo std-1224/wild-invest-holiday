@@ -7,11 +7,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { XeroClient } from 'xero-node';
-import { saveTokenSet, getTokenSet, hasValidTokens } from './lib/xero-token-store';
+import { saveTokenSet, getTokenSet, hasValidTokens } from './lib/xero-token-store.js';
 
 // Initialize Stripe
-const stripe = new Stripe(process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-10-29.clover',
+const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
+if (!stripeKey) {
+  console.warn('⚠️  Warning: No Stripe API key found in environment variables');
+}
+const stripe = new Stripe(stripeKey, {
+  apiVersion: '2024-11-20.acacia' as any,
 });
 
 // Mock Stripe Customer ID (same as dev-server.js)
@@ -44,22 +48,37 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-
-  // Handle OPTIONS request for CORS
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  // Get the path from the URL
-  const path = req.url || '';
-
-  console.log(`📥 ${req.method} ${path}`);
-
   try {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+
+    // Handle OPTIONS request for CORS
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+
+    // Get the path from the URL
+    const path = req.url || '';
+
+    console.log(`📥 ${req.method} ${path}`);
+
+    // Health check endpoint
+    if (path === '/api' || path === '/api/' || path.includes('/health')) {
+      return res.status(200).json({
+        success: true,
+        message: 'API is running',
+        timestamp: new Date().toISOString(),
+        env: {
+          hasStripeKey: !!process.env.STRIPE_SECRET_KEY || !!process.env.VITE_STRIPE_SECRET_KEY,
+          hasXeroClientId: !!process.env.XERO_CLIENT_ID,
+          hasXeroClientSecret: !!process.env.XERO_CLIENT_SECRET,
+          hasXeroTenantId: !!process.env.XERO_TENANT_ID,
+        },
+      });
+    }
+
     // Route to appropriate handler
     if (path.includes('/stripe/save-payment-method')) {
       return await handleSavePaymentMethod(req, res);
@@ -85,13 +104,16 @@ export default async function handler(
       return res.status(404).json({
         success: false,
         error: 'Endpoint not found',
+        path: path,
       });
     }
   } catch (error: any) {
-    console.error('❌ Error:', error);
+    console.error('❌ Fatal Error in handler:', error);
+    console.error('Error stack:', error.stack);
     return res.status(500).json({
       success: false,
       error: error.message || 'Internal server error',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 }
