@@ -6,6 +6,8 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
+import { XeroClient } from 'xero-node';
+import { saveTokenSet, getTokenSet, hasValidTokens } from './lib/xero-token-store';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '', {
@@ -19,21 +21,20 @@ const MOCK_CUSTOMER_ID = 'cus_mock_customer_id';
 // Note: In serverless, this resets on each cold start
 // For production, you'd want to use a real database
 let mockPaymentMethods: any[] = [
-  {
-    id: 'pm_1',
-    object: 'payment_method',
-    card: {
-      brand: 'visa',
-      last4: '4242',
-      exp_month: 12,
-      exp_year: 2025,
-    },
-    customer: MOCK_CUSTOMER_ID,
-  },
+  // {
+  //   id: 'pm_1',
+  //   object: 'payment_method',
+  //   card: {
+  //     brand: 'visa',
+  //     last4: '4242',
+  //     exp_month: 12,
+  //     exp_year: 2025,
+  //   },
+  //   customer: MOCK_CUSTOMER_ID,
+  // },
 ];
 
 let defaultPaymentMethodId = 'pm_1';
-let mockPayments: any[] = [];
 let mockSubscriptions: any[] = [];
 
 /**
@@ -72,14 +73,14 @@ export default async function handler(
       return await handleCreatePaymentIntent(req, res);
     } else if (path.includes('/stripe/create-subscription')) {
       return await handleCreateSubscription(req, res);
-    } else if (path.includes('/xero/get-invoices')) {
-      // Import and call the Xero get invoices handler
-      const xeroGetInvoices = await import('./xero-get-invoices');
-      return await xeroGetInvoices.default(req, res);
-    } else if (path.includes('/xero/pay-invoice')) {
-      // Import and call the Xero pay invoice handler
-      const xeroPayInvoice = await import('./xero-pay-invoice');
-      return await xeroPayInvoice.default(req, res);
+    } else if (path.includes('/xero-auth') || path.includes('/xero/auth')) {
+      return await handleXeroAuth(req, res);
+    } else if (path.includes('/xero-callback') || path.includes('/xero/callback')) {
+      return await handleXeroCallback(req, res);
+    } else if (path.includes('/xero/get-invoices') || path.includes('/xero-get-invoices')) {
+      return await handleXeroGetInvoices(req, res);
+    } else if (path.includes('/xero/pay-invoice') || path.includes('/xero-pay-invoice')) {
+      return await handleXeroPayInvoice(req, res);
     } else {
       return res.status(404).json({
         success: false,
@@ -273,5 +274,466 @@ async function handleCreateSubscription(req: VercelRequest, res: VercelResponse)
     success: true,
     subscription,
   });
+}
+
+/**
+ * GET /api/xero-auth
+ * Redirects user to Xero authorization page
+ */
+async function handleXeroAuth(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const clientId = process.env.XERO_CLIENT_ID;
+    const clientSecret = process.env.XERO_CLIENT_SECRET;
+    const redirectUri = process.env.XERO_REDIRECT_URI;
+
+    if (!clientId || !clientSecret || !redirectUri) {
+      return res.status(500).json({
+        error: 'Xero OAuth not configured',
+        message: 'Please configure XERO_CLIENT_ID, XERO_CLIENT_SECRET, and XERO_REDIRECT_URI',
+        missing: {
+          clientId: !clientId,
+          clientSecret: !clientSecret,
+          redirectUri: !redirectUri,
+        },
+      });
+    }
+
+    console.log('Generating Xero consent URL...');
+    console.log('Redirect URI:', redirectUri);
+
+    // Initialize Xero client
+    const xero = new XeroClient({
+      clientId,
+      clientSecret,
+      redirectUris: [redirectUri],
+      scopes: 'openid profile email accounting.transactions accounting.contacts accounting.settings'.split(' '),
+    });
+
+    // Generate consent URL
+    const consentUrl = await xero.buildConsentUrl();
+
+    console.log('Consent URL generated:', consentUrl);
+
+    // Redirect to Xero authorization page
+    return res.redirect(consentUrl);
+
+  } catch (error: any) {
+    console.error('Error generating Xero consent URL:', error);
+    return res.status(500).json({
+      error: 'Failed to generate authorization URL',
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * GET /api/xero-callback
+ * Handles OAuth callback from Xero
+ */
+async function handleXeroCallback(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { code, error, error_description } = req.query;
+
+    // Get frontend callback URL
+    const frontendCallback = process.env.XERO_FRONTEND_CALLBACK || 'http://localhost:5173/xero/callback';
+
+    // Check for OAuth errors
+    if (error) {
+      console.error('Xero OAuth error:', error, error_description);
+      const errorUrl = `${frontendCallback}?error=${encodeURIComponent(error as string)}&error_description=${encodeURIComponent(error_description as string || 'Unknown error')}`;
+      res.setHeader('Location', errorUrl);
+      return res.status(302).end();
+    }
+
+    if (!code) {
+      const errorUrl = `${frontendCallback}?error=no_code&error_description=${encodeURIComponent('No authorization code was provided by Xero')}`;
+      res.setHeader('Location', errorUrl);
+      return res.status(302).end();
+    }
+
+    const clientId = process.env.XERO_CLIENT_ID;
+    const clientSecret = process.env.XERO_CLIENT_SECRET;
+    const redirectUri = process.env.XERO_REDIRECT_URI;
+
+    if (!clientId || !clientSecret || !redirectUri) {
+      return res.status(500).json({
+        error: 'Xero OAuth not configured',
+        message: 'Please configure XERO_CLIENT_ID, XERO_CLIENT_SECRET, and XERO_REDIRECT_URI',
+      });
+    }
+
+    console.log('Processing Xero OAuth callback...');
+    console.log('Authorization code received:', code);
+
+    // Initialize Xero client
+    const xero = new XeroClient({
+      clientId,
+      clientSecret,
+      redirectUris: [redirectUri],
+      scopes: 'openid profile email accounting.transactions accounting.contacts accounting.settings'.split(' '),
+      state: '', // Match the empty state from the callback
+    });
+
+    // Exchange authorization code for tokens
+    const callbackUrl = `${redirectUri}?code=${code}&state=`;
+    await xero.apiCallback(callbackUrl);
+
+    console.log('✅ Token exchange successful');
+
+    // Get token set
+    const tokenSet = xero.readTokenSet();
+
+    // Save tokens to memory for use by other endpoints
+    saveTokenSet(tokenSet);
+
+    console.log('Access Token:', tokenSet.access_token?.substring(0, 20) + '...');
+    console.log('Refresh Token:', tokenSet.refresh_token?.substring(0, 20) + '...');
+    console.log('Expires At:', new Date((tokenSet.expires_at || 0) * 1000).toISOString());
+
+    // Get tenant connections
+    await xero.updateTenants();
+    const tenants = xero.tenants;
+
+    if (!tenants || tenants.length === 0) {
+      return res.status(500).json({
+        error: 'No organizations found',
+        message: 'No Xero organizations are connected to your account'
+      });
+    }
+
+    const tenant = tenants[0];
+
+    console.log('✅ Tenant ID:', tenant.tenantId);
+    console.log('✅ Tenant Name:', tenant.tenantName);
+    console.log('✅ Tenant Type:', tenant.tenantType);
+
+    // Redirect to frontend with success parameters
+    const redirectUrl = `${frontendCallback}?success=true&tenantId=${tenant.tenantId}&tenantName=${encodeURIComponent(tenant.tenantName || '')}&tenantType=${tenant.tenantType}`;
+
+    console.log('Redirecting to frontend:', redirectUrl);
+    res.setHeader('Location', redirectUrl);
+    return res.status(302).end();
+
+  } catch (error: any) {
+    console.error('Error processing Xero callback:', error);
+
+    // Redirect to frontend with error
+    const frontendCallback = process.env.XERO_FRONTEND_CALLBACK || 'http://localhost:5173/xero/callback';
+    const errorUrl = `${frontendCallback}?error=connection_error&error_description=${encodeURIComponent(error.message || 'Failed to connect to Xero')}`;
+    res.setHeader('Location', errorUrl);
+    return res.status(302).end();
+  }
+}
+
+/**
+ * GET /api/xero-get-invoices
+ * Fetches unpaid invoices from Xero for a specific customer
+ */
+async function handleXeroGetInvoices(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { contactId } = req.query;
+
+    if (!contactId) {
+      return res.status(400).json({ error: 'Contact ID is required' });
+    }
+
+    console.log('Fetching Xero invoices for contact:', contactId);
+
+    // Validate Xero configuration
+    const tenantId = process.env.XERO_TENANT_ID;
+    const clientId = process.env.XERO_CLIENT_ID;
+    const clientSecret = process.env.XERO_CLIENT_SECRET;
+    const redirectUri = process.env.XERO_REDIRECT_URI;
+
+    if (!tenantId || !clientId || !clientSecret || !redirectUri) {
+      console.error('Xero API not configured properly');
+      return res.status(500).json({
+        error: 'Xero API not configured',
+        message: 'Please configure XERO_TENANT_ID, XERO_CLIENT_ID, XERO_CLIENT_SECRET, and XERO_REDIRECT_URI in environment variables',
+        missing: {
+          tenantId: !tenantId,
+          clientId: !clientId,
+          clientSecret: !clientSecret,
+          redirectUri: !redirectUri,
+        }
+      });
+    }
+
+    // Check if we have valid OAuth tokens
+    if (!hasValidTokens()) {
+      console.error('No valid Xero OAuth tokens found');
+      return res.status(401).json({
+        error: 'Not authenticated with Xero',
+        message: 'Please connect to Xero first by visiting /api/xero-auth',
+        authUrl: `${process.env.VITE_API_URL || 'http://localhost:3001'}/api/xero-auth`,
+      });
+    }
+
+    // Initialize Xero client
+    const xero = new XeroClient({
+      clientId,
+      clientSecret,
+      redirectUris: [redirectUri],
+      scopes: 'openid profile email accounting.transactions accounting.contacts accounting.settings'.split(' '),
+    });
+
+    // Set the stored tokens
+    const tokenSet = getTokenSet();
+    if (!tokenSet) {
+      console.error('No token set available');
+      return res.status(401).json({
+        error: 'Not authenticated with Xero',
+        message: 'Please connect to Xero first',
+      });
+    }
+    xero.setTokenSet(tokenSet as any);
+
+    console.log('Fetching real invoices from Xero API for contact:', contactId);
+
+    // Fetch invoices from Xero
+    const response = await xero.accountingApi.getInvoices(
+      tenantId,
+      undefined, // ifModifiedSince
+      `Contact.ContactID=GUID("${contactId}")`, // where filter
+      'Date DESC', // order
+      undefined, // IDs
+      undefined, // invoiceNumbers
+      undefined, // contactIDs
+      ['AUTHORISED', 'SUBMITTED'], // statuses - only unpaid invoices
+      undefined, // page
+      undefined, // includeArchived
+      undefined, // createdByMyApp
+      undefined, // unitdp
+      undefined  // summaryOnly
+    );
+
+    const invoices = response.body.invoices || [];
+
+    // Filter for unpaid invoices only
+    const unpaidInvoices = invoices.filter(
+      (inv) => inv.amountDue && inv.amountDue > 0
+    );
+
+    console.log(`Found ${unpaidInvoices.length} unpaid invoices`);
+
+    return res.status(200).json({
+      success: true,
+      invoices: unpaidInvoices,
+      count: unpaidInvoices.length,
+    });
+  } catch (error: any) {
+    console.error('Error fetching Xero invoices:', error);
+    return res.status(500).json({
+      error: 'Failed to fetch invoices',
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * POST /api/xero-pay-invoice
+ * Charges customer's saved credit card and records payment in Xero
+ */
+async function handleXeroPayInvoice(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { invoiceId, invoiceNumber, amount, currency, customerId, paymentMethodId, xeroContactId, description } = req.body;
+
+    // Validate request
+    if (!invoiceId || !amount || !customerId || !paymentMethodId) {
+      return res.status(400).json({
+        error: 'Missing required fields: invoiceId, amount, customerId, paymentMethodId',
+      });
+    }
+
+    console.log('Processing invoice payment:', {
+      invoiceId,
+      invoiceNumber,
+      amount,
+      customerId,
+    });
+
+    // Step 1: Charge the customer's credit card via Stripe
+    const amountInCents = Math.round(amount * 100);
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountInCents,
+      currency: currency.toLowerCase(),
+      customer: customerId,
+      payment_method: paymentMethodId,
+      confirm: true,
+      description: description || `Payment for Invoice ${invoiceNumber}`,
+      metadata: {
+        invoiceId,
+        invoiceNumber,
+        xeroContactId,
+        source: 'wild-things-portal',
+      },
+      return_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/investor-portal`,
+    });
+
+    console.log('Stripe payment created:', paymentIntent.id, 'Status:', paymentIntent.status);
+
+    // Check if payment succeeded
+    if (paymentIntent.status !== 'succeeded') {
+      return res.status(400).json({
+        error: 'Payment failed',
+        status: paymentIntent.status,
+        message: 'The payment could not be processed. Please check your payment method.',
+      });
+    }
+
+    // Step 2: Record payment in Xero
+    const tenantId = process.env.XERO_TENANT_ID;
+    const clientId = process.env.XERO_CLIENT_ID;
+    const clientSecret = process.env.XERO_CLIENT_SECRET;
+    const redirectUri = process.env.XERO_REDIRECT_URI;
+
+    if (!tenantId || !clientId || !clientSecret || !redirectUri) {
+      console.error('Xero API not configured - payment charged but not recorded in Xero!');
+
+      return res.status(500).json({
+        error: 'Xero API not configured',
+        message: 'Payment was charged successfully but could not be recorded in Xero. Please contact support.',
+        paymentIntent: {
+          id: paymentIntent.id,
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency,
+          status: paymentIntent.status,
+        },
+        missing: {
+          tenantId: !tenantId,
+          clientId: !clientId,
+          clientSecret: !clientSecret,
+          redirectUri: !redirectUri,
+        }
+      });
+    }
+
+    // Check if we have valid OAuth tokens
+    if (!hasValidTokens()) {
+      console.error('No valid Xero OAuth tokens - payment charged but not recorded in Xero!');
+      return res.status(401).json({
+        error: 'Not authenticated with Xero',
+        message: 'Payment was charged successfully but could not be recorded in Xero. Please connect to Xero first.',
+        paymentIntent: {
+          id: paymentIntent.id,
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency,
+          status: paymentIntent.status,
+        },
+        authUrl: `${process.env.VITE_API_URL || 'http://localhost:3001'}/api/xero-auth`,
+      });
+    }
+
+    console.log('Recording payment in Xero...');
+
+    // Initialize Xero client
+    const xero = new XeroClient({
+      clientId,
+      clientSecret,
+      redirectUris: [redirectUri],
+      scopes: 'openid profile email accounting.transactions accounting.contacts accounting.settings'.split(' '),
+    });
+
+    // Set the stored tokens
+    const tokenSet = getTokenSet();
+    if (!tokenSet) {
+      console.error('No token set available');
+      return res.status(401).json({
+        error: 'Not authenticated with Xero',
+        message: 'Please connect to Xero first',
+      });
+    }
+    xero.setTokenSet(tokenSet as any);
+
+    // Create payment in Xero
+    const xeroPayment = {
+      invoice: {
+        invoiceID: invoiceId,
+      },
+      account: {
+        code: process.env.XERO_BANK_ACCOUNT_CODE || '090', // Default bank account
+      },
+      date: new Date().toISOString().split('T')[0],
+      amount: amount,
+      reference: `Stripe: ${paymentIntent.id}`,
+    };
+
+    const paymentResponse = await xero.accountingApi.createPayment(
+      tenantId,
+      xeroPayment as any
+    );
+
+    const xeroPaymentRecord = paymentResponse.body.payments?.[0];
+
+    console.log('Xero payment recorded:', xeroPaymentRecord?.paymentID);
+
+    // Fetch the full payment intent to get charges
+    const fullPaymentIntent = await stripe.paymentIntents.retrieve(paymentIntent.id, {
+      expand: ['charges'],
+    });
+
+    // Step 3: Return success response
+    return res.status(200).json({
+      success: true,
+      paymentIntent: {
+        id: paymentIntent.id,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        status: paymentIntent.status,
+        receiptUrl: (fullPaymentIntent as any).charges?.data[0]?.receipt_url,
+      },
+      xeroPayment: {
+        paymentID: xeroPaymentRecord?.paymentID,
+        invoiceID: invoiceId,
+        amount: amount,
+        date: xeroPaymentRecord?.date,
+        reference: xeroPaymentRecord?.reference,
+      },
+      message: 'Payment processed and recorded in Xero successfully',
+    });
+  } catch (error: any) {
+    console.error('Error processing invoice payment:', error);
+
+    // Handle Stripe errors
+    if (error.type === 'StripeCardError') {
+      return res.status(400).json({
+        error: 'Card error',
+        message: error.message,
+        code: error.code,
+      });
+    }
+
+    // Handle Xero errors
+    if (error.response?.body) {
+      console.error('Xero API error:', error.response.body);
+      return res.status(500).json({
+        error: 'Xero API error',
+        message: 'Payment succeeded but failed to record in Xero',
+        details: error.response.body,
+      });
+    }
+
+    return res.status(500).json({
+      error: 'Failed to process payment',
+      message: error.message,
+    });
+  }
 }
 

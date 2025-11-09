@@ -9,6 +9,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import Stripe from 'stripe';
+import { XeroClient } from 'xero-node';
+import { saveTokenSet, getTokenSet, hasValidTokens } from './lib/xero-token-store.js';
 
 const app = express();
 const PORT = 3001;
@@ -22,17 +24,17 @@ const MOCK_CUSTOMER_ID = 'cus_mock_customer_id';
 
 // In-memory storage (simulates DynamoDB)
 const mockPaymentMethods = [
-  {
-    id: 'pm_1',
-    object: 'payment_method',
-    card: {
-      brand: 'visa',
-      last4: '4242',
-      exp_month: 12,
-      exp_year: 2025,
-    },
-    customer: MOCK_CUSTOMER_ID,
-  },
+  // {
+  //   id: 'pm_1',
+  //   object: 'payment_method',
+  //   card: {
+  //     brand: 'visa',
+  //     last4: '4242',
+  //     exp_month: 12,
+  //     exp_year: 2025,
+  //   },
+  //   customer: MOCK_CUSTOMER_ID,
+  // },
 ];
 
 let defaultPaymentMethodId = 'pm_1';
@@ -290,26 +292,34 @@ app.get('/api/xero-auth', async (req, res) => {
   console.log('🔐 Xero Authorization Request');
 
   try {
-    const xeroAuth = await import('./xero-auth.js');
+    const clientId = process.env.XERO_CLIENT_ID;
+    const clientSecret = process.env.XERO_CLIENT_SECRET;
+    const redirectUri = process.env.XERO_REDIRECT_URI;
 
-    const mockReq = {
-      method: 'GET',
-      query: req.query,
-      url: req.url,
-    };
+    if (!clientId || !clientSecret || !redirectUri) {
+      console.error('Missing Xero environment variables');
+      return res.status(500).json({
+        error: 'Xero not configured',
+        message: 'Missing required environment variables',
+      });
+    }
 
-    const mockRes = {
-      status: (code) => ({
-        json: (data) => res.status(code).json(data),
-        end: () => res.status(code).end(),
-      }),
-      redirect: (url) => res.redirect(url),
-      setHeader: (key, value) => res.setHeader(key, value),
-    };
+    // Initialize Xero client
+    const xero = new XeroClient({
+      clientId,
+      clientSecret,
+      redirectUris: [redirectUri],
+      scopes: 'openid profile email accounting.transactions accounting.contacts accounting.settings'.split(' '),
+    });
 
-    await xeroAuth.default(mockReq, mockRes);
+    // Generate consent URL
+    const consentUrl = await xero.buildConsentUrl();
+    console.log('Redirecting to Xero consent URL');
+
+    // Redirect to Xero
+    res.redirect(consentUrl);
   } catch (error) {
-    console.error('Error calling Xero auth Lambda:', error);
+    console.error('Error generating Xero consent URL:', error);
     res.status(500).json({
       error: 'Failed to generate authorization URL',
       message: error.message,
@@ -325,70 +335,150 @@ app.get('/api/xero-callback', async (req, res) => {
   console.log('🔄 Xero OAuth Callback:', req.query);
 
   try {
-    const xeroCallback = await import('./xero-callback.js');
+    const { code, state, error, error_description } = req.query;
 
-    const mockReq = {
-      method: 'GET',
-      query: req.query,
-      url: req.url,
-    };
+    // Handle OAuth errors
+    if (error) {
+      console.error('Xero OAuth error:', error, error_description);
+      const frontendCallback = process.env.XERO_FRONTEND_CALLBACK || 'http://localhost:5173/xero/callback';
+      const errorUrl = `${frontendCallback}?error=${error}&error_description=${encodeURIComponent(error_description || 'Authorization failed')}`;
+      return res.redirect(errorUrl);
+    }
 
-    const mockRes = {
-      statusCode: 200,
-      status: function(code) {
-        this.statusCode = code;
-        res.status(code);
-        return this;
-      },
-      json: (data) => res.json(data),
-      send: (html) => res.send(html),
-      end: function() {
-        return res.end();
-      },
-      setHeader: (key, value) => res.setHeader(key, value),
-    };
+    if (!code) {
+      const frontendCallback = process.env.XERO_FRONTEND_CALLBACK || 'http://localhost:5173/xero/callback';
+      const errorUrl = `${frontendCallback}?error=missing_code&error_description=${encodeURIComponent('No authorization code received')}`;
+      return res.redirect(errorUrl);
+    }
 
-    await xeroCallback.default(mockReq, mockRes);
+    const clientId = process.env.XERO_CLIENT_ID;
+    const clientSecret = process.env.XERO_CLIENT_SECRET;
+    const redirectUri = process.env.XERO_REDIRECT_URI;
+
+    // Initialize Xero client
+    const xero = new XeroClient({
+      clientId,
+      clientSecret,
+      redirectUris: [redirectUri],
+      scopes: 'openid profile email accounting.transactions accounting.contacts accounting.settings'.split(' '),
+    });
+
+    // Exchange code for tokens
+    const tokenSet = await xero.apiCallback(req.url);
+    console.log('✅ Successfully obtained Xero tokens');
+
+    // Save tokens to memory
+    saveTokenSet(tokenSet);
+
+    // Get tenant connections
+    await xero.updateTenants();
+    const tenants = xero.tenants;
+    const tenant = tenants && tenants.length > 0 ? tenants[0] : null;
+
+    console.log('Xero tenant:', tenant?.tenantName || 'Unknown');
+
+    // Redirect to frontend with success
+    const frontendCallback = process.env.XERO_FRONTEND_CALLBACK || 'http://localhost:5173/xero/callback';
+    const successUrl = `${frontendCallback}?success=true&tenantId=${tenant?.tenantId || ''}&tenantName=${encodeURIComponent(tenant?.tenantName || 'Unknown')}`;
+    res.redirect(successUrl);
+
   } catch (error) {
-    console.error('Error calling Xero callback Lambda:', error);
-    res.status(500).send(`
-      <h1>Error</h1>
-      <p>${error.message}</p>
-      <pre>${error.stack}</pre>
-    `);
+    console.error('Error processing Xero callback:', error);
+    const frontendCallback = process.env.XERO_FRONTEND_CALLBACK || 'http://localhost:5173/xero/callback';
+    const errorUrl = `${frontendCallback}?error=connection_error&error_description=${encodeURIComponent(error.message || 'Failed to connect to Xero')}`;
+    res.redirect(errorUrl);
   }
 });
 
 /**
  * GET /api/xero/get-invoices
- * Proxy to Xero API Lambda function
+ * Fetch invoices from Xero
  */
 app.get('/api/xero/get-invoices', async (req, res) => {
-  const { contactId, customerId } = req.query;
+  const { contactId } = req.query;
+  console.log('📄 Get Xero Invoices:', { contactId });
 
   try {
-    // In development, we proxy to the Lambda function
-    // Import and call the Lambda function directly
-    const xeroGetInvoices = await import('./xero-get-invoices.js');
+    const clientId = process.env.XERO_CLIENT_ID;
+    const clientSecret = process.env.XERO_CLIENT_SECRET;
+    const redirectUri = process.env.XERO_REDIRECT_URI;
+    const tenantId = process.env.XERO_TENANT_ID;
 
-    // Create mock Vercel request/response objects
-    const mockReq = {
-      method: 'GET',
-      query: { contactId, customerId },
-    };
+    if (!clientId || !clientSecret || !redirectUri || !tenantId) {
+      return res.status(500).json({
+        error: 'Xero not configured',
+        message: 'Missing required environment variables',
+      });
+    }
 
-    const mockRes = {
-      status: (code) => ({
-        json: (data) => {
-          res.status(code).json(data);
-        },
-      }),
-      setHeader: () => {},
-    };
+    if (!contactId) {
+      return res.status(400).json({
+        error: 'Missing contactId parameter',
+      });
+    }
 
-    await xeroGetInvoices.default(mockReq, mockRes);
+    // Check if we have valid OAuth tokens
+    if (!hasValidTokens()) {
+      return res.status(401).json({
+        error: 'Not authenticated with Xero',
+        message: 'Please connect to Xero first by visiting /api/xero-auth',
+        authUrl: `${process.env.VITE_API_URL || 'http://localhost:3001'}/api/xero-auth`,
+      });
+    }
+
+    // Initialize Xero client
+    const xero = new XeroClient({
+      clientId,
+      clientSecret,
+      redirectUris: [redirectUri],
+      scopes: 'openid profile email accounting.transactions accounting.contacts accounting.settings'.split(' '),
+    });
+
+    // Set the stored tokens
+    const tokenSet = getTokenSet();
+    if (!tokenSet) {
+      return res.status(401).json({
+        error: 'Not authenticated with Xero',
+        message: 'Please connect to Xero first',
+      });
+    }
+    xero.setTokenSet(tokenSet);
+
+    console.log('Fetching real invoices from Xero API for contact:', contactId);
+
+    // Fetch invoices from Xero
+    const response = await xero.accountingApi.getInvoices(
+      tenantId,
+      undefined, // ifModifiedSince
+      `Contact.ContactID=GUID("${contactId}")`, // where filter
+      'Date DESC', // order
+      undefined, // IDs
+      undefined, // invoiceNumbers
+      undefined, // contactIDs
+      ['AUTHORISED', 'SUBMITTED'], // statuses - only unpaid invoices
+      undefined, // page
+      undefined, // includeArchived
+      undefined, // createdByMyApp
+      undefined, // unitdp
+      undefined  // summaryOnly
+    );
+
+    const invoices = response.body.invoices || [];
+
+    // Filter for unpaid invoices only
+    const unpaidInvoices = invoices.filter(
+      (inv) => inv.amountDue && inv.amountDue > 0
+    );
+
+    console.log(`Found ${unpaidInvoices.length} unpaid invoices`);
+
+    res.status(200).json({
+      success: true,
+      invoices: unpaidInvoices,
+      count: unpaidInvoices.length,
+    });
   } catch (error) {
-    console.error('Error calling Xero Lambda:', error);
+    console.error('Error fetching Xero invoices:', error);
     res.status(500).json({
       error: 'Failed to fetch invoices',
       message: error.message,
@@ -398,36 +488,130 @@ app.get('/api/xero/get-invoices', async (req, res) => {
 
 /**
  * POST /api/xero/pay-invoice
- * Proxy to Xero payment Lambda function
+ * Pay a Xero invoice with Stripe
  */
 app.post('/api/xero/pay-invoice', async (req, res) => {
-  console.log('💳 Pay Xero Invoice (proxying to Lambda):', req.body);
+  console.log('💳 Pay Xero Invoice:', req.body);
 
   try {
-    // In development, we proxy to the Lambda function
-    const xeroPayInvoice = await import('./xero-pay-invoice.js');
+    const {
+      invoiceId,
+      invoiceNumber,
+      amount,
+      currency,
+      customerId,
+      paymentMethodId,
+      xeroContactId,
+      description,
+    } = req.body;
 
-    // Create mock Vercel request/response objects
-    const mockReq = {
-      method: 'POST',
-      body: req.body,
+    // Validate required fields
+    if (!invoiceId || !amount || !customerId || !paymentMethodId) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        required: ['invoiceId', 'amount', 'customerId', 'paymentMethodId'],
+      });
+    }
+
+    const clientId = process.env.XERO_CLIENT_ID;
+    const clientSecret = process.env.XERO_CLIENT_SECRET;
+    const redirectUri = process.env.XERO_REDIRECT_URI;
+    const tenantId = process.env.XERO_TENANT_ID;
+    const stripeSecretKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+
+    if (!clientId || !clientSecret || !redirectUri || !tenantId) {
+      return res.status(500).json({
+        error: 'Xero not configured',
+        message: 'Missing required Xero environment variables',
+      });
+    }
+
+    if (!stripeSecretKey) {
+      return res.status(500).json({
+        error: 'Stripe not configured',
+        message: 'Missing STRIPE_SECRET_KEY environment variable',
+      });
+    }
+
+    // Initialize Stripe
+    const stripe = new Stripe(stripeSecretKey);
+
+    // Initialize Xero client
+    const xero = new XeroClient({
+      clientId,
+      clientSecret,
+      redirectUris: [redirectUri],
+      scopes: 'openid profile email accounting.transactions accounting.contacts accounting.settings'.split(' '),
+    });
+
+    // Set the stored tokens
+    const tokenSet = getTokenSet();
+    if (!tokenSet) {
+      return res.status(401).json({
+        error: 'Not authenticated with Xero',
+        message: 'Please connect to Xero first',
+      });
+    }
+    xero.setTokenSet(tokenSet);
+
+    // Step 1: Charge the customer's card via Stripe
+    console.log(`Charging ${amount} ${currency} to payment method ${paymentMethodId}`);
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Convert to cents
+      currency: currency || 'usd',
+      customer: customerId,
+      payment_method: paymentMethodId,
+      confirm: true,
+      description: description || `Payment for invoice ${invoiceNumber}`,
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never',
+      },
+    });
+
+    console.log('✅ Stripe charge successful:', paymentIntent.id);
+
+    // Step 2: Record payment in Xero
+    const xeroPayment = {
+      invoice: {
+        invoiceID: invoiceId,
+      },
+      account: {
+        code: '200', // Bank account code - adjust as needed
+      },
+      amount: amount,
+      date: new Date().toISOString().split('T')[0],
+      reference: `Stripe: ${paymentIntent.id}`,
     };
 
-    const mockRes = {
-      status: (code) => ({
-        json: (data) => {
-          res.status(code).json(data);
-        },
-      }),
-      setHeader: () => {},
-    };
+    console.log('Recording payment in Xero:', xeroPayment);
 
-    await xeroPayInvoice.default(mockReq, mockRes);
+    const paymentResponse = await xero.accountingApi.createPayment(
+      tenantId,
+      { payments: [xeroPayment] }
+    );
+
+    console.log('✅ Xero payment recorded successfully');
+
+    res.status(200).json({
+      success: true,
+      stripeCharge: {
+        id: paymentIntent.id,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        status: paymentIntent.status,
+      },
+      xeroPayment: paymentResponse.body.payments?.[0] || {},
+      message: 'Payment processed successfully',
+    });
+
   } catch (error) {
-    console.error('Error calling Xero payment Lambda:', error);
+    console.error('Error processing payment:', error);
     res.status(500).json({
       error: 'Failed to process payment',
       message: error.message,
+      details: error.response?.body || error.stack,
     });
   }
 });

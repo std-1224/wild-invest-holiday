@@ -187,19 +187,40 @@ class WildThingsAPI {
   }
 
   // Xero integration
-  async createXeroInvoice(invoiceData) {
-    return this.request('/integrations/xero/invoice', {
-      method: 'POST',
-      body: JSON.stringify(invoiceData),
-    });
+  /**
+   * Initiate Xero OAuth connection
+   * Redirects to Xero authorization page
+   */
+  async connectXero() {
+    // This should be a redirect, not an API call
+    window.location.href = `${this.baseURL}/api/xero-auth`;
   }
 
+  /**
+   * Get unpaid invoices from Xero for a specific contact
+   * @param {string} contactId - Xero contact ID
+   * @param {string} customerId - Stripe customer ID
+   * @returns {Promise<{success: boolean, invoices: Array, count: number}>}
+   */
   async getXeroInvoices(contactId, customerId) {
-    return this.request(`/xero/get-invoices?contactId=${contactId}&customerId=${customerId}`);
+    return this.request(`/api/xero/get-invoices?contactId=${contactId}&customerId=${customerId}`);
   }
 
+  /**
+   * Pay a Xero invoice using Stripe
+   * @param {Object} paymentData - Payment details
+   * @param {string} paymentData.invoiceId - Xero invoice ID
+   * @param {string} paymentData.invoiceNumber - Invoice number
+   * @param {number} paymentData.amount - Amount to charge
+   * @param {string} paymentData.currency - Currency code (e.g., 'usd')
+   * @param {string} paymentData.customerId - Stripe customer ID
+   * @param {string} paymentData.paymentMethodId - Stripe payment method ID
+   * @param {string} paymentData.xeroContactId - Xero contact ID
+   * @param {string} paymentData.description - Payment description
+   * @returns {Promise<{success: boolean, stripeCharge: Object, xeroPayment: Object}>}
+   */
   async payXeroInvoice(paymentData) {
-    return this.request('/xero/pay-invoice', {
+    return this.request('/api/xero/pay-invoice', {
       method: 'POST',
       body: JSON.stringify(paymentData),
     });
