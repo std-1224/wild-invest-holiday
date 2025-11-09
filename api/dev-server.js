@@ -281,6 +281,157 @@ app.post('/api/stripe/webhook', (req, res) => {
 });
 
 // ============================================================================
+// XERO API ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/xero-auth
+ * Redirect to Xero authorization page
+ */
+app.get('/api/xero-auth', async (req, res) => {
+  console.log('🔐 Xero Authorization Request');
+
+  try {
+    const xeroAuth = await import('./xero-auth.js');
+
+    const mockReq = {
+      method: 'GET',
+      query: req.query,
+      url: req.url,
+    };
+
+    const mockRes = {
+      status: (code) => ({
+        json: (data) => res.status(code).json(data),
+        end: () => res.status(code).end(),
+      }),
+      redirect: (url) => res.redirect(url),
+      setHeader: (key, value) => res.setHeader(key, value),
+    };
+
+    await xeroAuth.default(mockReq, mockRes);
+  } catch (error) {
+    console.error('Error calling Xero auth Lambda:', error);
+    res.status(500).json({
+      error: 'Failed to generate authorization URL',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/xero-callback
+ * Handle OAuth callback from Xero
+ */
+app.get('/api/xero-callback', async (req, res) => {
+  console.log('🔄 Xero OAuth Callback:', req.query);
+
+  try {
+    const xeroCallback = await import('./xero-callback.js');
+
+    const mockReq = {
+      method: 'GET',
+      query: req.query,
+      url: req.url,
+    };
+
+    const mockRes = {
+      status: (code) => ({
+        json: (data) => res.status(code).json(data),
+        send: (html) => res.status(code).send(html),
+        end: () => res.status(code).end(),
+      }),
+      send: (html) => res.send(html),
+      setHeader: (key, value) => res.setHeader(key, value),
+    };
+
+    await xeroCallback.default(mockReq, mockRes);
+  } catch (error) {
+    console.error('Error calling Xero callback Lambda:', error);
+    res.status(500).send(`
+      <h1>Error</h1>
+      <p>${error.message}</p>
+      <pre>${error.stack}</pre>
+    `);
+  }
+});
+
+/**
+ * GET /api/xero/get-invoices
+ * Proxy to Xero API Lambda function
+ */
+app.get('/api/xero/get-invoices', async (req, res) => {
+  const { contactId, customerId } = req.query;
+
+  console.log('📄 Get Xero Invoices (proxying to Lambda):', { contactId, customerId });
+
+  try {
+    // In development, we proxy to the Lambda function
+    // Import and call the Lambda function directly
+    const xeroGetInvoices = await import('./xero-get-invoices.js');
+
+    // Create mock Vercel request/response objects
+    const mockReq = {
+      method: 'GET',
+      query: { contactId, customerId },
+    };
+
+    const mockRes = {
+      status: (code) => ({
+        json: (data) => {
+          res.status(code).json(data);
+        },
+      }),
+      setHeader: () => {},
+    };
+
+    await xeroGetInvoices.default(mockReq, mockRes);
+  } catch (error) {
+    console.error('Error calling Xero Lambda:', error);
+    res.status(500).json({
+      error: 'Failed to fetch invoices',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/xero/pay-invoice
+ * Proxy to Xero payment Lambda function
+ */
+app.post('/api/xero/pay-invoice', async (req, res) => {
+  console.log('💳 Pay Xero Invoice (proxying to Lambda):', req.body);
+
+  try {
+    // In development, we proxy to the Lambda function
+    const xeroPayInvoice = await import('./xero-pay-invoice.js');
+
+    // Create mock Vercel request/response objects
+    const mockReq = {
+      method: 'POST',
+      body: req.body,
+    };
+
+    const mockRes = {
+      status: (code) => ({
+        json: (data) => {
+          res.status(code).json(data);
+        },
+      }),
+      setHeader: () => {},
+    };
+
+    await xeroPayInvoice.default(mockReq, mockRes);
+  } catch (error) {
+    console.error('Error calling Xero payment Lambda:', error);
+    res.status(500).json({
+      error: 'Failed to process payment',
+      message: error.message,
+    });
+  }
+});
+
+// ============================================================================
 // SERVER
 // ============================================================================
 
@@ -289,6 +440,7 @@ app.listen(PORT, () => {
   console.log('=====================================');
   console.log(`✅ Server running on http://localhost:${PORT}`);
   console.log(`✅ Stripe API endpoints available at /api/stripe/*`);
+  console.log(`✅ Xero API endpoints available at /api/xero/*`);
   console.log('\n📝 Available Endpoints:');
   console.log('  POST /api/stripe/create-payment-intent');
   console.log('  POST /api/stripe/save-payment-method');
@@ -298,6 +450,12 @@ app.listen(PORT, () => {
   console.log('  POST /api/stripe/create-subscription');
   console.log('  POST /api/stripe/cancel-subscription');
   console.log('  POST /api/stripe/webhook');
+  console.log('  GET  /api/xero-auth (OAuth authorization)');
+  console.log('  GET  /api/xero-callback (OAuth callback)');
+  console.log('  GET  /api/xero/get-invoices');
+  console.log('  POST /api/xero/pay-invoice');
+  console.log('\n🔐 To connect Xero:');
+  console.log(`  Visit: http://localhost:${PORT}/api/xero-auth`);
   console.log('\n💡 Update your .env file:');
   console.log(`  VITE_API_URL=http://localhost:${PORT}`);
   console.log('\n');

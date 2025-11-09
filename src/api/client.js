@@ -194,6 +194,17 @@ class WildThingsAPI {
     });
   }
 
+  async getXeroInvoices(contactId, customerId) {
+    return this.request(`/xero/get-invoices?contactId=${contactId}&customerId=${customerId}`);
+  }
+
+  async payXeroInvoice(paymentData) {
+    return this.request('/xero/pay-invoice', {
+      method: 'POST',
+      body: JSON.stringify(paymentData),
+    });
+  }
+
   // RMS integration
   async syncRMSCalendar(investmentId) {
     return this.request('/integrations/rms/sync-calendar', {

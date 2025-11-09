@@ -153,7 +153,7 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
 }
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState("home");
+  const [currentPage, setCurrentPage] = useState("investor-portal");
 
   return (
     <AuthProvider onNavigateToPortal={() => setCurrentPage("investor-portal")}>

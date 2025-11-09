@@ -21,6 +21,8 @@ import {
   PayoutData,
 } from "../components/Modals/PayoutRequestModal";
 import { stripeClient } from "../api/stripe";
+import { XeroInvoices } from "../components/XeroInvoices";
+import { XeroConnect } from "../components/XeroConnect";
 
 type CabinType = "1BR" | "2BR";
 
@@ -1191,6 +1193,16 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 payouts={payoutHistory}
                 onRequestPayout={() => setShowPayoutRequestModal(true)}
                 availableBalance={wildThingsAccountBalance}
+              />
+
+              {/* Xero Connection */}
+              <XeroConnect />
+
+              {/* Xero Invoices - Pay with Saved Cards */}
+              <XeroInvoices
+                customerId={stripeCustomerId}
+                xeroContactId="CONTACT-001" // In production, this would come from user profile
+                paymentMethods={savedPaymentMethods}
               />
 
               <PaymentHistory payments={mockPayments} />

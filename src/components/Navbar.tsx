@@ -102,7 +102,7 @@ export const Navbar = ({
                 Invest
               </a>
             </li>
-            {isLoggedIn && (
+            {/* {isLoggedIn && ( */}
               <li>
                 <a
                   href="#investor-portal"
@@ -119,7 +119,7 @@ export const Navbar = ({
                   Investor Portal
                 </a>
               </li>
-            )}
+            {/* )} */}
             {/* <li>
               <a
                 href="#invest"
@@ -217,7 +217,7 @@ export const Navbar = ({
                   Invest
                 </a>
               </li>
-              {isLoggedIn && (
+              {/* {isLoggedIn && ( */}
                 <li className="mb-2">
                   <a
                     href="#investor-portal"
@@ -235,7 +235,7 @@ export const Navbar = ({
                     Investor Portal
                   </a>
                 </li>
-              )}
+              {/* )} */}
               {/* <li className="mb-2">
                 <a
                   href="#invest"

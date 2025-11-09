@@ -9,7 +9,7 @@ import Stripe from 'stripe';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia',
+  apiVersion: '2025-10-29.clover',
 });
 
 // Mock Stripe Customer ID (same as dev-server.js)
@@ -72,6 +72,14 @@ export default async function handler(
       return await handleCreatePaymentIntent(req, res);
     } else if (path.includes('/stripe/create-subscription')) {
       return await handleCreateSubscription(req, res);
+    } else if (path.includes('/xero/get-invoices')) {
+      // Import and call the Xero get invoices handler
+      const xeroGetInvoices = await import('./xero-get-invoices');
+      return await xeroGetInvoices.default(req, res);
+    } else if (path.includes('/xero/pay-invoice')) {
+      // Import and call the Xero pay invoice handler
+      const xeroPayInvoice = await import('./xero-pay-invoice');
+      return await xeroPayInvoice.default(req, res);
     } else {
       return res.status(404).json({
         success: false,

@@ -3,6 +3,7 @@
 
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { XeroClient } from 'xero-node';
+import { getTokenSet, hasValidTokens } from './xero-token-store.js';
 
 /**
  * Xero Invoice Response
@@ -65,118 +66,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('Fetching Xero invoices for contact:', contactId);
 
-    // Initialize Xero client
-    const xero = new XeroClient({
-      clientId: process.env.XERO_CLIENT_ID || '',
-      clientSecret: process.env.XERO_CLIENT_SECRET || '',
-      redirectUris: [process.env.XERO_REDIRECT_URI || ''],
-      scopes: 'openid profile email accounting.transactions accounting.contacts'.split(' '),
-    });
+    // Validate Xero configuration
+    const tenantId = process.env.XERO_TENANT_ID;
+    const clientId = process.env.XERO_CLIENT_ID;
+    const clientSecret = process.env.XERO_CLIENT_SECRET;
+    const redirectUri = process.env.XERO_REDIRECT_URI;
 
-    // Get access token (in production, you'd retrieve this from storage)
-    // For now, we'll use a mock response or require token to be passed
-    const tenantId = process.env.XERO_TENANT_ID || '';
-
-    if (!tenantId) {
-      console.warn('XERO_TENANT_ID not configured, returning mock data');
-      
-      // Return mock invoices for development
-      const mockInvoices = [
-        {
-          invoiceID: 'INV-001',
-          invoiceNumber: 'INV-2024-001',
-          type: 'ACCREC',
-          contact: {
-            contactID: contactId as string,
-            name: 'John Smith',
-          },
-          date: '2024-11-01',
-          dueDate: '2024-11-15',
-          status: 'AUTHORISED',
-          lineAmountTypes: 'Exclusive',
-          lineItems: [
-            {
-              description: 'Property Management Fee - November 2024',
-              quantity: 1,
-              unitAmount: 250.00,
-              lineAmount: 250.00,
-              accountCode: '200',
-            },
-          ],
-          subTotal: 250.00,
-          totalTax: 25.00,
-          total: 275.00,
-          amountDue: 275.00,
-          amountPaid: 0,
-          currencyCode: 'AUD',
-          reference: 'Cabin #1 - Mansfield',
-        },
-        {
-          invoiceID: 'INV-002',
-          invoiceNumber: 'INV-2024-002',
-          type: 'ACCREC',
-          contact: {
-            contactID: contactId as string,
-            name: 'John Smith',
-          },
-          date: '2024-11-05',
-          dueDate: '2024-11-20',
-          status: 'AUTHORISED',
-          lineAmountTypes: 'Exclusive',
-          lineItems: [
-            {
-              description: 'Cleaning Service - November 2024',
-              quantity: 2,
-              unitAmount: 150.00,
-              lineAmount: 300.00,
-              accountCode: '300',
-            },
-          ],
-          subTotal: 300.00,
-          totalTax: 30.00,
-          total: 330.00,
-          amountDue: 330.00,
-          amountPaid: 0,
-          currencyCode: 'AUD',
-          reference: 'Cabin #1 - Mansfield',
-        },
-        {
-          invoiceID: 'INV-003',
-          invoiceNumber: 'INV-2024-003',
-          type: 'ACCREC',
-          contact: {
-            contactID: contactId as string,
-            name: 'John Smith',
-          },
-          date: '2024-11-08',
-          dueDate: '2024-11-22',
-          status: 'AUTHORISED',
-          lineAmountTypes: 'Exclusive',
-          lineItems: [
-            {
-              description: 'Utilities - Electricity & Water',
-              quantity: 1,
-              unitAmount: 180.00,
-              lineAmount: 180.00,
-              accountCode: '400',
-            },
-          ],
-          subTotal: 180.00,
-          totalTax: 18.00,
-          total: 198.00,
-          amountDue: 198.00,
-          amountPaid: 0,
-          currencyCode: 'AUD',
-          reference: 'Cabin #1 - Mansfield',
-        },
-      ];
-
-      return res.status(200).json({
-        success: true,
-        invoices: mockInvoices,
-        count: mockInvoices.length,
+    if (!tenantId || !clientId || !clientSecret || !redirectUri) {
+      console.error('Xero API not configured properly');
+      return res.status(500).json({
+        error: 'Xero API not configured',
+        message: 'Please configure XERO_TENANT_ID, XERO_CLIENT_ID, XERO_CLIENT_SECRET, and XERO_REDIRECT_URI in environment variables',
+        missing: {
+          tenantId: !tenantId,
+          clientId: !clientId,
+          clientSecret: !clientSecret,
+          redirectUri: !redirectUri,
+        }
       });
     }
+
+    // Check if we have valid OAuth tokens
+    if (!hasValidTokens()) {
+      console.error('No valid Xero OAuth tokens found');
+      return res.status(401).json({
+        error: 'Not authenticated with Xero',
+        message: 'Please connect to Xero first by visiting /api/xero-auth',
+        authUrl: `${process.env.VITE_API_URL || 'http://localhost:3001'}/api/xero-auth`,
+      });
+    }
+
+    // Initialize Xero client
+    const xero = new XeroClient({
+      clientId,
+      clientSecret,
+      redirectUris: [redirectUri],
+      scopes: 'openid profile email accounting.transactions accounting.contacts accounting.settings'.split(' '),
+    });
+
+    // Set the stored tokens
+    const tokenSet = getTokenSet();
+    xero.setTokenSet(tokenSet);
+
+    console.log('Fetching real invoices from Xero API for contact:', contactId);
 
     // Fetch invoices from Xero
     const response = await xero.accountingApi.getInvoices(

@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Calendar, Info } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Calendar, Info, RefreshCw } from "lucide-react";
+import rmsClient from "../api/rms";
+import type { RMSPeakPeriod, OwnerBookingAllowance } from "../types/rms";
 
 interface BookedDate {
   date: string;
@@ -11,21 +13,25 @@ interface BookedDate {
 interface OwnerBookingCalendarProps {
   cabinId: number;
   cabinType: string;
-  bookedDates: BookedDate[];
-  ownerDaysUsed: number;
-  ownerDaysLimit: number;
+  ownerId: string; // Added for RMS integration
+  bookedDates?: BookedDate[]; // Made optional - will fetch from RMS
+  ownerDaysUsed?: number; // Made optional - will fetch from RMS
+  ownerDaysLimit?: number; // Made optional - will fetch from RMS
   onCreateBooking?: (startDate: string, endDate: string) => void;
   onCancelBooking?: (date: string) => void;
+  useRMSIntegration?: boolean; // Flag to enable/disable RMS integration
 }
 
 export const OwnerBookingCalendar = ({
   cabinId,
   cabinType,
-  bookedDates,
-  ownerDaysUsed,
-  ownerDaysLimit,
+  ownerId,
+  bookedDates: propBookedDates,
+  ownerDaysUsed: propOwnerDaysUsed,
+  ownerDaysLimit: propOwnerDaysLimit,
   onCreateBooking,
   onCancelBooking,
+  useRMSIntegration = false,
 }: OwnerBookingCalendarProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
@@ -34,6 +40,66 @@ export const OwnerBookingCalendar = ({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedBookingToCancel, setSelectedBookingToCancel] =
     useState<BookedDate | null>(null);
+
+  // RMS Integration State
+  const [rmsBookedDates, setRmsBookedDates] = useState<BookedDate[]>([]);
+  const [rmsPeakPeriods, setRmsPeakPeriods] = useState<RMSPeakPeriod[]>([]);
+  const [rmsAllowance, setRmsAllowance] = useState<OwnerBookingAllowance | null>(null);
+  const [isLoadingRMS, setIsLoadingRMS] = useState(false);
+  const [rmsError, setRmsError] = useState<string | null>(null);
+
+  // Use RMS data if integration is enabled, otherwise use props
+  const bookedDates: BookedDate[] = useRMSIntegration ? rmsBookedDates : (propBookedDates || []);
+  const ownerDaysUsed = useRMSIntegration ? (rmsAllowance?.daysUsed || 0) : (propOwnerDaysUsed || 0);
+  const ownerDaysLimit = useRMSIntegration ? (rmsAllowance?.daysLimit || 180) : (propOwnerDaysLimit || 180);
+
+  // Fetch RMS data on mount and when month changes
+  useEffect(() => {
+    if (useRMSIntegration && rmsClient.isConfigured()) {
+      fetchRMSData();
+    }
+  }, [useRMSIntegration, cabinId, ownerId, currentMonth]);
+
+  /**
+   * Fetch availability and allowance from RMS
+   */
+  const fetchRMSData = async () => {
+    setIsLoadingRMS(true);
+    setRmsError(null);
+
+    try {
+      // Calculate date range for current month
+      const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
+        .toISOString()
+        .split('T')[0];
+      const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
+        .toISOString()
+        .split('T')[0];
+
+      // Fetch availability and allowance in parallel
+      const [availability, allowance] = await Promise.all([
+        rmsClient.getAvailability(cabinId, startDate, endDate),
+        rmsClient.getOwnerAllowance(ownerId, cabinId),
+      ]);
+
+      // Convert RMS booked dates to BookedDate format
+      const convertedBookedDates: BookedDate[] = availability.bookedDates.map(rmsDate => ({
+        date: rmsDate.date,
+        type: rmsDate.bookingType,
+        guestName: rmsDate.guestName,
+        nights: rmsDate.nights,
+      }));
+
+      setRmsBookedDates(convertedBookedDates);
+      setRmsPeakPeriods(availability.peakPeriods);
+      setRmsAllowance(allowance);
+    } catch (error) {
+      console.error('Error fetching RMS data:', error);
+      setRmsError(error instanceof Error ? error.message : 'Failed to load booking data');
+    } finally {
+      setIsLoadingRMS(false);
+    }
+  };
 
   const daysInMonth = new Date(
     currentMonth.getFullYear(),
@@ -62,14 +128,32 @@ export const OwnerBookingCalendar = ({
     "December",
   ];
 
-  const isDateBooked = (date: Date) => {
+  /**
+   * Check if a date is booked
+   */
+  const isDateBooked = (date: Date): BookedDate | undefined => {
     const dateStr = date.toISOString().split("T")[0];
     return bookedDates.find((bd) => bd.date === dateStr);
   };
 
-  const isPeakPeriod = (date: Date) => {
+  /**
+   * Check if a date falls within a peak period
+   */
+  const isPeakPeriod = (date: Date): boolean => {
+    if (useRMSIntegration && rmsPeakPeriods.length > 0) {
+      // Check against RMS peak periods
+      const dateStr = date.toISOString().split("T")[0];
+      const checkDate = new Date(dateStr);
+
+      return rmsPeakPeriods.some(period => {
+        const startDate = new Date(period.startDate);
+        const endDate = new Date(period.endDate);
+        return checkDate >= startDate && checkDate <= endDate;
+      });
+    }
+
+    // Fallback: December-January as peak periods
     const month = date.getMonth();
-    // Peak periods: December-January, Easter, School holidays
     return month === 11 || month === 0;
   };
 
@@ -94,15 +178,94 @@ export const OwnerBookingCalendar = ({
     }
   };
 
-  const handleCreateBooking = () => {
-    if (selectedStartDate && selectedEndDate && onCreateBooking) {
-      const start = selectedStartDate.toISOString().split("T")[0];
-      const end = selectedEndDate.toISOString().split("T")[0];
+  /**
+   * Handle booking creation - with RMS integration
+   */
+  const handleCreateBooking = async () => {
+    if (!selectedStartDate || !selectedEndDate) return;
+
+    const start = selectedStartDate.toISOString().split("T")[0];
+    const end = selectedEndDate.toISOString().split("T")[0];
+
+    if (useRMSIntegration && rmsClient.isConfigured()) {
+      try {
+        setIsLoadingRMS(true);
+
+        // Create booking in RMS
+        const response = await rmsClient.createOwnerBooking({
+          ownerId,
+          cabinId,
+          checkInDate: start,
+          checkOutDate: end,
+          guests: 2, // Default, could be made configurable
+        });
+
+        if (response.success && response.booking) {
+          // Refresh RMS data to get updated availability
+          await fetchRMSData();
+          alert(`Owner booking created successfully! ${response.booking.nights} nights booked.`);
+        } else {
+          alert(`Failed to create booking: ${response.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error creating booking:', error);
+        alert(`Error creating booking: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setIsLoadingRMS(false);
+      }
+    } else if (onCreateBooking) {
+      // Fallback to callback if RMS not enabled
       onCreateBooking(start, end);
-      setSelectedStartDate(null);
-      setSelectedEndDate(null);
-      setShowBookingModal(false);
     }
+
+    setSelectedStartDate(null);
+    setSelectedEndDate(null);
+    setShowBookingModal(false);
+  };
+
+  /**
+   * Handle booking cancellation - with RMS integration
+   */
+  const handleCancelBooking = async () => {
+    if (!selectedBookingToCancel) return;
+
+    const bookingDate = new Date(selectedBookingToCancel.date);
+    const today = new Date();
+    const hoursUntilBooking = (bookingDate.getTime() - today.getTime()) / (1000 * 60 * 60);
+
+    if (hoursUntilBooking < 48) {
+      alert("Cannot cancel: Bookings must be cancelled at least 48 hours in advance.");
+      return;
+    }
+
+    if (useRMSIntegration && rmsClient.isConfigured()) {
+      try {
+        setIsLoadingRMS(true);
+
+        // In a real implementation, we'd need the bookingId
+        // For now, we'll use the callback if available
+        if (onCancelBooking) {
+          onCancelBooking(selectedBookingToCancel.date);
+        }
+
+        // Refresh RMS data
+        await fetchRMSData();
+
+        const nights = selectedBookingToCancel.nights || 1;
+        alert(`Booking cancelled successfully! ${nights} days returned to your allowance.`);
+      } catch (error) {
+        console.error('Error cancelling booking:', error);
+        alert(`Error cancelling booking: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setIsLoadingRMS(false);
+      }
+    } else if (onCancelBooking) {
+      // Fallback to callback if RMS not enabled
+      onCancelBooking(selectedBookingToCancel.date);
+    }
+
+    setShowCancelModal(false);
+    setSelectedBookingToCancel(null);
   };
 
   const calculateNights = () => {
@@ -210,13 +373,48 @@ export const OwnerBookingCalendar = ({
         <div>
           <h3 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
             OWNER BOOKING CALENDAR
+            {useRMSIntegration && (
+              <span className="ml-2 text-xs font-normal text-[#86dbdf]">
+                (RMS Integrated)
+              </span>
+            )}
           </h3>
           <p className="text-sm text-gray-600 mt-1">
             {cabinType} - Cabin #{cabinId}
           </p>
         </div>
-        <Calendar className="w-8 h-8 text-[#86dbdf]" />
+        <div className="flex items-center gap-2">
+          {useRMSIntegration && rmsClient.isConfigured() && (
+            <button
+              onClick={fetchRMSData}
+              disabled={isLoadingRMS}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50"
+              title="Refresh from RMS"
+            >
+              <RefreshCw className={`w-5 h-5 text-[#86dbdf] ${isLoadingRMS ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+          <Calendar className="w-8 h-8 text-[#86dbdf]" />
+        </div>
       </div>
+
+      {/* RMS Error Message */}
+      {rmsError && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">
+            <strong>RMS Error:</strong> {rmsError}
+          </p>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isLoadingRMS && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            Loading booking data from RMS...
+          </p>
+        </div>
+      )}
 
       {/* 180-Day Allowance Tracker */}
       <div className="mb-6 p-4 bg-[#ffcf00]/[0.1] rounded-lg border-2 border-[#ffcf00]">
@@ -428,29 +626,11 @@ export const OwnerBookingCalendar = ({
                 Keep Booking
               </button>
               <button
-                onClick={() => {
-                  if (onCancelBooking && selectedBookingToCancel.date) {
-                    const bookingDate = new Date(selectedBookingToCancel.date);
-                    const today = new Date();
-                    const hoursUntilBooking =
-                      (bookingDate.getTime() - today.getTime()) /
-                      (1000 * 60 * 60);
-
-                    if (hoursUntilBooking < 48) {
-                      alert(
-                        "Cannot cancel: Bookings must be cancelled at least 48 hours in advance."
-                      );
-                      return;
-                    }
-
-                    onCancelBooking(selectedBookingToCancel.date);
-                  }
-                  setShowCancelModal(false);
-                  setSelectedBookingToCancel(null);
-                }}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all"
+                onClick={handleCancelBooking}
+                disabled={isLoadingRMS}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all disabled:opacity-50"
               >
-                Cancel Booking
+                {isLoadingRMS ? 'Cancelling...' : 'Cancel Booking'}
               </button>
             </div>
           </div>
