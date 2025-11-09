@@ -136,8 +136,6 @@ app.post('/api/stripe/save-payment-method', async (req, res) => {
 app.post('/api/stripe/list-payment-methods', (req, res) => {
   const { customerId } = req.body;
 
-  console.log('📋 List Payment Methods:', { customerId });
-
   // Return payment methods in the same format as the Lambda function
   // with nested card object to match Stripe API structure
   const paymentMethods = mockPaymentMethods.map(pm => ({
@@ -336,12 +334,17 @@ app.get('/api/xero-callback', async (req, res) => {
     };
 
     const mockRes = {
-      status: (code) => ({
-        json: (data) => res.status(code).json(data),
-        send: (html) => res.status(code).send(html),
-        end: () => res.status(code).end(),
-      }),
+      statusCode: 200,
+      status: function(code) {
+        this.statusCode = code;
+        res.status(code);
+        return this;
+      },
+      json: (data) => res.json(data),
       send: (html) => res.send(html),
+      end: function() {
+        return res.end();
+      },
       setHeader: (key, value) => res.setHeader(key, value),
     };
 
@@ -362,8 +365,6 @@ app.get('/api/xero-callback', async (req, res) => {
  */
 app.get('/api/xero/get-invoices', async (req, res) => {
   const { contactId, customerId } = req.query;
-
-  console.log('📄 Get Xero Invoices (proxying to Lambda):', { contactId, customerId });
 
   try {
     // In development, we proxy to the Lambda function
@@ -437,27 +438,5 @@ app.post('/api/xero/pay-invoice', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log('\n🚀 Wild Things Development API Server');
-  console.log('=====================================');
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`✅ Stripe API endpoints available at /api/stripe/*`);
-  console.log(`✅ Xero API endpoints available at /api/xero/*`);
-  console.log('\n📝 Available Endpoints:');
-  console.log('  POST /api/stripe/create-payment-intent');
-  console.log('  POST /api/stripe/save-payment-method');
-  console.log('  POST /api/stripe/list-payment-methods');
-  console.log('  POST /api/stripe/set-default-payment-method');
-  console.log('  POST /api/stripe/remove-payment-method');
-  console.log('  POST /api/stripe/create-subscription');
-  console.log('  POST /api/stripe/cancel-subscription');
-  console.log('  POST /api/stripe/webhook');
-  console.log('  GET  /api/xero-auth (OAuth authorization)');
-  console.log('  GET  /api/xero-callback (OAuth callback)');
-  console.log('  GET  /api/xero/get-invoices');
-  console.log('  POST /api/xero/pay-invoice');
-  console.log('\n🔐 To connect Xero:');
-  console.log(`  Visit: http://localhost:${PORT}/api/xero-auth`);
-  console.log('\n💡 Update your .env file:');
-  console.log(`  VITE_API_URL=http://localhost:${PORT}`);
-  console.log('\n');
 });
 

@@ -25,7 +25,6 @@ export default async function handler(req, res) {
         if (!contactId) {
             return res.status(400).json({ error: 'Contact ID is required' });
         }
-        console.log('Fetching Xero invoices for contact:', contactId);
         // Validate Xero configuration
         const tenantId = process.env.XERO_TENANT_ID;
         const clientId = process.env.XERO_CLIENT_ID;
@@ -63,7 +62,6 @@ export default async function handler(req, res) {
         // Set the stored tokens
         const tokenSet = getTokenSet();
         xero.setTokenSet(tokenSet);
-        console.log('Fetching real invoices from Xero API for contact:', contactId);
         // Fetch invoices from Xero
         const response = await xero.accountingApi.getInvoices(tenantId, undefined, // ifModifiedSince
         `Contact.ContactID=GUID("${contactId}")`, // where filter
@@ -89,7 +87,6 @@ export default async function handler(req, res) {
         });
     }
     catch (error) {
-        console.error('Error fetching Xero invoices:', error);
         return res.status(500).json({
             error: 'Failed to fetch invoices',
             message: error.message,

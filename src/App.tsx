@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "./components/Navbar";
 import { InvestmentModal } from "./components/Modals/InvestmentModal";
 import { HomePage } from "./sections/HomePage";
@@ -6,6 +6,7 @@ import { LocationsPage } from "./sections/LocationsPage";
 import { InvestPage } from "./sections/Invest/InvestPage";
 import { InvestorPortal } from "./sections/InvestorPortal";
 import { HolidayHomesPage } from "./sections/HolidayHomes";
+import { XeroCallback } from "./sections/XeroCallback";
 import { colors } from "./config/mockCalculate";
 import { ReservationModal } from "./components/Modals/ReservationModal";
 import { ChatWidget } from "./components/ChatWidget";
@@ -108,6 +109,10 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
           />
         )}
 
+        {currentPage === "xero-callback" && (
+          <XeroCallback setCurrentPage={setCurrentPage} />
+        )}
+
         {/* Investment Modal */}
         <InvestmentModal
           showInvestmentModal={showInvestmentModal}
@@ -154,6 +159,17 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("investor-portal");
+
+  // Check if this is a Xero callback
+  useEffect(() => {
+    const path = window.location.pathname;
+    const search = window.location.search;
+
+    // Check for Xero callback with success or error parameters
+    if (path === '/xero/callback' && (search.includes('success=') || search.includes('error='))) {
+      setCurrentPage('xero-callback');
+    }
+  }, []);
 
   return (
     <AuthProvider onNavigateToPortal={() => setCurrentPage("investor-portal")}>

@@ -203,6 +203,20 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
     loadPaymentMethods();
   }, []);
 
+  // Listen for Xero connection changes
+  useEffect(() => {
+    const handleXeroConnectionChange = () => {
+      console.log('Xero connection changed, refreshing XeroConnect component');
+      setXeroRefreshKey(prev => prev + 1);
+    };
+
+    window.addEventListener('xeroConnectionChanged', handleXeroConnectionChange);
+
+    return () => {
+      window.removeEventListener('xeroConnectionChanged', handleXeroConnectionChange);
+    };
+  }, []);
+
   const loadPaymentMethods = async () => {
     setLoadingPaymentMethods(true);
     try {
@@ -344,6 +358,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   );
   const [investmentAttitude, setInvestmentAttitude] = useState("retain"); // 'retain' or 'payout'
   const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'bookings' | 'payments' | 'owner-booking' | 'settings'
+  const [xeroRefreshKey, setXeroRefreshKey] = useState(0); // Key to force XeroConnect refresh
   const [userProfile, setUserProfile] = useState({
     firstName: "John",
     lastName: "Doe",
@@ -1196,7 +1211,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               />
 
               {/* Xero Connection */}
-              <XeroConnect />
+              <XeroConnect key={xeroRefreshKey} />
 
               {/* Xero Invoices - Pay with Saved Cards */}
               <XeroInvoices
