@@ -1331,7 +1331,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               />
 
               {/* Xero Connection */}
-              <XeroConnect key={xeroRefreshKey} />
+              {/* <XeroConnect key={xeroRefreshKey} /> */}
 
               {/* Xero Invoices - Pay with Saved Cards */}
               <XeroInvoices

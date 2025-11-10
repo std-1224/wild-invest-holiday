@@ -1,14 +1,9 @@
-# Development server (local only)
+# Development server (local only - not needed in production)
 api/dev-server.js
 
-# Database scripts (local only)
+# Database scripts (local only - not needed in production)
 api/scripts/
 
-# TypeScript declaration files
-**/*.d.ts
-
-# Handlers, models, and lib are imported by api/index.ts, not standalone functions
-api/handlers/
-api/models/
-api/lib/
+# Server logs
+server.log
 

@@ -10,7 +10,7 @@ import express from 'express';
 import cors from 'cors';
 import Stripe from 'stripe';
 import { XeroClient } from 'xero-node';
-import { saveTokenSet, getTokenSet, hasValidTokens } from './lib/xero-token-store.js';
+import { saveTokenSet, getTokenSet, hasValidTokens } from '../server/lib/xero-token-store.js';
 import {
   handleRegister,
   handleLogin,
@@ -22,16 +22,16 @@ import {
   handleValidateReferral,
   handleGetReferralStats,
   handleApplyReferralCredits,
-} from './handlers/auth.js';
+} from '../server/handlers/auth.js';
 import {
   handleGetAllOwners,
   handleGetAgreementsByOwner,
   handleCreateAgreement,
   handleUpdateAgreement,
-} from './handlers/agreements.js';
+} from '../server/handlers/agreements.js';
 import {
   handleUploadAgreement,
-} from './handlers/upload.js';
+} from '../server/handlers/upload.js';
 
 const app = express();
 const PORT = 3001;
