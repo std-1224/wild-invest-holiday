@@ -920,9 +920,6 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     </p>
                     <div className="flex items-center gap-3">
                       <div className="flex-1 bg-white rounded-lg p-3 border-2 border-[#ec874c]">
-                        <p className="text-xs text-gray-600 mb-1">
-                          Your Referral Code
-                        </p>
                         <p className="text-2xl font-bold tracking-wider text-[#ec874c]">
                           {referralCode}
                         </p>

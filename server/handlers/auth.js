@@ -71,8 +71,9 @@ export async function handleRegister(req, res) {
         id: user._id,
         name: user.name,
         email: user.email,
-        createdAt: user.createdAt,
+        referralCode: user.referralCode,
         role: user.role,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {
@@ -133,8 +134,9 @@ export async function handleLogin(req, res) {
         id: user._id,
         name: user.name,
         email: user.email,
-        createdAt: user.createdAt,
+        referralCode: user.referralCode,
         role: user.role,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {
@@ -287,6 +289,7 @@ export async function handleResetPassword(req, res) {
         id: user._id,
         name: user.name,
         email: user.email,
+        referralCode: user.referralCode,
         role: user.role,
       },
     });
