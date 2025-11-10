@@ -370,12 +370,45 @@ class WildThingsAPI {
 
   // Xero integration
   /**
-   * Initiate Xero OAuth connection
-   * Redirects to Xero authorization page
+   * Check Xero connection status for authenticated user
+   * @returns {Promise<Object>} Response with connection status
    */
-  async connectXero() {
-    // This should be a redirect, not an API call
-    window.location.href = `${this.baseURL}/api/xero-auth`;
+  async getXeroStatus() {
+    return this.request('/api/xero/status');
+  }
+
+  /**
+   * Disconnect Xero account for authenticated user
+   * @returns {Promise<Object>} Response confirming disconnection
+   */
+  async disconnectXero() {
+    return this.request('/api/xero/disconnect', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
+  /**
+   * Get invoices from Xero for authenticated user
+   * @returns {Promise<Object>} Response with list of invoices
+   */
+  async getXeroInvoices() {
+    return this.request('/api/xero/invoices');
+  }
+
+  /**
+   * Record a payment in Xero
+   * @param {string} invoiceId - Xero invoice ID
+   * @param {number} amount - Payment amount
+   * @param {string} paymentDate - Payment date (YYYY-MM-DD)
+   * @param {string} reference - Payment reference
+   * @returns {Promise<Object>} Response with payment details
+   */
+  async recordXeroPayment(invoiceId, amount, paymentDate, reference) {
+    return this.request('/api/xero/record-payment', {
+      method: 'POST',
+      body: JSON.stringify({ invoiceId, amount, paymentDate, reference }),
+    });
   }
 
   /**

@@ -1,60 +1,107 @@
 import React, { useState, useEffect } from "react";
+import apiClient from "../api/client";
 
 /**
  * XeroConnect Component
  * Provides a button to connect to Xero via OAuth
+ * Now uses database-backed authentication
  */
 export const XeroConnect: React.FC = () => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
   const [isConnected, setIsConnected] = useState(false);
   const [tenantName, setTenantName] = useState<string>("");
   const [connectedAt, setConnectedAt] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+
+  // Check connection status from API
+  const checkConnectionStatus = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.getXeroStatus();
+
+      if (response.success && response.connected) {
+        setIsConnected(true);
+        setTenantName(response.tenantName || '');
+        setConnectedAt(response.connectedAt || '');
+
+        // Also update localStorage for backward compatibility
+        localStorage.setItem('xeroConnected', 'true');
+        localStorage.setItem('xeroTenantName', response.tenantName || '');
+        localStorage.setItem('xeroTenantId', response.tenantId || '');
+        localStorage.setItem('xeroConnectedAt', response.connectedAt || '');
+      } else {
+        setIsConnected(false);
+        setTenantName('');
+        setConnectedAt('');
+
+        // Clear localStorage
+        localStorage.removeItem('xeroConnected');
+        localStorage.removeItem('xeroTenantName');
+        localStorage.removeItem('xeroTenantId');
+        localStorage.removeItem('xeroConnectedAt');
+      }
+    } catch (error) {
+      console.error('Error checking Xero connection status:', error);
+      setIsConnected(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Check connection status on mount and when window gains focus
   useEffect(() => {
-    const checkConnectionStatus = () => {
-      const connected = localStorage.getItem('xeroConnected') === 'true';
-      const name = localStorage.getItem('xeroTenantName') || '';
-      const timestamp = localStorage.getItem('xeroConnectedAt') || '';
-      setIsConnected(connected);
-      setTenantName(name);
-      setConnectedAt(timestamp);
-    };
-
     // Check on mount
     checkConnectionStatus();
 
     // Check when window gains focus (user returns from OAuth)
     window.addEventListener('focus', checkConnectionStatus);
 
-    // Check for storage events (in case of multiple tabs)
-    window.addEventListener('storage', checkConnectionStatus);
-
     // Check for custom event from XeroCallback
     window.addEventListener('xeroConnectionChanged', checkConnectionStatus);
 
     return () => {
       window.removeEventListener('focus', checkConnectionStatus);
-      window.removeEventListener('storage', checkConnectionStatus);
       window.removeEventListener('xeroConnectionChanged', checkConnectionStatus);
     };
   }, []);
 
   const handleConnectXero = () => {
-    // Redirect to Xero authorization endpoint
-    window.location.href = `${API_URL}/api/xero-auth`;
+    // Get current user from apiClient
+    const user = apiClient.getUser();
+
+    if (!user || !user.id) {
+      alert('Please log in first to connect Xero');
+      return;
+    }
+
+    // Redirect to Xero authorization endpoint with userId
+    window.location.href = `${API_URL}/api/xero-auth?userId=${user.id}`;
   };
 
-  const handleDisconnect = () => {
-    // Clear connection status
-    localStorage.removeItem('xeroConnected');
-    localStorage.removeItem('xeroTenantId');
-    localStorage.removeItem('xeroTenantName');
-    localStorage.removeItem('xeroConnectedAt');
+  const handleDisconnect = async () => {
+    try {
+      const response = await apiClient.disconnectXero();
 
-    setIsConnected(false);
-    setTenantName('');
-    setConnectedAt('');
+      if (response.success) {
+        // Clear connection status
+        localStorage.removeItem('xeroConnected');
+        localStorage.removeItem('xeroTenantId');
+        localStorage.removeItem('xeroTenantName');
+        localStorage.removeItem('xeroConnectedAt');
+
+        setIsConnected(false);
+        setTenantName('');
+        setConnectedAt('');
+
+        // Dispatch event to notify other components
+        window.dispatchEvent(new Event('xeroConnectionChanged'));
+      } else {
+        alert('Failed to disconnect Xero');
+      }
+    } catch (error) {
+      console.error('Error disconnecting Xero:', error);
+      alert('Failed to disconnect Xero');
+    }
   };
 
   const formatDate = (isoString: string) => {
