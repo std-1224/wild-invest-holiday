@@ -114,12 +114,13 @@ export async function handleUploadAgreement(req, res) {
       });
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Validate file size (max 3MB for Vercel compatibility)
+    // Vercel has a 4.5MB request body limit, and base64 encoding increases size by ~33%
+    const maxSize = 3 * 1024 * 1024; // 3MB
     if (fileSize > maxSize) {
       return res.status(400).json({
         success: false,
-        error: 'File too large. Maximum size is 10MB',
+        error: 'File too large. Maximum size is 3MB',
       });
     }
 

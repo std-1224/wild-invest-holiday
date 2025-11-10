@@ -4,8 +4,7 @@
   "functions": {
     "api/index.ts": {
       "memory": 1024,
-      "maxDuration": 10,
-      "maxRequestBodySize": "50mb"
+      "maxDuration": 10
     }
   },
   "rewrites": [
