@@ -48,6 +48,13 @@ const userSchema = new mongoose.Schema(
       uppercase: true,
       default: null,
     },
+    role: {
+      type: String,
+      enum: ['owner', 'admin'],
+      default: 'owner',
+      trim: true,
+      lowercase: true,
+    },
     resetPasswordToken: {
       type: String,
       default: null,

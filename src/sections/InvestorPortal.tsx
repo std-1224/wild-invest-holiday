@@ -168,6 +168,10 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   // Load user profile from API (must be before referralCode)
   const currentUser = apiClient.getUser();
 
+  // Agreements state
+  const [userAgreements, setUserAgreements] = useState<any[]>([]);
+  const [loadingAgreements, setLoadingAgreements] = useState(false);
+
   const [showAttitudeChangeModal, setShowAttitudeChangeModal] = useState(false);
   const [pendingAttitudeChange, setPendingAttitudeChange] = useState<
     "retain" | "payout" | null
@@ -229,6 +233,27 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
 
     loadReferralStats();
   }, []);
+
+  // Load user agreements on mount
+  useEffect(() => {
+    const loadAgreements = async () => {
+      if (!currentUser?.id) return;
+
+      setLoadingAgreements(true);
+      try {
+        const response = await apiClient.getAgreementsByOwner(currentUser.id);
+        if (response.success) {
+          setUserAgreements(response.agreements || []);
+        }
+      } catch (error) {
+        console.error('Error loading agreements:', error);
+      } finally {
+        setLoadingAgreements(false);
+      }
+    };
+
+    loadAgreements();
+  }, [currentUser?.id]);
 
   // Listen for Xero connection changes
   useEffect(() => {
@@ -1036,71 +1061,70 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                           <h4 className="text-lg font-bold mb-3 text-[#0e181f]">
                             📄 Legal Documents & Contracts
                           </h4>
-                          <div className="space-y-2 mb-3">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-white rounded-lg border gap-2 sm:gap-0">
-                              <div className="flex items-center">
-                                <span className="text-2xl mr-3">📋</span>
-                                <div>
-                                  <p className="font-bold text-sm text-[#0e181f]">
-                                    Sale Agreement
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    Signed {investment.purchaseDate}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                                <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
-                                  Signed
-                                </span>
-                                <button className="text-blue-600 text-sm hover:underline">
-                                  View →
-                                </button>
-                              </div>
+                          {loadingAgreements ? (
+                            <div className="text-center py-4">
+                              <p className="text-sm text-gray-600">Loading agreements...</p>
                             </div>
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-white rounded-lg border gap-2 sm:gap-0">
-                              <div className="flex items-center">
-                                <span className="text-2xl mr-3">🏠</span>
-                                <div>
-                                  <p className="font-bold text-sm text-[#0e181f]">
-                                    Land Lease Agreement
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    Signed {investment.purchaseDate}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                                <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
-                                  Signed
-                                </span>
-                                <button className="text-blue-600 text-sm hover:underline">
-                                  View →
-                                </button>
-                              </div>
+                          ) : userAgreements.length === 0 ? (
+                            <div className="text-center py-4 bg-white rounded-lg border">
+                              <p className="text-sm text-gray-600">No agreements uploaded yet</p>
                             </div>
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-white rounded-lg border gap-2 sm:gap-0">
-                              <div className="flex items-center">
-                                <span className="text-2xl mr-3">⚙️</span>
-                                <div>
-                                  <p className="font-bold text-sm text-[#0e181f]">
-                                    Site Management Agreement
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    Signed {investment.purchaseDate}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                                <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
-                                  Signed
-                                </span>
-                                <button className="text-blue-600 text-sm hover:underline">
-                                  View →
-                                </button>
-                              </div>
+                          ) : (
+                            <div className="space-y-2 mb-3">
+                              {userAgreements
+                                .filter((agreement) =>
+                                  !agreement.cabin_id || agreement.cabin_id === investment.cabinType
+                                )
+                                .map((agreement) => {
+                                  const agreementTypeIcons: { [key: string]: string } = {
+                                    sale_agreement: "📋",
+                                    land_lease: "🏠",
+                                    site_management: "⚙️",
+                                    other: "📄",
+                                  };
+                                  const agreementTypeNames: { [key: string]: string } = {
+                                    sale_agreement: "Sale Agreement",
+                                    land_lease: "Land Lease Agreement",
+                                    site_management: "Site Management Agreement",
+                                    other: "Other Document",
+                                  };
+
+                                  return (
+                                    <div
+                                      key={agreement.id}
+                                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-white rounded-lg border gap-2 sm:gap-0"
+                                    >
+                                      <div className="flex items-center">
+                                        <span className="text-2xl mr-3">
+                                          {agreementTypeIcons[agreement.agreement_type] || "📄"}
+                                        </span>
+                                        <div>
+                                          <p className="font-bold text-sm text-[#0e181f]">
+                                            {agreementTypeNames[agreement.agreement_type] || agreement.agreement_type}
+                                          </p>
+                                          <p className="text-xs text-gray-600">
+                                            Uploaded {new Date(agreement.createdAt).toLocaleDateString()}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                        <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                                          {agreement.status === 'active' ? 'Active' : agreement.status}
+                                        </span>
+                                        <a
+                                          href={agreement.agreement_url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 text-sm hover:underline"
+                                        >
+                                          View →
+                                        </a>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                             </div>
-                          </div>
+                          )}
                         </div>
 
                         {/* Billing Section */}

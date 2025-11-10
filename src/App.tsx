@@ -5,6 +5,7 @@ import { HomePage } from "./sections/HomePage";
 import { LocationsPage } from "./sections/LocationsPage";
 import { InvestPage } from "./sections/Invest/InvestPage";
 import { InvestorPortal } from "./sections/InvestorPortal";
+import { AdminPortal } from "./sections/AdminPortal";
 import { HolidayHomesPage } from "./sections/HolidayHomes";
 import { XeroCallback } from "./sections/XeroCallback";
 import { colors } from "./config/mockCalculate";
@@ -34,9 +35,13 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
   // Use the auth context
   const { isLoggedIn, setIsLoggedIn, showLoginModal, logout } = useAuth();
 
-  // Protect investor portal - redirect to home if not logged in
+  // Protect investor portal and admin portal - redirect to home if not logged in
   useEffect(() => {
     if (currentPage === "investor-portal" && !isLoggedIn) {
+      setCurrentPage("home");
+      showLoginModal(); // Show login modal to prompt user to login
+    }
+    if (currentPage === "admin-portal" && !isLoggedIn) {
       setCurrentPage("home");
       showLoginModal(); // Show login modal to prompt user to login
     }
@@ -114,6 +119,13 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
             setSelectedCabinForInvestment={setSelectedCabinForInvestment}
             userInvestments={userInvestments}
             setUserInvestments={setUserInvestments}
+          />
+        )}
+
+        {currentPage === "admin-portal" && (
+          <AdminPortal
+            setIsLoggedIn={setIsLoggedIn}
+            onNavigate={setCurrentPage}
           />
         )}
 

@@ -23,13 +23,23 @@ import {
   handleGetReferralStats,
   handleApplyReferralCredits,
 } from './handlers/auth.js';
+import {
+  handleGetAllOwners,
+  handleGetAgreementsByOwner,
+  handleCreateAgreement,
+  handleUpdateAgreement,
+} from './handlers/agreements.js';
+import {
+  handleUploadAgreement,
+} from './handlers/upload.js';
 
 const app = express();
 const PORT = 3001;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increased limit for file uploads (base64)
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // In-memory storage (simulates DynamoDB)
 const mockPaymentMethods = [];
@@ -47,7 +57,6 @@ const mockSubscriptions = [];
  * Register a new user
  */
 app.post('/api/auth/register', async (req, res) => {
-  console.log('📝 Register User:', req.body.email);
   await handleRegister(req, res);
 });
 
@@ -56,7 +65,6 @@ app.post('/api/auth/register', async (req, res) => {
  * Login user
  */
 app.post('/api/auth/login', async (req, res) => {
-  console.log('🔐 Login User:', req.body.email);
   await handleLogin(req, res);
 });
 
@@ -65,7 +73,6 @@ app.post('/api/auth/login', async (req, res) => {
  * Send password reset email
  */
 app.post('/api/auth/forgot-password', async (req, res) => {
-  console.log('🔑 Forgot Password:', req.body.email);
   await handleForgotPassword(req, res);
 });
 
@@ -74,7 +81,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
  * Reset password using token
  */
 app.post('/api/auth/reset-password', async (req, res) => {
-  console.log('🔄 Reset Password');
   await handleResetPassword(req, res);
 });
 
@@ -83,7 +89,6 @@ app.post('/api/auth/reset-password', async (req, res) => {
  * Get current user profile
  */
 app.get('/api/auth/me', async (req, res) => {
-  console.log('👤 Get Profile');
   await handleGetProfile(req, res);
 });
 
@@ -92,7 +97,6 @@ app.get('/api/auth/me', async (req, res) => {
  * Update user profile
  */
 app.put('/api/auth/update-profile', async (req, res) => {
-  console.log('✏️ Update Profile:', req.body.email);
   await handleUpdateProfile(req, res);
 });
 
@@ -101,7 +105,6 @@ app.put('/api/auth/update-profile', async (req, res) => {
  * Change user password
  */
 app.put('/api/auth/change-password', async (req, res) => {
-  console.log('🔒 Change Password');
   await handleChangePassword(req, res);
 });
 
@@ -110,7 +113,6 @@ app.put('/api/auth/change-password', async (req, res) => {
  * Validate a referral code
  */
 app.post('/api/auth/validate-referral', async (req, res) => {
-  console.log('🎁 Validate Referral Code:', req.body.referralCode);
   await handleValidateReferral(req, res);
 });
 
@@ -119,7 +121,6 @@ app.post('/api/auth/validate-referral', async (req, res) => {
  * Get referral statistics
  */
 app.get('/api/auth/referral-stats', async (req, res) => {
-  console.log('📊 Get Referral Stats');
   await handleGetReferralStats(req, res);
 });
 
@@ -128,7 +129,6 @@ app.get('/api/auth/referral-stats', async (req, res) => {
  * Apply referral credits on first investment
  */
 app.post('/api/auth/apply-referral-credits', async (req, res) => {
-  console.log('💰 Apply Referral Credits:', req.body.userId);
   await handleApplyReferralCredits(req, res);
 });
 
@@ -702,6 +702,50 @@ app.post('/api/xero/pay-invoice', async (req, res) => {
       details: error.response?.body || error.stack,
     });
   }
+});
+
+// ============================================================================
+// AGREEMENT API ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/agreements/owners
+ * Get all users with role 'owner' (Admin only)
+ */
+app.get('/api/agreements/owners', async (req, res) => {
+  await handleGetAllOwners(req, res);
+});
+
+/**
+ * GET /api/agreements/:ownerId
+ * Get all agreements for a specific owner
+ */
+app.get('/api/agreements/:ownerId', async (req, res) => {
+  await handleGetAgreementsByOwner(req, res);
+});
+
+/**
+ * POST /api/agreements
+ * Create a new agreement (Admin only)
+ */
+app.post('/api/agreements', async (req, res) => {
+  await handleCreateAgreement(req, res);
+});
+
+/**
+ * PUT /api/agreements/:agreementId
+ * Update an agreement (Admin only)
+ */
+app.put('/api/agreements/:agreementId', async (req, res) => {
+  await handleUpdateAgreement(req, res);
+});
+
+/**
+ * POST /api/upload/agreement
+ * Upload agreement file to S3
+ */
+app.post('/api/upload/agreement', async (req, res) => {
+  await handleUploadAgreement(req, res);
 });
 
 // ============================================================================

@@ -122,7 +122,14 @@ class WildThingsAPI {
    * @returns {Promise<Object>} User profile data
    */
   async getProfile() {
-    return this.request('/api/auth/me');
+    const response = await this.request('/api/auth/me');
+
+    // Update stored user data with latest profile info
+    if (response.user) {
+      localStorage.setItem('user', JSON.stringify(response.user));
+    }
+
+    return response;
   }
 
   /**
@@ -441,6 +448,73 @@ class WildThingsAPI {
         Authorization: `Bearer ${this.authToken}`,
       },
       body: formData,
+    });
+  }
+
+  // Agreement methods
+  /**
+   * Get all owners (admin only)
+   * @returns {Promise<Object>} Response with list of owners
+   */
+  async getAllOwners() {
+    return this.request('/api/agreements/owners');
+  }
+
+  /**
+   * Get agreements for a specific owner
+   * @param {string} ownerId - Owner's user ID
+   * @returns {Promise<Object>} Response with list of agreements
+   */
+  async getAgreementsByOwner(ownerId) {
+    return this.request(`/api/agreements/${ownerId}`);
+  }
+
+  /**
+   * Create a new agreement (admin only)
+   * @param {Object} agreementData - Agreement data
+   * @returns {Promise<Object>} Response with created agreement
+   */
+  async createAgreement(agreementData) {
+    return this.request('/api/agreements', {
+      method: 'POST',
+      body: JSON.stringify(agreementData),
+    });
+  }
+
+  /**
+   * Update an agreement (admin only)
+   * @param {string} agreementId - Agreement ID
+   * @param {Object} updateData - Data to update
+   * @returns {Promise<Object>} Response with updated agreement
+   */
+  async updateAgreement(agreementId, updateData) {
+    return this.request(`/api/agreements/${agreementId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  }
+
+  /**
+   * Upload agreement file to S3 (admin only)
+   * @param {File} file - File to upload
+   * @returns {Promise<Object>} Response with S3 URL
+   */
+  async uploadAgreementFile(file) {
+    // Convert file to base64
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    return this.request('/api/upload/agreement', {
+      method: 'POST',
+      body: JSON.stringify({
+        file: base64,
+        fileName: file.name,
+        fileType: file.type,
+      }),
     });
   }
 

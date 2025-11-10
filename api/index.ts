@@ -20,6 +20,15 @@ import {
   handleGetReferralStats,
   handleApplyReferralCredits,
 } from './handlers/auth.js';
+import {
+  handleGetAllOwners,
+  handleGetAgreementsByOwner,
+  handleCreateAgreement,
+  handleUpdateAgreement,
+} from './handlers/agreements.js';
+import {
+  handleUploadAgreement,
+} from './handlers/upload.js';
 
 // Initialize Stripe
 const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
@@ -70,9 +79,6 @@ export default async function handler(
 
     // Get the path from the URL
     const path = req.url || '';
-
-    console.log(`📥 ${req.method} ${path}`);
-
     // Health check endpoint
     if (path === '/api' || path === '/api/' || path.includes('/health')) {
       return res.status(200).json({
@@ -134,6 +140,26 @@ export default async function handler(
       return await handleXeroGetInvoices(req, res);
     } else if (path.includes('/xero/pay-invoice') || path.includes('/xero-pay-invoice')) {
       return await handleXeroPayInvoice(req, res);
+    }
+    // Agreement routes - Order matters! Check specific routes before generic patterns
+    else if (path.includes('/agreements/owners')) {
+      return await handleGetAllOwners(req, res);
+    } else if (path.includes('/agreements') && req.method === 'POST') {
+      return await handleCreateAgreement(req, res);
+    } else if (path.match(/\/agreements\/[a-f0-9]{24}$/) && req.method === 'PUT') {
+      // PUT /api/agreements/:agreementId
+      const agreementId = path.split('/').pop();
+      (req as any).params = { agreementId };
+      return await handleUpdateAgreement(req, res);
+    } else if (path.match(/\/agreements\/[a-f0-9]{24}$/)) {
+      // GET /api/agreements/:ownerId
+      const ownerId = path.split('/').pop();
+      (req as any).params = { ownerId };
+      return await handleGetAgreementsByOwner(req, res);
+    }
+    // Upload routes
+    else if (path.includes('/upload/agreement')) {
+      return await handleUploadAgreement(req, res);
     } else {
       return res.status(404).json({
         success: false,

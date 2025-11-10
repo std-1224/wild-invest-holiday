@@ -57,6 +57,7 @@ export async function handleRegister(req, res) {
       email: email.toLowerCase(),
       password,
       referredBy: referralCode ? referralCode.toUpperCase() : null,
+      role: 'owner',
     });
 
     // Generate JWT token
@@ -71,6 +72,7 @@ export async function handleRegister(req, res) {
         name: user.name,
         email: user.email,
         createdAt: user.createdAt,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -132,6 +134,7 @@ export async function handleLogin(req, res) {
         name: user.name,
         email: user.email,
         createdAt: user.createdAt,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -284,6 +287,7 @@ export async function handleResetPassword(req, res) {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -335,6 +339,7 @@ export async function handleGetProfile(req, res) {
         name: user.name,
         email: user.email,
         referralCode: user.referralCode,
+        role: user.role,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -415,6 +420,7 @@ export async function handleUpdateProfile(req, res) {
         email: user.email,
         phone: user.phone,
         referralCode: user.referralCode,
+        role: user.role,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
