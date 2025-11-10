@@ -12,10 +12,12 @@ class WildThingsAPI {
   // Helper method to make HTTP requests
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+    // Always read the latest token from localStorage to ensure we have the current auth state
+    const currentToken = localStorage.getItem('authToken');
     const config = {
       headers: {
         'Content-Type': 'application/json',
-        ...(this.authToken && { Authorization: `Bearer ${this.authToken}` }),
+        ...(currentToken && { Authorization: `Bearer ${currentToken}` }),
         ...options.headers,
       },
       ...options,
@@ -23,7 +25,7 @@ class WildThingsAPI {
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
@@ -183,7 +185,8 @@ class WildThingsAPI {
    * @returns {boolean} True if user has a token
    */
   isAuthenticated() {
-    return !!this.authToken;
+    // Always read from localStorage to get the current auth state
+    return !!localStorage.getItem('authToken');
   }
 
   /**
