@@ -1114,8 +1114,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                           <h4 className="text-lg font-bold mb-4 text-[#0e181f]">
                             💰 Billing & Invoices
                           </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <button className="flex flex-col items-center text-center p-4 bg-white rounded-lg border-2 border-[#f5f5f5] hover:shadow-lg transition-all hover:border-aqua-400">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {/* <button className="flex flex-col items-center text-center p-4 bg-white rounded-lg border-2 border-[#f5f5f5] hover:shadow-lg transition-all hover:border-aqua-400">
                               <span className="text-3xl mb-2">🏢</span>
                               <p className="font-bold text-sm mb-1 text-[#0e181f]">
                                 Management
@@ -1138,7 +1138,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                               <span className="text-blue-600 text-xs font-medium">
                                 View →
                               </span>
-                            </button>
+                            </button> */}
                             <button className="flex flex-col items-center text-center p-4 bg-white rounded-lg border-2 border-[#f5f5f5] hover:shadow-lg transition-all hover:border-aqua-400">
                               <span className="text-3xl mb-2">🔧</span>
                               <p className="font-bold text-sm mb-1 text-[#0e181f]">
