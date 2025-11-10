@@ -37,7 +37,15 @@ const userSchema = new mongoose.Schema(
     },
     referralCode: {
       type: String,
+      unique: true,
+      sparse: true, // Allow null values but enforce uniqueness when set
       trim: true,
+      uppercase: true,
+    },
+    referredBy: {
+      type: String, // Stores the referral code used during signup
+      trim: true,
+      uppercase: true,
       default: null,
     },
     resetPasswordToken: {
@@ -53,6 +61,36 @@ const userSchema = new mongoose.Schema(
     timestamps: true, // Automatically adds createdAt and updatedAt
   }
 );
+
+// Generate unique referral code before saving (only for new users)
+userSchema.pre('save', async function (next) {
+  // Generate referral code for new users
+  if (this.isNew && !this.referralCode) {
+    try {
+      let isUnique = false;
+      let code = '';
+
+      // Keep generating until we get a unique code
+      while (!isUnique) {
+        // Generate 8-character alphanumeric code (e.g., KAL12345)
+        const randomPart = crypto.randomBytes(4).toString('hex').toUpperCase();
+        code = randomPart.substring(0, 8);
+
+        // Check if code already exists
+        const existing = await mongoose.models.User.findOne({ referralCode: code });
+        if (!existing) {
+          isUnique = true;
+        }
+      }
+
+      this.referralCode = code;
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  next();
+});
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {

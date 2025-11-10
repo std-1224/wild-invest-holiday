@@ -1,10 +1,11 @@
 /**
  * Authentication Handlers
- * Handles user registration, login, password reset
+ * Handles user registration, login, password reset, and referrals
  */
 import { connectDB } from '../lib/db.js';
 import { generateToken } from '../lib/jwt.js';
 import User from '../models/User.js';
+import ReferralTransaction from '../models/ReferralTransaction.js';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 
@@ -39,9 +40,15 @@ export async function handleRegister(req, res) {
     }
 
     // Validate referral code if provided
+    let referrerUser = null;
     if (referralCode) {
-      // TODO: Implement referral code validation logic
-      // For now, we'll just store it
+      referrerUser = await User.findOne({ referralCode: referralCode.toUpperCase() });
+      if (!referrerUser) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid referral code',
+        });
+      }
     }
 
     // Create user
@@ -49,7 +56,7 @@ export async function handleRegister(req, res) {
       name: `${firstName} ${lastName}`,
       email: email.toLowerCase(),
       password,
-      referralCode: referralCode || null,
+      referredBy: referralCode ? referralCode.toUpperCase() : null,
     });
 
     // Generate JWT token
@@ -494,6 +501,224 @@ export async function handleChangePassword(req, res) {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to change password',
+    });
+  }
+}
+
+/**
+ * POST /api/auth/validate-referral
+ * Validate a referral code
+ */
+export async function handleValidateReferral(req, res) {
+  try {
+    await connectDB();
+
+    const { referralCode } = req.body;
+
+    if (!referralCode) {
+      return res.status(400).json({
+        success: false,
+        valid: false,
+        message: 'Referral code is required',
+      });
+    }
+
+    // Find user with this referral code
+    const user = await User.findOne({ referralCode: referralCode.toUpperCase() });
+
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        valid: false,
+        message: 'Invalid referral code',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      valid: true,
+      message: 'Valid referral code',
+      referrerName: user.name,
+    });
+  } catch (error) {
+    console.error('❌ Validate referral error:', error);
+    res.status(500).json({
+      success: false,
+      valid: false,
+      error: error.message || 'Failed to validate referral code',
+    });
+  }
+}
+
+/**
+ * GET /api/auth/referral-stats
+ * Get referral statistics for the authenticated user
+ */
+export async function handleGetReferralStats(req, res) {
+  try {
+    await connectDB();
+
+    // Extract token from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated',
+      });
+    }
+
+    const token = authHeader.substring(7);
+
+    // Verify token
+    const { verifyToken } = await import('../lib/jwt.js');
+    let decoded;
+    try {
+      decoded = verifyToken(token);
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired token',
+      });
+    }
+
+    // Get user's referral code
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+      });
+    }
+
+    // Count how many users used this user's referral code
+    const referralCount = await User.countDocuments({
+      referredBy: user.referralCode
+    });
+
+    // Calculate total earned from referral transactions
+    const transactions = await ReferralTransaction.find({
+      toUserId: decoded.id,
+      status: 'completed',
+    });
+
+    const totalEarned = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+
+    res.status(200).json({
+      success: true,
+      referralCode: user.referralCode,
+      referralCount,
+      totalEarned,
+      transactions: transactions.map(tx => ({
+        amount: tx.amount,
+        type: tx.type,
+        createdAt: tx.createdAt,
+      })),
+    });
+  } catch (error) {
+    console.error('❌ Get referral stats error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get referral stats',
+    });
+  }
+}
+
+/**
+ * POST /api/auth/apply-referral-credits
+ * Apply referral credits when user makes first investment
+ * This should be called from the investment completion handler
+ */
+export async function handleApplyReferralCredits(req, res) {
+  try {
+    await connectDB();
+
+    const { userId, investmentId } = req.body;
+
+    if (!userId || !investmentId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID and Investment ID are required',
+      });
+    }
+
+    // Get the user who just invested
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+      });
+    }
+
+    // Check if user was referred by someone
+    if (!user.referredBy) {
+      return res.status(200).json({
+        success: true,
+        message: 'No referral code used',
+        creditsApplied: false,
+      });
+    }
+
+    // Find the referrer
+    const referrer = await User.findOne({ referralCode: user.referredBy });
+    if (!referrer) {
+      return res.status(404).json({
+        success: false,
+        error: 'Referrer not found',
+      });
+    }
+
+    // Check if credits already applied for this user
+    const existingCredits = await ReferralTransaction.findOne({
+      fromUserId: referrer._id,
+      toUserId: user._id,
+    });
+
+    if (existingCredits) {
+      return res.status(200).json({
+        success: true,
+        message: 'Referral credits already applied',
+        creditsApplied: false,
+      });
+    }
+
+    // Create two transactions: one for referrer, one for referee
+    const transactions = await ReferralTransaction.create([
+      {
+        fromUserId: user._id,
+        toUserId: referrer._id,
+        amount: 1000,
+        status: 'completed',
+        type: 'referrer_credit',
+        investmentId,
+        notes: `Referral credit for referring ${user.name}`,
+      },
+      {
+        fromUserId: referrer._id,
+        toUserId: user._id,
+        amount: 1000,
+        status: 'completed',
+        type: 'referee_credit',
+        investmentId,
+        notes: `Referral credit for using ${referrer.name}'s code`,
+      },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: 'Referral credits applied successfully',
+      creditsApplied: true,
+      transactions: transactions.map(tx => ({
+        id: tx._id,
+        amount: tx.amount,
+        type: tx.type,
+      })),
+    });
+  } catch (error) {
+    console.error('❌ Apply referral credits error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to apply referral credits',
     });
   }
 }

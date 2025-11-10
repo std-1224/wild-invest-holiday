@@ -179,6 +179,13 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   // Get referral code from current user
   const referralCode = currentUser?.referralCode || "";
 
+  // Referral stats state
+  const [referralStats, setReferralStats] = useState({
+    referralCount: 0,
+    totalEarned: 0,
+  });
+  const [loadingReferralStats, setLoadingReferralStats] = useState(false);
+
   const [floatingInvestmentData, setFloatingInvestmentData] =
     useState<FloatingInvestmentData>({
       selectedCabin: null,
@@ -198,6 +205,29 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   // Load payment methods from Stripe on mount
   useEffect(() => {
     loadPaymentMethods();
+  }, []);
+
+  // Load referral stats on mount
+  useEffect(() => {
+    const loadReferralStats = async () => {
+      setLoadingReferralStats(true);
+      try {
+        const stats = await apiClient.getReferralStats();
+        if (stats.success) {
+          setReferralStats({
+            referralCount: stats.referralCount || 0,
+            totalEarned: stats.totalEarned || 0,
+          });
+        }
+      } catch (error) {
+        console.error('Error loading referral stats:', error);
+        // Keep default values (0, 0)
+      } finally {
+        setLoadingReferralStats(false);
+      }
+    };
+
+    loadReferralStats();
   }, []);
 
   // Listen for Xero connection changes
@@ -888,8 +918,12 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                       <p className="text-xs text-gray-600 mb-1">
                         Referrals Made
                       </p>
-                      <p className="text-4xl font-bold text-[#ec874c]">0</p>
-                      <p className="text-xs text-gray-600 mt-1">$0 earned</p>
+                      <p className="text-4xl font-bold text-[#ec874c]">
+                        {loadingReferralStats ? "..." : referralStats.referralCount}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        ${loadingReferralStats ? "..." : referralStats.totalEarned.toLocaleString()} earned
+                      </p>
                     </div>
                   </div>
                 </div>

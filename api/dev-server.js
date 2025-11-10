@@ -19,6 +19,9 @@ import {
   handleGetProfile,
   handleUpdateProfile,
   handleChangePassword,
+  handleValidateReferral,
+  handleGetReferralStats,
+  handleApplyReferralCredits,
 } from './handlers/auth.js';
 
 const app = express();
@@ -100,6 +103,33 @@ app.put('/api/auth/update-profile', async (req, res) => {
 app.put('/api/auth/change-password', async (req, res) => {
   console.log('🔒 Change Password');
   await handleChangePassword(req, res);
+});
+
+/**
+ * POST /api/auth/validate-referral
+ * Validate a referral code
+ */
+app.post('/api/auth/validate-referral', async (req, res) => {
+  console.log('🎁 Validate Referral Code:', req.body.referralCode);
+  await handleValidateReferral(req, res);
+});
+
+/**
+ * GET /api/auth/referral-stats
+ * Get referral statistics
+ */
+app.get('/api/auth/referral-stats', async (req, res) => {
+  console.log('📊 Get Referral Stats');
+  await handleGetReferralStats(req, res);
+});
+
+/**
+ * POST /api/auth/apply-referral-credits
+ * Apply referral credits on first investment
+ */
+app.post('/api/auth/apply-referral-credits', async (req, res) => {
+  console.log('💰 Apply Referral Credits:', req.body.userId);
+  await handleApplyReferralCredits(req, res);
 });
 
 // ============================================================================

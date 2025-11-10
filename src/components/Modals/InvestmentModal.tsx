@@ -5,6 +5,7 @@ import {
   defaultNightlyRates,
   getExtrasForCabin,
 } from "../../config/mockCalculate";
+import apiClient from "../../api/client";
 
 type CabinType = "1BR" | "2BR";
 
@@ -43,6 +44,10 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
   setIsLoggedIn,
   setCurrentPage,
 }) => {
+  // Check if user is logged in
+  const currentUser = apiClient.getUser();
+  const isLoggedIn = apiClient.isAuthenticated();
+
   const [investmentData, setInvestmentData] = useState({
     firstName: "",
     lastName: "",
@@ -51,8 +56,35 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
     location: "Mansfield",
     password: "",
     confirmPassword: "",
+    referralCode: "",
     agreeToTerms: false,
   });
+
+  const [referralCodeValid, setReferralCodeValid] = useState<boolean | null>(
+    null
+  );
+  const [referralCodeValidating, setReferralCodeValidating] =
+    useState<boolean>(false);
+  const [referrerName, setReferrerName] = useState<string>("");
+
+  // Pre-fill form with user data if logged in (only when modal first opens)
+  useEffect(() => {
+    if (showInvestmentModal && isLoggedIn && currentUser) {
+      const nameParts = currentUser.name?.split(" ") || ["", ""];
+      setInvestmentData({
+        firstName: nameParts[0] || "",
+        lastName: nameParts.slice(1).join(" ") || "",
+        email: currentUser.email || "",
+        phone: currentUser.phone || "",
+        location: "Mansfield",
+        password: "",
+        confirmPassword: "",
+        referralCode: "",
+        agreeToTerms: false,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showInvestmentModal]);
 
   // Initialize selectedExtras from floatingInvestmentData
   const initializeExtras = () => {
@@ -77,6 +109,38 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
       setSelectedExtras(extrasObj);
     }
   }, [showInvestmentModal, floatingInvestmentData.selectedExtras]);
+
+  // Debounced referral code validation
+  useEffect(() => {
+    if (
+      !investmentData.referralCode ||
+      investmentData.referralCode.length < 6
+    ) {
+      setReferralCodeValid(null);
+      setReferrerName("");
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setReferralCodeValidating(true);
+      try {
+        const response = await apiClient.validateReferralCode(
+          investmentData.referralCode
+        );
+        setReferralCodeValid(response.valid);
+        if (response.valid && response.referrerName) {
+          setReferrerName(response.referrerName);
+        }
+      } catch (error) {
+        console.error("Error validating referral code:", error);
+        setReferralCodeValid(false);
+      } finally {
+        setReferralCodeValidating(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [investmentData.referralCode]);
 
   // Early return after hooks
   if (!showInvestmentModal || !selectedCabinForInvestment) {
@@ -125,7 +189,12 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
 
   // Calculate ROI impact for individual extras
   const calculateExtraROI = (extraId: string, cabinType: CabinType) => {
-    const baseROI = calculateROI(cabinType, 66, defaultNightlyRates[cabinType], []);
+    const baseROI = calculateROI(
+      cabinType,
+      66,
+      defaultNightlyRates[cabinType],
+      []
+    );
     const withExtraROI = calculateROI(
       cabinType,
       66,
@@ -141,18 +210,26 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
     };
   };
 
-  const handleInvestmentSubmit = (e: React.FormEvent) => {
+  const handleInvestmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Create investment account and process deposit
-    console.log("Investment Account Created:", investmentData);
+    console.log("Processing investment:", investmentData);
     console.log("Holding Deposit:", holdingDeposit);
     console.log("Balance Due:", balanceDue);
     console.log("Total Deposit:", calculateTotalDeposit());
     console.log("Cabin Type:", selectedCabinForInvestment);
 
-    // Simulate account creation and login
-    setIsLoggedIn(true);
+    // If not logged in, create account first
+    if (!isLoggedIn) {
+      console.log("Creating new investment account...");
+      // Simulate account creation and login
+      setIsLoggedIn(true);
+    } else {
+      console.log(
+        "User already logged in, processing investment for existing account"
+      );
+    }
+
     setShowInvestmentModal(false);
 
     // Add to user investments
@@ -169,6 +246,29 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
       nextPayment: "Build Complete (30%)",
     };
     setUserInvestments([...userInvestments, newInvestment]);
+
+    // Apply referral credits if referral code was used (only for first investment)
+    if (investmentData.referralCode && referralCodeValid) {
+      try {
+        const user = apiClient.getUser();
+        if (user?.id) {
+          const investmentId = `INV-${Date.now()}`;
+          const result = await apiClient.applyReferralCredits(
+            user.id,
+            investmentId
+          );
+          if (result.success && result.creditsApplied) {
+            console.log("✅ Referral credits applied successfully!");
+            alert(
+              "🎉 Congratulations! You and your referrer have each received $1,000 credit!"
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error applying referral credits:", error);
+        // Don't block the investment flow if referral credits fail
+      }
+    }
 
     // Redirect to investor portal
     setCurrentPage("investor-portal");
@@ -244,10 +344,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
               <p className="font-medium" style={{ color: colors.darkBlue }}>
                 Holding Deposit
               </p>
-              <p
-                className="text-xl font-bold"
-                style={{ color: colors.yellow }}
-              >
+              <p className="text-xl font-bold" style={{ color: colors.yellow }}>
                 ${holdingDeposit}
               </p>
             </div>
@@ -366,14 +463,16 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                         📦 Package Includes:
                       </p>
                       <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                        {(extra as any).items.map((item: string, idx: number) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span style={{ color: colors.aqua }}>✓</span>
-                            <span style={{ color: colors.darkBlue }}>
-                              {item}
-                            </span>
-                          </li>
-                        ))}
+                        {(extra as any).items.map(
+                          (item: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span style={{ color: colors.aqua }}>✓</span>
+                              <span style={{ color: colors.darkBlue }}>
+                                {item}
+                              </span>
+                            </li>
+                          )
+                        )}
                       </ul>
                     </div>
                   )}
@@ -383,91 +482,142 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
         </div>
 
         <form onSubmit={handleInvestmentSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label
-                className="block text-sm font-medium mb-2"
+          {/* Show profile summary if logged in, otherwise show editable fields */}
+          {isLoggedIn ? (
+            <div
+              className="mb-6 p-4 rounded-lg"
+              style={{
+                backgroundColor: `${colors.aqua}10`,
+                border: `1px solid ${colors.aqua}`,
+              }}
+            >
+              <h3
+                className="text-lg font-bold mb-3"
                 style={{ color: colors.darkBlue }}
               >
-                First Name
-              </label>
-              <input
-                type="text"
-                value={investmentData.firstName}
-                onChange={(e) =>
-                  setInvestmentData({
-                    ...investmentData,
-                    firstName: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
-                required
-              />
+                Your Profile
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-gray-600">Name:</span>{" "}
+                  <span
+                    className="font-medium"
+                    style={{ color: colors.darkBlue }}
+                  >
+                    {investmentData.firstName} {investmentData.lastName}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Email:</span>{" "}
+                  <span
+                    className="font-medium"
+                    style={{ color: colors.darkBlue }}
+                  >
+                    {investmentData.email}
+                  </span>
+                </div>
+                {investmentData.phone && (
+                  <div>
+                    <span className="text-gray-600">Phone:</span>{" "}
+                    <span
+                      className="font-medium"
+                      style={{ color: colors.darkBlue }}
+                    >
+                      {investmentData.phone}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <label
-                className="block text-sm font-medium mb-2"
-                style={{ color: colors.darkBlue }}
-              >
-                Last Name
-              </label>
-              <input
-                type="text"
-                value={investmentData.lastName}
-                onChange={(e) =>
-                  setInvestmentData({
-                    ...investmentData,
-                    lastName: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
-                required
-              />
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: colors.darkBlue }}
+                  >
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={investmentData.firstName}
+                    onChange={(e) =>
+                      setInvestmentData({
+                        ...investmentData,
+                        firstName: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: colors.darkBlue }}
+                  >
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={investmentData.lastName}
+                    onChange={(e) =>
+                      setInvestmentData({
+                        ...investmentData,
+                        lastName: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label
-                className="block text-sm font-medium mb-2"
-                style={{ color: colors.darkBlue }}
-              >
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={investmentData.email}
-                onChange={(e) =>
-                  setInvestmentData({
-                    ...investmentData,
-                    email: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
-                required
-              />
-            </div>
-            <div>
-              <label
-                className="block text-sm font-medium mb-2"
-                style={{ color: colors.darkBlue }}
-              >
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                value={investmentData.phone}
-                onChange={(e) =>
-                  setInvestmentData({
-                    ...investmentData,
-                    phone: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
-                required
-              />
-            </div>
-          </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: colors.darkBlue }}
+                  >
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={investmentData.email}
+                    onChange={(e) =>
+                      setInvestmentData({
+                        ...investmentData,
+                        email: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: colors.darkBlue }}
+                  >
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={investmentData.phone}
+                    onChange={(e) =>
+                      setInvestmentData({
+                        ...investmentData,
+                        phone: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                    required
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="mb-4">
             <label
@@ -492,7 +642,8 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
             </select>
           </div>
 
-          {/* Account Creation Fields */}
+          {/* Account Creation Fields - Only show if not logged in */}
+
           <div
             className="mb-6 p-4 rounded-lg"
             style={{
@@ -500,54 +651,116 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
               border: `1px solid ${colors.aqua}`,
             }}
           >
-            <h3
-              className="text-lg font-bold mb-4"
-              style={{ color: colors.darkBlue }}
-            >
-              Create Your Investment Account
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label
-                  className="block text-sm font-medium mb-2"
+            {!isLoggedIn && (
+              <>
+                <h3
+                  className="text-lg font-bold mb-4"
                   style={{ color: colors.darkBlue }}
                 >
-                  Password
-                </label>
+                  Create Your Investment Account
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label
+                      className="block text-sm font-medium mb-2"
+                      style={{ color: colors.darkBlue }}
+                    >
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={investmentData.password}
+                      onChange={(e) =>
+                        setInvestmentData({
+                          ...investmentData,
+                          password: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className="block text-sm font-medium mb-2"
+                      style={{ color: colors.darkBlue }}
+                    >
+                      Confirm Password
+                    </label>
+                    <input
+                      type="password"
+                      value={investmentData.confirmPassword}
+                      onChange={(e) =>
+                        setInvestmentData({
+                          ...investmentData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
+                      required
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Referral Code Field */}
+            <div className="mb-4">
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{ color: colors.darkBlue }}
+              >
+                Referral Code (Optional)
+              </label>
+              <div className="relative">
                 <input
-                  type="password"
-                  value={investmentData.password}
+                  type="text"
+                  value={investmentData.referralCode}
                   onChange={(e) =>
                     setInvestmentData({
                       ...investmentData,
-                      password: e.target.value,
+                      referralCode: e.target.value.toUpperCase(),
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
-                  required
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 pr-10 uppercase ${
+                    referralCodeValid === true
+                      ? "border-green-500 focus:ring-green-500"
+                      : referralCodeValid === false
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-300 focus:ring-[#86DBDF]"
+                  }`}
+                  placeholder="Enter referral code"
+                  maxLength={8}
                 />
+                {referralCodeValidating && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xl">
+                    ⏳
+                  </span>
+                )}
+                {!referralCodeValidating && referralCodeValid !== null && (
+                  <span className="absolute right-3 top-4/5 -translate-y-1/2 text-xl">
+                    {referralCodeValid ? "✅" : "❌"}
+                  </span>
+                )}
               </div>
-              <div>
-                <label
-                  className="block text-sm font-medium mb-2"
-                  style={{ color: colors.darkBlue }}
-                >
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  value={investmentData.confirmPassword}
-                  onChange={(e) =>
-                    setInvestmentData({
-                      ...investmentData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
-                  required
-                />
-              </div>
+              {referralCodeValid === true && referrerName && (
+                <p className="mt-1 text-sm text-green-600">
+                  ✓ Valid code from {referrerName}. You'll both get $1,000
+                  credit!
+                </p>
+              )}
+              {referralCodeValid === false && investmentData.referralCode && (
+                <p className="mt-1 text-sm text-red-600">
+                  ✗ Invalid referral code
+                </p>
+              )}
+              {!investmentData.referralCode && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Have a referral code? Get $1,000 credit when you invest!
+                </p>
+              )}
             </div>
+
             <div className="mb-4">
               <label className="flex items-center">
                 <input
@@ -569,7 +782,6 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
               </label>
             </div>
           </div>
-
           <div
             className="mb-6 p-6 rounded-xl shadow-lg"
             style={{
@@ -810,10 +1022,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
               {/* Wild Things Account Balance Deduction */}
               {isUsingAccountBalance && wildThingsBalance > 0 && (
                 <div className="flex justify-between border-t pt-2">
-                  <span
-                    className="font-medium"
-                    style={{ color: colors.aqua }}
-                  >
+                  <span className="font-medium" style={{ color: colors.aqua }}>
                     Less: Wild Things Account Balance:
                   </span>
                   <span

@@ -8,4 +8,7 @@ export function handleResetPassword(req: VercelRequest | any, res: VercelRespons
 export function handleGetProfile(req: VercelRequest | any, res: VercelResponse | any): Promise<void>;
 export function handleUpdateProfile(req: VercelRequest | any, res: VercelResponse | any): Promise<void>;
 export function handleChangePassword(req: VercelRequest | any, res: VercelResponse | any): Promise<void>;
+export function handleValidateReferral(req: VercelRequest | any, res: VercelResponse | any): Promise<void>;
+export function handleGetReferralStats(req: VercelRequest | any, res: VercelResponse | any): Promise<void>;
+export function handleApplyReferralCredits(req: VercelRequest | any, res: VercelResponse | any): Promise<void>;
 

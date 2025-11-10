@@ -16,6 +16,9 @@ import {
   handleGetProfile,
   handleUpdateProfile,
   handleChangePassword,
+  handleValidateReferral,
+  handleGetReferralStats,
+  handleApplyReferralCredits,
 } from './handlers/auth.js';
 
 // Initialize Stripe
@@ -99,6 +102,12 @@ export default async function handler(
       return await handleUpdateProfile(req, res);
     } else if (path.includes('/auth/change-password')) {
       return await handleChangePassword(req, res);
+    } else if (path.includes('/auth/validate-referral')) {
+      return await handleValidateReferral(req, res);
+    } else if (path.includes('/auth/referral-stats')) {
+      return await handleGetReferralStats(req, res);
+    } else if (path.includes('/auth/apply-referral-credits')) {
+      return await handleApplyReferralCredits(req, res);
     } else if (path.includes('/auth/me')) {
       return await handleGetProfile(req, res);
     }

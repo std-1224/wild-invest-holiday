@@ -188,6 +188,42 @@ class WildThingsAPI {
     return userStr ? JSON.parse(userStr) : null;
   }
 
+  // Referral methods
+  /**
+   * Validate a referral code
+   * @param {string} referralCode - Referral code to validate
+   * @returns {Promise<Object>} Validation result with valid flag and referrer name
+   */
+  async validateReferralCode(referralCode) {
+    return this.request('/api/auth/validate-referral', {
+      method: 'POST',
+      body: JSON.stringify({ referralCode }),
+    });
+  }
+
+  /**
+   * Get referral statistics for the current user
+   * @returns {Promise<Object>} Referral stats including code, count, and earnings
+   */
+  async getReferralStats() {
+    return this.request('/api/auth/referral-stats', {
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Apply referral credits when user makes first investment
+   * @param {string} userId - User ID who made the investment
+   * @param {string} investmentId - Investment ID
+   * @returns {Promise<Object>} Result of credit application
+   */
+  async applyReferralCredits(userId, investmentId) {
+    return this.request('/api/auth/apply-referral-credits', {
+      method: 'POST',
+      body: JSON.stringify({ userId, investmentId }),
+    });
+  }
+
   // Investment methods
   async createInvestment(investmentData) {
     return this.request('/investments', {
@@ -252,30 +288,7 @@ class WildThingsAPI {
     });
   }
 
-  // Referral system methods
-  async generateReferralCode() {
-    return this.request('/referrals/generate-code', {
-      method: 'POST',
-    });
-  }
 
-  async validateReferralCode(referralCode) {
-    return this.request('/referrals/validate-code', {
-      method: 'POST',
-      body: JSON.stringify({ referralCode }),
-    });
-  }
-
-  async getReferralStats() {
-    return this.request('/referrals/stats');
-  }
-
-  async applyReferralCredit(referralCode, referredUserId, investmentId) {
-    return this.request('/referrals/apply-credit', {
-      method: 'POST',
-      body: JSON.stringify({ referralCode, referredUserId, investmentId }),
-    });
-  }
 
   // Payout system methods
   async requestPayout(amount, bankDetails) {

@@ -45,6 +45,25 @@ export interface AuthResponse {
   error?: string;
 }
 
+export interface ReferralValidationResponse {
+  success: boolean;
+  valid: boolean;
+  message: string;
+  referrerName?: string;
+}
+
+export interface ReferralStatsResponse {
+  success: boolean;
+  referralCode: string;
+  referralCount: number;
+  totalEarned: number;
+  transactions: Array<{
+    amount: number;
+    type: string;
+    createdAt: string;
+  }>;
+}
+
 export class WildThingsAPI {
   constructor();
   
@@ -74,8 +93,9 @@ export class WildThingsAPI {
   resendVerificationCode(email: string): Promise<any>;
   
   // Referral methods
-  validateReferralCode(code: string): Promise<any>;
-  getReferralStats(): Promise<any>;
+  validateReferralCode(code: string): Promise<ReferralValidationResponse>;
+  getReferralStats(): Promise<ReferralStatsResponse>;
+  applyReferralCredits(userId: string, investmentId: string): Promise<{ success: boolean; message: string; creditsApplied: boolean }>;
 }
 
 declare const apiClient: WildThingsAPI;
