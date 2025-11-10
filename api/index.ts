@@ -29,6 +29,12 @@ import {
 import {
   handleUploadAgreement,
 } from '../server/handlers/upload.js';
+import {
+  handleSavePaymentMethod,
+  handleListPaymentMethods,
+  handleSetDefaultPaymentMethod,
+  handleRemovePaymentMethod,
+} from '../server/handlers/payment-methods.js';
 
 // Initialize Stripe
 const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
@@ -39,24 +45,9 @@ const stripe = new Stripe(stripeKey, {
   apiVersion: '2024-11-20.acacia' as any,
 });
 
-// In-memory storage (simulates DynamoDB)
+// In-memory storage for subscriptions (simulates DynamoDB)
 // Note: In serverless, this resets on each cold start
 // For production, you'd want to use a real database
-let mockPaymentMethods: any[] = [
-  // {
-  //   id: 'pm_1',
-  //   object: 'payment_method',
-  //   card: {
-  //     brand: 'visa',
-  //     last4: '4242',
-  //     exp_month: 12,
-  //     exp_year: 2025,
-  //   },
-  //   customer: MOCK_CUSTOMER_ID,
-  // },
-];
-
-let defaultPaymentMethodId = 'pm_1';
 let mockSubscriptions: any[] = [];
 
 /**
@@ -196,121 +187,7 @@ export default async function handler(
   }
 }
 
-/**
- * POST /api/stripe/save-payment-method
- * Save a payment method to a customer
- */
-async function handleSavePaymentMethod(req: VercelRequest, res: VercelResponse) {
-  const { paymentMethodId, customerId, setAsDefault } = req.body;
 
-  console.log('💳 Save Payment Method:', { paymentMethodId, customerId, setAsDefault });
-
-  try {
-    // Retrieve the payment method from Stripe to get real card details
-    const stripePaymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
-
-    // Check if payment method already exists
-    const existingIndex = mockPaymentMethods.findIndex(pm => pm.id === paymentMethodId);
-
-    if (existingIndex === -1) {
-      // Add new payment method with real Stripe data
-      const newPaymentMethod = {
-        id: stripePaymentMethod.id,
-        object: 'payment_method',
-        card: {
-          brand: stripePaymentMethod.card?.brand || 'unknown',
-          last4: stripePaymentMethod.card?.last4 || '0000',
-          exp_month: stripePaymentMethod.card?.exp_month || 0,
-          exp_year: stripePaymentMethod.card?.exp_year || 0,
-        },
-        customer: customerId,
-      };
-      mockPaymentMethods.push(newPaymentMethod);
-    }
-
-    if (setAsDefault) {
-      defaultPaymentMethodId = paymentMethodId;
-    }
-
-    return res.json({
-      success: true,
-      paymentMethod: mockPaymentMethods.find(pm => pm.id === paymentMethodId),
-    });
-  } catch (error: any) {
-    console.error('❌ Error saving payment method:', error.message);
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-}
-
-/**
- * POST /api/stripe/list-payment-methods
- * List all payment methods for a customer
- */
-async function handleListPaymentMethods(req: VercelRequest, res: VercelResponse) {
-  const { customerId } = req.body;
-
-  console.log('📋 List Payment Methods:', { customerId });
-
-  // Return payment methods in the same format as the dev-server
-  const paymentMethods = mockPaymentMethods.map(pm => ({
-    id: pm.id,
-    type: pm.type,
-    card: pm.card,
-    billing_details: pm.billing_details,
-    created: pm.created,
-    isDefault: pm.id === defaultPaymentMethodId,
-  }));
-
-  return res.json({
-    success: true,
-    paymentMethods,
-  });
-}
-
-/**
- * POST /api/stripe/set-default-payment-method
- * Set a payment method as default
- */
-async function handleSetDefaultPaymentMethod(req: VercelRequest, res: VercelResponse) {
-  const { paymentMethodId, customerId } = req.body;
-
-  console.log('⭐ Set Default Payment Method:', { paymentMethodId, customerId });
-
-  defaultPaymentMethodId = paymentMethodId;
-
-  return res.json({
-    success: true,
-    message: 'Default payment method updated',
-  });
-}
-
-/**
- * POST /api/stripe/remove-payment-method
- * Remove a payment method
- */
-async function handleRemovePaymentMethod(req: VercelRequest, res: VercelResponse) {
-  const { paymentMethodId } = req.body;
-
-  console.log('🗑️ Remove Payment Method:', { paymentMethodId });
-
-  const index = mockPaymentMethods.findIndex(pm => pm.id === paymentMethodId);
-  if (index !== -1) {
-    mockPaymentMethods.splice(index, 1);
-  }
-
-  // If this was the default, clear it
-  if (defaultPaymentMethodId === paymentMethodId) {
-    defaultPaymentMethodId = mockPaymentMethods.length > 0 ? mockPaymentMethods[0].id : '';
-  }
-
-  return res.json({
-    success: true,
-    message: 'Payment method removed',
-  });
-}
 
 /**
  * POST /api/stripe/create-payment-intent

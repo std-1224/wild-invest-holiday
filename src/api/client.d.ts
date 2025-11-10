@@ -104,6 +104,12 @@ export class WildThingsAPI {
   createAgreement(agreementData: any): Promise<{ success: boolean; message: string; agreement: any }>;
   updateAgreement(agreementId: string, updateData: any): Promise<{ success: boolean; message: string; agreement: any }>;
   uploadAgreementFile(file: File): Promise<{ success: boolean; message: string; url: string; fileName: string; fileSize: number; fileType: string }>;
+
+  // Payment method management
+  savePaymentMethod(paymentMethodId: string, setAsDefault?: boolean): Promise<{ success: boolean; paymentMethod: any }>;
+  listPaymentMethods(): Promise<{ success: boolean; paymentMethods: any[] }>;
+  setDefaultPaymentMethod(paymentMethodId: string): Promise<{ success: boolean; message: string }>;
+  removePaymentMethod(paymentMethodId: string): Promise<{ success: boolean; message: string }>;
 }
 
 declare const apiClient: WildThingsAPI;

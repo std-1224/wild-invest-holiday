@@ -32,6 +32,12 @@ import {
 import {
   handleUploadAgreement,
 } from '../server/handlers/upload.js';
+import {
+  handleSavePaymentMethod,
+  handleListPaymentMethods,
+  handleSetDefaultPaymentMethod,
+  handleRemovePaymentMethod,
+} from '../server/handlers/payment-methods.js';
 
 const app = express();
 const PORT = 3001;
@@ -41,11 +47,7 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increased limit for file uploads (base64)
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// In-memory storage (simulates DynamoDB)
-const mockPaymentMethods = [];
-
-let defaultPaymentMethodId = 'pm_1';
-
+// In-memory storage for subscriptions (simulates DynamoDB)
 const mockSubscriptions = [];
 
 // ============================================================================
@@ -163,129 +165,11 @@ app.post('/api/stripe/create-payment-intent', (req, res) => {
   });
 });
 
-/**
- * POST /api/stripe/save-payment-method
- * Save a payment method to a customer
- *
- * In production, this would call Stripe API to attach the payment method.
- * For development, we need to fetch the payment method details from Stripe
- * to get the real card information (brand, last4, expiry).
- */
-app.post('/api/stripe/save-payment-method', async (req, res) => {
-  const { paymentMethodId, customerId, setAsDefault } = req.body;
-
-  console.log('💳 Save Payment Method:', { paymentMethodId, customerId, setAsDefault });
-
-  try {
-    // In development, we need to fetch the real payment method from Stripe
-    // to get the actual card details (brand, last4, exp_month, exp_year)
-    const stripe = new Stripe(process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-
-    // Retrieve the payment method from Stripe
-    const stripePaymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
-
-    // Check if payment method already exists
-    const existingIndex = mockPaymentMethods.findIndex(pm => pm.id === paymentMethodId);
-
-    if (existingIndex === -1) {
-      // Add new payment method with real Stripe data
-      const newPaymentMethod = {
-        id: stripePaymentMethod.id,
-        object: 'payment_method',
-        card: {
-          brand: stripePaymentMethod.card?.brand || 'unknown',
-          last4: stripePaymentMethod.card?.last4 || '0000',
-          exp_month: stripePaymentMethod.card?.exp_month || 0,
-          exp_year: stripePaymentMethod.card?.exp_year || 0,
-        },
-        customer: customerId,
-      };
-      mockPaymentMethods.push(newPaymentMethod);
-    }
-
-    if (setAsDefault) {
-      defaultPaymentMethodId = paymentMethodId;
-    }
-
-    res.json({
-      success: true,
-      paymentMethod: mockPaymentMethods.find(pm => pm.id === paymentMethodId),
-    });
-  } catch (error) {
-    console.error('❌ Error saving payment method:', error.message);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
-
-/**
- * POST /api/stripe/list-payment-methods
- * List all payment methods for a customer
- */
-app.post('/api/stripe/list-payment-methods', (_req, res) => {
-  // customerId not used in mock implementation
-
-  // Return payment methods in the same format as the Lambda function
-  // with nested card object to match Stripe API structure
-  const paymentMethods = mockPaymentMethods.map(pm => ({
-    id: pm.id,
-    type: pm.type,
-    card: pm.card,
-    billing_details: pm.billing_details,
-    created: pm.created,
-    isDefault: pm.id === defaultPaymentMethodId,
-  }));
-
-  res.json({
-    success: true,
-    paymentMethods,
-    defaultPaymentMethodId,
-  });
-});
-
-/**
- * POST /api/stripe/set-default-payment-method
- * Set a payment method as default
- */
-app.post('/api/stripe/set-default-payment-method', (req, res) => {
-  const { paymentMethodId, customerId } = req.body;
-
-  console.log('⭐ Set Default Payment Method:', { paymentMethodId, customerId });
-
-  defaultPaymentMethodId = paymentMethodId;
-
-  res.json({
-    success: true,
-    message: 'Default payment method updated',
-  });
-});
-
-/**
- * POST /api/stripe/remove-payment-method
- * Remove a payment method
- */
-app.post('/api/stripe/remove-payment-method', (req, res) => {
-  const { paymentMethodId } = req.body;
-
-  console.log('🗑️  Remove Payment Method:', { paymentMethodId });
-
-  const index = mockPaymentMethods.findIndex(pm => pm.id === paymentMethodId);
-  if (index !== -1) {
-    mockPaymentMethods.splice(index, 1);
-    
-    // If removed payment method was default, set first remaining as default
-    if (defaultPaymentMethodId === paymentMethodId && mockPaymentMethods.length > 0) {
-      defaultPaymentMethodId = mockPaymentMethods[0].id;
-    }
-  }
-
-  res.json({
-    success: true,
-    message: 'Payment method removed',
-  });
-});
+// Stripe Payment Method Routes - Using MongoDB handlers
+app.post('/api/stripe/save-payment-method', handleSavePaymentMethod);
+app.post('/api/stripe/list-payment-methods', handleListPaymentMethods);
+app.post('/api/stripe/set-default-payment-method', handleSetDefaultPaymentMethod);
+app.post('/api/stripe/remove-payment-method', handleRemovePaymentMethod);
 
 /**
  * POST /api/stripe/create-subscription

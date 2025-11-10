@@ -320,10 +320,51 @@ class WildThingsAPI {
     });
   }
 
-  async savePaymentMethod(paymentMethodId, customerId) {
-    return this.request('/payments/save-method', {
+  /**
+   * Save a payment method (credit card) for the authenticated user
+   * @param {string} paymentMethodId - Stripe payment method ID
+   * @param {boolean} setAsDefault - Whether to set as default payment method
+   * @returns {Promise<Object>} Response with saved payment method
+   */
+  async savePaymentMethod(paymentMethodId, setAsDefault = false) {
+    return this.request('/api/stripe/save-payment-method', {
       method: 'POST',
-      body: JSON.stringify({ paymentMethodId, customerId }),
+      body: JSON.stringify({ paymentMethodId, setAsDefault }),
+    });
+  }
+
+  /**
+   * List all saved payment methods for the authenticated user
+   * @returns {Promise<Object>} Response with list of payment methods
+   */
+  async listPaymentMethods() {
+    return this.request('/api/stripe/list-payment-methods', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
+  /**
+   * Set a payment method as default
+   * @param {string} paymentMethodId - Stripe payment method ID
+   * @returns {Promise<Object>} Response confirming update
+   */
+  async setDefaultPaymentMethod(paymentMethodId) {
+    return this.request('/api/stripe/set-default-payment-method', {
+      method: 'POST',
+      body: JSON.stringify({ paymentMethodId }),
+    });
+  }
+
+  /**
+   * Remove a saved payment method
+   * @param {string} paymentMethodId - Stripe payment method ID
+   * @returns {Promise<Object>} Response confirming removal
+   */
+  async removePaymentMethod(paymentMethodId) {
+    return this.request('/api/stripe/remove-payment-method', {
+      method: 'POST',
+      body: JSON.stringify({ paymentMethodId }),
     });
   }
 

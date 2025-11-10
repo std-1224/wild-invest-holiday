@@ -20,7 +20,6 @@ import {
   PayoutRequestModal,
   PayoutData,
 } from "../components/Modals/PayoutRequestModal";
-import { stripeClient } from "../api/stripe";
 import { XeroInvoices } from "../components/XeroInvoices";
 import { XeroConnect } from "../components/XeroConnect";
 import apiClient from "../api/client";
@@ -203,10 +202,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   const [showAddPaymentMethodModal, setShowAddPaymentMethodModal] = useState(false);
   const [, setLoadingPaymentMethods] = useState(false);
 
-  // Mock Stripe Customer ID (in production, this would come from user authentication)
-  const stripeCustomerId = "cus_mock_customer_id";
-
-  // Load payment methods from Stripe on mount
+  // Load payment methods from database on mount
   useEffect(() => {
     loadPaymentMethods();
   }, []);
@@ -272,13 +268,10 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   const loadPaymentMethods = async () => {
     setLoadingPaymentMethods(true);
     try {
-      const response = await stripeClient.listPaymentMethods({
-        customerId: stripeCustomerId,
-        type: 'card',
-      });
+      const response = await apiClient.listPaymentMethods();
 
       if (response.success && response.paymentMethods) {
-        // Convert Stripe payment methods to UI format
+        // Convert payment methods to UI format
         const formattedMethods: PaymentMethod[] = response.paymentMethods.map((pm: any) => ({
           id: pm.id,
           last4: pm.card?.last4 || '0000',
@@ -291,11 +284,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
       }
     } catch (error) {
       console.error('Error loading payment methods:', error);
-      // Fallback to mock data if Stripe is not configured
-      setSavedPaymentMethods([
-        { id: "1", last4: "4242", brand: "Visa", expiry: "12/25", isDefault: true },
-        { id: "2", last4: "5555", brand: "Mastercard", expiry: "06/26", isDefault: false },
-      ]);
+      // Keep empty array on error
+      setSavedPaymentMethods([]);
     } finally {
       setLoadingPaymentMethods(false);
     }
@@ -307,15 +297,13 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
 
   const handleRemovePaymentMethod = async (id: string) => {
     try {
-      const response = await stripeClient.removePaymentMethod({
-        paymentMethodId: id,
-      });
+      const response = await apiClient.removePaymentMethod(id);
 
       if (response.success) {
         // Reload payment methods
         await loadPaymentMethods();
       } else {
-        alert(response.error || 'Failed to remove payment method');
+        alert(response.message || 'Failed to remove payment method');
       }
     } catch (error: any) {
       console.error('Error removing payment method:', error);
@@ -325,16 +313,13 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
 
   const handleSetDefaultPaymentMethod = async (id: string) => {
     try {
-      const response = await stripeClient.setDefaultPaymentMethod({
-        customerId: stripeCustomerId,
-        paymentMethodId: id,
-      });
+      const response = await apiClient.setDefaultPaymentMethod(id);
 
       if (response.success) {
         // Reload payment methods
         await loadPaymentMethods();
       } else {
-        alert(response.error || 'Failed to set default payment method');
+        alert(response.message || 'Failed to set default payment method');
       }
     } catch (error: any) {
       console.error('Error setting default payment method:', error);
@@ -1332,7 +1317,6 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
 
               {/* Xero Invoices - Pay with Saved Cards */}
               <XeroInvoices
-                customerId={stripeCustomerId}
                 xeroContactId="CONTACT-001" // In production, this would come from user profile
                 paymentMethods={savedPaymentMethods}
               />
@@ -2106,7 +2090,6 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
         onSuccess={() => {
           loadPaymentMethods();
         }}
-        customerId={stripeCustomerId}
       />
     </div>
   );

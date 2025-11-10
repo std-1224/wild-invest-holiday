@@ -11,6 +11,7 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 import { stripeClient } from '../api/stripe';
+import apiClient from '../api/client';
 
 // Wild Things brand colors
 const colors = {
@@ -27,7 +28,6 @@ interface AddPaymentMethodModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  customerId: string;
 }
 
 /**
@@ -36,8 +36,7 @@ interface AddPaymentMethodModalProps {
 const CardForm: React.FC<{
   onSuccess: () => void;
   onClose: () => void;
-  customerId: string;
-}> = ({ onSuccess, onClose, customerId }) => {
+}> = ({ onSuccess, onClose }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -78,15 +77,11 @@ const CardForm: React.FC<{
 
       console.log('Payment method created:', paymentMethod.id);
 
-      // Save payment method to customer
-      const response = await stripeClient.savePaymentMethod({
-        paymentMethodId: paymentMethod.id,
-        customerId,
-        setAsDefault,
-      });
+      // Save payment method to authenticated user's account
+      const response = await apiClient.savePaymentMethod(paymentMethod.id, setAsDefault);
 
       if (!response.success) {
-        throw new Error(response.error || 'Failed to save payment method');
+        throw new Error('Failed to save payment method');
       }
 
       console.log('Payment method saved successfully');
@@ -196,7 +191,6 @@ export const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  customerId,
 }) => {
   if (!isOpen) return null;
 
@@ -244,7 +238,7 @@ export const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
         {/* Content */}
         <div className="p-6">
           <Elements stripe={stripePromise} options={elementsOptions}>
-            <CardForm onSuccess={onSuccess} onClose={onClose} customerId={customerId} />
+            <CardForm onSuccess={onSuccess} onClose={onClose} />
           </Elements>
         </div>
       </div>

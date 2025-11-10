@@ -40,13 +40,11 @@ interface PaymentMethod {
 }
 
 interface XeroInvoicesProps {
-  customerId: string; // Stripe customer ID
   xeroContactId: string; // Xero contact ID
   paymentMethods: PaymentMethod[];
 }
 
 export const XeroInvoices: React.FC<XeroInvoicesProps> = ({
-  customerId,
   xeroContactId,
   paymentMethods,
 }) => {
