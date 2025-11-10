@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AddPaymentMethodModal } from "../AddPaymentMethodModal";
 
 interface Investment {
   cabinType: string;
@@ -19,7 +20,7 @@ interface BoostModalProps {
   onClose: () => void;
   selectedInvestment: Investment | null;
   savedPaymentMethods: PaymentMethod[];
-  onAddPaymentMethod: (method: PaymentMethod) => void;
+  onPaymentMethodsRefresh: () => void;
 }
 
 interface BoostTier {
@@ -35,7 +36,7 @@ export const BoostModal = ({
   onClose,
   selectedInvestment,
   savedPaymentMethods,
-  onAddPaymentMethod,
+  onPaymentMethodsRefresh,
 }: BoostModalProps) => {
   const [selectedBoostTier, setSelectedBoostTier] = useState<string | null>(
     null
@@ -43,14 +44,7 @@ export const BoostModal = ({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
     string | null
   >(savedPaymentMethods.find((pm) => pm.isDefault)?.id || null);
-  const [showAddCard, setShowAddCard] = useState(false);
-  const [newCardData, setNewCardData] = useState({
-    cardNumber: "",
-    expiry: "",
-    cvv: "",
-    name: "",
-    setAsDefault: false,
-  });
+  const [showAddPaymentMethodModal, setShowAddPaymentMethodModal] = useState(false);
 
   const boostTiers: BoostTier[] = [
     {
@@ -92,25 +86,10 @@ export const BoostModal = ({
     },
   ];
 
-  const handleAddCard = () => {
-    const newCard: PaymentMethod = {
-      id: (savedPaymentMethods.length + 1).toString(),
-      last4: newCardData.cardNumber.slice(-4),
-      brand: "Visa", // Would detect from card number in production
-      expiry: newCardData.expiry,
-      isDefault: newCardData.setAsDefault || savedPaymentMethods.length === 0,
-    };
-
-    onAddPaymentMethod(newCard);
-    setSelectedPaymentMethod(newCard.id);
-    setShowAddCard(false);
-    setNewCardData({
-      cardNumber: "",
-      expiry: "",
-      cvv: "",
-      name: "",
-      setAsDefault: false,
-    });
+  const handlePaymentMethodAdded = () => {
+    // Refresh payment methods list
+    onPaymentMethodsRefresh();
+    setShowAddPaymentMethodModal(false);
   };
 
   const handleBoostSubmit = () => {
@@ -240,131 +219,12 @@ export const BoostModal = ({
             </div>
 
             {/* Add New Card */}
-            {!showAddCard ? (
-              <button
-                onClick={() => setShowAddCard(true)}
-                className="w-full py-3 rounded-lg font-bold border-2 border-dashed transition-all hover:bg-gray-50 border-[#86dbdf] text-[#0e181f]"
-              >
-                + Add New Card
-              </button>
-            ) : (
-              <div className="bg-gray-50 rounded-lg p-4 border-2 border-[#86dbdf]">
-                <h4 className="font-bold mb-3 text-[#0e181f]">Add New Card</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1 text-[#0e181f]">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="1234 5678 9012 3456"
-                      value={newCardData.cardNumber}
-                      onChange={(e) =>
-                        setNewCardData({
-                          ...newCardData,
-                          cardNumber: e.target.value.replace(/\s/g, ""),
-                        })
-                      }
-                      maxLength={16}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-[#0e181f]">
-                        Expiry (MM/YY)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="12/25"
-                        value={newCardData.expiry}
-                        onChange={(e) =>
-                          setNewCardData({
-                            ...newCardData,
-                            expiry: e.target.value,
-                          })
-                        }
-                        maxLength={5}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-[#0e181f]">
-                        CVV
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="123"
-                        value={newCardData.cvv}
-                        onChange={(e) =>
-                          setNewCardData({
-                            ...newCardData,
-                            cvv: e.target.value,
-                          })
-                        }
-                        maxLength={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1 text-[#0e181f]">
-                      Cardholder Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="John Doe"
-                      value={newCardData.name}
-                      onChange={(e) =>
-                        setNewCardData({
-                          ...newCardData,
-                          name: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={newCardData.setAsDefault}
-                      onChange={(e) =>
-                        setNewCardData({
-                          ...newCardData,
-                          setAsDefault: e.target.checked,
-                        })
-                      }
-                    />
-                    <span className="text-sm text-[#0e181f]">
-                      Set as default payment method
-                    </span>
-                  </label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleAddCard}
-                      className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#86dbdf] text-[#0e181f]"
-                    >
-                      Save Card
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowAddCard(false);
-                        setNewCardData({
-                          cardNumber: "",
-                          expiry: "",
-                          cvv: "",
-                          name: "",
-                          setAsDefault: false,
-                        });
-                      }}
-                      className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#f5f5f5] text-[#0e181f]"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <button
+              onClick={() => setShowAddPaymentMethodModal(true)}
+              className="w-full py-3 rounded-lg font-bold border-2 border-dashed transition-all hover:bg-gray-50 border-[#86dbdf] text-[#0e181f]"
+            >
+              + Add New Card
+            </button>
           </div>
         )}
 
@@ -436,6 +296,13 @@ export const BoostModal = ({
           </button>
         </div>
       </div>
+
+      {/* Add Payment Method Modal */}
+      <AddPaymentMethodModal
+        isOpen={showAddPaymentMethodModal}
+        onClose={() => setShowAddPaymentMethodModal(false)}
+        onSuccess={handlePaymentMethodAdded}
+      />
     </div>
   );
 };

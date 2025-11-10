@@ -2009,14 +2009,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
           }}
           selectedInvestment={selectedInvestmentForBoost}
           savedPaymentMethods={savedPaymentMethods}
-          onAddPaymentMethod={(newCard) => {
-            if (newCard.isDefault) {
-              setSavedPaymentMethods(
-                savedPaymentMethods.map((pm) => ({ ...pm, isDefault: false }))
-              );
-            }
-            setSavedPaymentMethods([...savedPaymentMethods, newCard]);
-          }}
+          onPaymentMethodsRefresh={loadPaymentMethods}
         />
       </div>
 
