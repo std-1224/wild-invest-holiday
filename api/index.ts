@@ -77,14 +77,22 @@ export default async function handler(
       return res.status(200).end();
     }
 
-    // Get the path from the URL (remove query string)
-    const fullUrl = req.url || '';
-    const path = fullUrl.split('?')[0]; // Remove query parameters
+    // Get the path from the URL
+    // In Vercel, req.url might be just the function path, so we need to reconstruct from query params
+    let path = req.url || '';
+
+    // If Vercel added the path as a query parameter, use that instead
+    if (req.query.path && typeof req.query.path === 'string') {
+      path = `/api/${req.query.path}`;
+    } else {
+      // Otherwise, clean the URL by removing query string
+      path = path.split('?')[0];
+    }
 
     // Debug logging
     console.log('📍 Request:', {
       method: req.method,
-      fullUrl,
+      url: req.url,
       path,
       query: req.query,
     });
