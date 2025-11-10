@@ -7,11 +7,13 @@
       "maxDuration": 10
     }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/index"
-    },
+      "src": "/api/(.*)",
+      "dest": "/api/index"
+    }
+  ],
+  "rewrites": [
     {
       "source": "/((?!api).*)",
       "destination": "/index.html"

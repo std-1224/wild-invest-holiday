@@ -77,8 +77,18 @@ export default async function handler(
       return res.status(200).end();
     }
 
-    // Get the path from the URL
-    const path = req.url || '';
+    // Get the path from the URL (remove query string)
+    const fullUrl = req.url || '';
+    const path = fullUrl.split('?')[0]; // Remove query parameters
+
+    // Debug logging
+    console.log('📍 Request:', {
+      method: req.method,
+      fullUrl,
+      path,
+      query: req.query,
+    });
+
     // Health check endpoint
     if (path === '/api' || path === '/api/' || path.includes('/health')) {
       return res.status(200).json({
