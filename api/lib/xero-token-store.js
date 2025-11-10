@@ -5,7 +5,6 @@
 let tokenSet = null;
 export function saveTokenSet(tokens) {
     tokenSet = tokens;
-    console.log('✅ Xero tokens saved to memory');
 }
 export function getTokenSet() {
     return tokenSet;
