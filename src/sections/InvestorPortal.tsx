@@ -1312,8 +1312,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 availableBalance={wildThingsAccountBalance}
               />
 
-              {/* Xero Connection */}
-              {/* <XeroConnect key={xeroRefreshKey} /> */}
+              {/* Xero Connection - Shows info for owners, connection UI for admins */}
+              <XeroConnect key={xeroRefreshKey} />
 
               {/* Xero Invoices - Pay with Saved Cards */}
               <XeroInvoices

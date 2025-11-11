@@ -47,13 +47,25 @@ async function getAuthenticatedUser(req) {
 }
 
 /**
- * Helper: Get or refresh Xero access token
+ * Helper: Get admin's Xero client (centralized Xero for all owners)
+ * Only the admin user has Xero connected, and all owner invoices are created in admin's Xero
  */
-async function getValidXeroClient(userId) {
-  const connection = await XeroConnection.findByUserId(userId);
+async function getAdminXeroClient() {
+  // Find the single admin user
+  const adminUser = await User.findOne({ role: 'admin' });
+
+  if (!adminUser) {
+    console.log('⚠️ No admin user found in system');
+    return null;
+  }
+
+  console.log('✅ Found admin user:', adminUser.email);
+
+  // Get admin's Xero connection
+  const connection = await XeroConnection.findByUserId(adminUser._id);
 
   if (!connection) {
-    console.log('⚠️ No Xero connection found for user');
+    console.log('⚠️ Admin has not connected Xero yet');
     return null;
   }
 
@@ -355,20 +367,23 @@ export async function handleActivateBoost(req, res) {
       });
     }
     
-    // Step 2: Try to create invoice in Xero (optional)
+    // Step 2: Try to create invoice in admin's Xero (optional)
     let xeroInvoiceId = null;
     let xeroContactId = null;
-    
+
     try {
-      const xeroClient = await getValidXeroClient(user._id);
-      
+      // Get admin's Xero client (centralized for all owners)
+      const xeroClient = await getAdminXeroClient();
+
       if (xeroClient) {
         const { xero, connection } = xeroClient;
-        
-        // Get or create Xero contact
+
+        console.log('📝 Creating invoice in admin\'s Xero for owner:', user.email);
+
+        // Create contact in admin's Xero for this owner
         xeroContactId = await getOrCreateXeroContact(xero, connection.tenantId, user);
-        
-        // Create invoice in Xero
+
+        // Create invoice in admin's Xero
         xeroInvoiceId = await createXeroInvoice(
           xero,
           connection.tenantId,
@@ -376,10 +391,10 @@ export async function handleActivateBoost(req, res) {
           { investmentId, cabinType, location, tierName, monthlyPrice },
           paymentIntent.id
         );
-        
-        console.log('✅ Xero invoice created:', xeroInvoiceId);
+
+        console.log('✅ Xero invoice created in admin\'s account:', xeroInvoiceId);
       } else {
-        console.log('⚠️ Xero not connected, skipping invoice creation');
+        console.log('⚠️ Admin Xero not connected, skipping invoice creation');
       }
     } catch (xeroError) {
       const errorMsg = xeroError?.message || xeroError?.toString() || 'Unknown error';

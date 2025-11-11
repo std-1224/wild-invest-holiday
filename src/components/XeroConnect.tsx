@@ -5,6 +5,8 @@ import apiClient from "../api/client";
  * XeroConnect Component
  * Provides a button to connect to Xero via OAuth
  * Now uses database-backed authentication
+ *
+ * IMPORTANT: Only admin users can connect Xero (centralized admin Xero for all owners)
  */
 export const XeroConnect: React.FC = () => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -12,6 +14,7 @@ export const XeroConnect: React.FC = () => {
   const [tenantName, setTenantName] = useState<string>("");
   const [connectedAt, setConnectedAt] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string>("");
 
   // Check connection status from API
   const checkConnectionStatus = async () => {
@@ -48,6 +51,14 @@ export const XeroConnect: React.FC = () => {
     }
   };
 
+  // Check user role on mount
+  useEffect(() => {
+    const user = apiClient.getUser();
+    if (user && user.role) {
+      setUserRole(user.role);
+    }
+  }, []);
+
   // Check connection status on mount and when window gains focus
   useEffect(() => {
     // Check on mount
@@ -71,6 +82,12 @@ export const XeroConnect: React.FC = () => {
 
     if (!user || !user.id) {
       alert('Please log in first to connect Xero');
+      return;
+    }
+
+    // Only admin can connect Xero
+    if (user.role !== 'admin') {
+      alert('Only admin users can connect Xero. Owner invoices are managed through the admin\'s Xero account.');
       return;
     }
 
@@ -116,7 +133,46 @@ export const XeroConnect: React.FC = () => {
     });
   };
 
-  // If connected, show connected state
+  // If user is owner (not admin), show info message
+  if (userRole === 'owner') {
+    return (
+      <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-200">
+        <div className="flex items-start gap-4">
+          {/* Xero Logo */}
+          <div className="flex-shrink-0">
+            <img
+              src={`/xero.png`}
+              alt={"xero-logo"}
+              className="w-12 h-8 object-contain"
+            />
+          </div>
+
+          {/* Content */}
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">
+              Xero Integration
+            </h3>
+            <p className="text-sm text-blue-800 mb-3">
+              Your invoices are automatically managed through Wild Things' centralized Xero accounting system.
+            </p>
+            <div className="bg-white border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                ℹ️ How it works:
+              </h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• When you activate a marketing boost, an invoice is automatically created</li>
+                <li>• Your payment is processed via Stripe and recorded in our accounting system</li>
+                <li>• All invoices are managed by the Wild Things admin team</li>
+                <li>• You don't need to connect your own Xero account</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If connected, show connected state (admin only)
   if (isConnected) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 border border-green-200">
