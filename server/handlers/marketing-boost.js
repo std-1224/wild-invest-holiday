@@ -385,6 +385,7 @@ export async function handleActivateBoost(req, res) {
     // Step 2: Try to create invoice in admin's Xero (optional)
     let xeroInvoiceId = null;
     let xeroContactId = null;
+    let xeroDebugInfo = null; // For debugging in production
 
     console.log('📋 Step 2: Attempting to create Xero invoice...');
 
@@ -396,10 +397,12 @@ export async function handleActivateBoost(req, res) {
         const { xero, connection } = xeroClient;
 
         console.log('📝 Creating invoice in admin\'s Xero for owner:', user.email);
+        xeroDebugInfo = { status: 'admin_xero_found', tenantId: connection.tenantId };
 
         // Create contact in admin's Xero for this owner
         xeroContactId = await getOrCreateXeroContact(xero, connection.tenantId, user);
         console.log('✅ Xero contact ID:', xeroContactId);
+        xeroDebugInfo.contactId = xeroContactId;
 
         // Create invoice in admin's Xero
         xeroInvoiceId = await createXeroInvoice(
@@ -411,9 +414,12 @@ export async function handleActivateBoost(req, res) {
         );
 
         console.log('✅ Xero invoice created in admin\'s account:', xeroInvoiceId);
+        xeroDebugInfo.invoiceId = xeroInvoiceId;
+        xeroDebugInfo.status = 'success';
       } else {
         console.log('⚠️ Admin Xero not connected, skipping invoice creation');
         console.log('💡 This is non-critical - boost will still be activated');
+        xeroDebugInfo = { status: 'admin_xero_not_found', message: 'No admin user or admin has not connected Xero' };
       }
     } catch (xeroError) {
       const errorMsg = xeroError?.message || xeroError?.toString() || 'Unknown error';
@@ -422,6 +428,11 @@ export async function handleActivateBoost(req, res) {
         console.error('Xero API error details:', JSON.stringify(xeroError.response.body, null, 2));
       }
       console.error('Full error stack:', xeroError);
+      xeroDebugInfo = {
+        status: 'error',
+        error: errorMsg,
+        stack: xeroError?.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
+      };
       // Continue even if Xero fails
     }
     
@@ -467,6 +478,7 @@ export async function handleActivateBoost(req, res) {
         invoiceId: xeroInvoiceId,
         contactId: xeroContactId,
       } : null,
+      xeroDebug: xeroDebugInfo, // Temporary debug info for production troubleshooting
       message: 'Marketing boost activated successfully!',
     });
   } catch (error) {
