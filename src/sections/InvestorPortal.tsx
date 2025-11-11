@@ -1502,7 +1502,9 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               />
 
               {/* Xero Connection - Shows info for owners, connection UI for admins */}
-              <XeroConnect key={xeroRefreshKey} />
+              {currentUser?.role === "admin" && (
+                <XeroConnect key={xeroRefreshKey} />
+              )}
 
               {/* Xero Invoices - Pay with Saved Cards */}
               {/* xeroContactId is optional - backend will use user's xeroContactId from profile */}
