@@ -89,7 +89,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
 
       if (response.success && response.validated) {
         console.log('✅ Xero connection validated successfully');
-        console.log(`🏢 Organization: ${response.organization?.name}`);
+        console.log(`🏢 Tenant: ${response.tenantName}`);
         if (response.tokenExpiresAt) {
           console.log(`⏰ Token expires: ${new Date(response.tokenExpiresAt).toLocaleString()}`);
         }

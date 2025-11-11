@@ -114,7 +114,7 @@ export class WildThingsAPI {
 
   // Xero integration
   getXeroStatus(): Promise<{ success: boolean; connected: boolean; tenantId?: string; tenantName?: string; connectedAt?: string; tokenExpiresAt?: string; needsRefresh?: boolean }>;
-  validateXeroConnection(): Promise<{ success: boolean; connected: boolean; validated: boolean; organization?: { name: string; id: string; countryCode: string }; tokenExpiresAt?: string; message?: string; requiresReconnect?: boolean }>;
+  validateXeroConnection(): Promise<{ success: boolean; connected: boolean; validated: boolean; tenantId?: string; tenantName?: string; tokenExpiresAt?: string; message?: string; requiresReconnect?: boolean }>;
   disconnectXero(): Promise<{ success: boolean; message: string }>;
   getXeroInvoices(contactId?: string): Promise<{ success: boolean; invoices: any[]; count: number }>;
   recordXeroPayment(invoiceId: string, amount: number, paymentDate?: string, reference?: string): Promise<{ success: boolean; payment: any }>;

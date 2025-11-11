@@ -243,34 +243,42 @@ export async function handleValidateXeroConnection(req, res) {
 
     console.log(`✅ Xero connection found`);
     console.log(`🏢 Tenant: ${connection.tenantName}`);
+    console.log(`🆔 Tenant ID: ${connection.tenantId}`);
     console.log(`⏰ Token expires: ${connection.tokenExpiresAt}`);
     console.log(`🔄 Needs refresh: ${connection.needsRefresh()}`);
 
     // Get valid Xero client (this will auto-refresh tokens if needed)
-    const { xero, tenantId } = await getValidXeroClient(user._id);
+    const { xero, connection: updatedConnection } = await getValidXeroClient(user._id);
 
     // Make a lightweight API call to validate the connection
-    // We'll just get the organization info - it's fast and doesn't return much data
+    // We'll use getInvoices with a limit of 1 - it's fast and proves the connection works
     console.log('📡 Making test API call to Xero...');
-    const response = await xero.accountingApi.getOrganisations(tenantId);
+    console.log(`🆔 Using tenant ID: ${updatedConnection.tenantId}`);
 
-    if (response && response.body && response.body.organisations && response.body.organisations.length > 0) {
-      const org = response.body.organisations[0];
+    const response = await xero.accountingApi.getInvoices(
+      updatedConnection.tenantId,
+      undefined, // ifModifiedSince
+      undefined, // where
+      undefined, // order
+      undefined, // IDs
+      undefined, // invoiceNumbers
+      undefined, // contactIDs
+      undefined, // statuses
+      1 // page size - only get 1 invoice to keep it lightweight
+    );
+
+    if (response && response.body) {
       console.log(`✅ Xero API call successful`);
-      console.log(`🏢 Organization: ${org.name}`);
-      console.log(`🆔 Organization ID: ${org.organisationID}`);
+      console.log(`📊 API response received (${response.body.invoices?.length || 0} invoices)`);
       console.log('========================================\n');
 
       return res.json({
         success: true,
         connected: true,
         validated: true,
-        organization: {
-          name: org.name,
-          id: org.organisationID,
-          countryCode: org.countryCode,
-        },
-        tokenExpiresAt: connection.tokenExpiresAt,
+        tenantId: updatedConnection.tenantId,
+        tenantName: updatedConnection.tenantName,
+        tokenExpiresAt: updatedConnection.tokenExpiresAt,
         message: 'Xero connection validated successfully',
       });
     } else {
