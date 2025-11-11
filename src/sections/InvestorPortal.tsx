@@ -42,6 +42,7 @@ interface Investment {
   nightsBooked: number;
   roi: number;
   bookedDates: string[];
+  purchasedExtras?: string[]; // Array of extra IDs that have been purchased
 }
 
 interface FloatingInvestmentData {
@@ -111,6 +112,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
         "2024-12-28",
         "2024-12-29",
       ],
+      purchasedExtras: ["furniture", "linen"], // Already purchased extras
     },
     {
       id: 2,
@@ -138,6 +140,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
         "2024-12-30",
         "2024-12-31",
       ],
+      purchasedExtras: ["solar"], // Already purchased extras
     },
   ];
 
@@ -178,6 +181,12 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   const [showBoostModal, setShowBoostModal] = useState(false);
   const [selectedInvestmentForBoost, setSelectedInvestmentForBoost] =
     useState<Investment | null>(null);
+
+  // Extras purchase state
+  const [selectedExtrasForPurchase, setSelectedExtrasForPurchase] = useState<{
+    [investmentId: number]: string[];
+  }>({});
+  const [purchasingExtras, setPurchasingExtras] = useState(false);
 
   // Get referral code from current user
   const referralCode = currentUser?.referralCode || "";
@@ -1158,6 +1167,236 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                             </div>
                           </div>
                         </div>
+
+                        {/* Cabin Extras Section */}
+                        {(() => {
+                          const cabinExtras = getExtrasForCabin(investment.cabinType);
+                          const purchasedExtras = investment.purchasedExtras || [];
+                          const availableExtras = cabinExtras.filter(
+                            (extra) => !purchasedExtras.includes(extra.id)
+                          );
+                          const selectedForPurchase = selectedExtrasForPurchase[investment.id] || [];
+
+                          // Calculate ROI impact for an extra
+                          const calculateExtraROI = (extraId: string) => {
+                            const baseROI = calculateROI(
+                              investment.cabinType,
+                              investment.occupancyRate,
+                              investment.averagePerNight,
+                              purchasedExtras
+                            );
+                            const withExtraROI = calculateROI(
+                              investment.cabinType,
+                              investment.occupancyRate,
+                              investment.averagePerNight,
+                              [...purchasedExtras, extraId]
+                            );
+
+                            return {
+                              baseROI: baseROI.roi,
+                              withExtraROI: withExtraROI.roi,
+                              roiBoost: withExtraROI.roi - baseROI.roi,
+                              annualProfitIncrease: withExtraROI.annualProfit - baseROI.annualProfit,
+                            };
+                          };
+
+                          const toggleExtraSelection = (extraId: string) => {
+                            setSelectedExtrasForPurchase((prev) => {
+                              const current = prev[investment.id] || [];
+                              const isSelected = current.includes(extraId);
+                              return {
+                                ...prev,
+                                [investment.id]: isSelected
+                                  ? current.filter((id) => id !== extraId)
+                                  : [...current, extraId],
+                              };
+                            });
+                          };
+
+                          const handlePurchaseExtras = async () => {
+                            if (selectedForPurchase.length === 0) return;
+
+                            setPurchasingExtras(true);
+                            try {
+                              // TODO: Implement API call to purchase extras
+                              // await apiClient.purchaseCabinExtras(investment.id, selectedForPurchase);
+
+                              // For now, just update the local state
+                              alert(
+                                `Purchase initiated for ${selectedForPurchase.length} extra(s)!\n\nThis will be processed through your payment method.`
+                              );
+
+                              // Clear selection
+                              setSelectedExtrasForPurchase((prev) => ({
+                                ...prev,
+                                [investment.id]: [],
+                              }));
+                            } catch (error) {
+                              console.error("Error purchasing extras:", error);
+                              alert("Failed to purchase extras. Please try again.");
+                            } finally {
+                              setPurchasingExtras(false);
+                            }
+                          };
+
+                          const totalSelectedCost = selectedForPurchase.reduce((total, extraId) => {
+                            const extra = cabinExtras.find((e) => e.id === extraId);
+                            return total + (extra?.price || 0);
+                          }, 0);
+
+                          return (
+                            <div className="bg-gradient-to-r from-[#ffcf00]/10 to-[#86dbdf]/10 rounded-lg p-4 sm:p-6 border-2 border-[#86dbdf] mt-4">
+                              <h4 className="text-lg font-bold mb-4 text-[#0e181f]">
+                                ✨ Cabin Extras & Upgrades
+                              </h4>
+
+                              {/* Purchased Extras */}
+                              {purchasedExtras.length > 0 && (
+                                <div className="mb-6">
+                                  <h5 className="text-sm font-bold mb-3 text-[#0e181f] flex items-center gap-2">
+                                    <span className="text-green-600">✓</span> Purchased Extras
+                                  </h5>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {purchasedExtras.map((extraId) => {
+                                      const extra = cabinExtras.find((e) => e.id === extraId);
+                                      if (!extra) return null;
+
+                                      return (
+                                        <div
+                                          key={extraId}
+                                          className="bg-white rounded-lg p-3 border-2 border-green-200"
+                                        >
+                                          <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                              <p className="font-bold text-sm text-[#0e181f]">
+                                                {extra.name}
+                                              </p>
+                                              <p className="text-xs text-gray-600 mt-1">
+                                                {extra.impactDescription}
+                                              </p>
+                                            </div>
+                                            <span className="text-green-600 text-xl ml-2">✓</span>
+                                          </div>
+                                          <div className="mt-2 pt-2 border-t border-gray-200">
+                                            <p className="text-xs text-gray-600">
+                                              Purchase Price: <span className="font-bold">${extra.price.toLocaleString()}</span>
+                                            </p>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Available Extras */}
+                              {availableExtras.length > 0 ? (
+                                <div>
+                                  <h5 className="text-sm font-bold mb-3 text-[#0e181f]">
+                                    🛒 Available for Purchase
+                                  </h5>
+                                  <div className="space-y-3 mb-4">
+                                    {availableExtras.map((extra) => {
+                                      const roiData = calculateExtraROI(extra.id);
+                                      const isSelected = selectedForPurchase.includes(extra.id);
+
+                                      return (
+                                        <div
+                                          key={extra.id}
+                                          onClick={() => toggleExtraSelection(extra.id)}
+                                          className={`bg-white rounded-lg p-4 border-2 cursor-pointer transition-all hover:shadow-md ${
+                                            isSelected
+                                              ? "border-[#ffcf00] bg-[#ffcf00]/5"
+                                              : "border-gray-200 hover:border-[#86dbdf]"
+                                          }`}
+                                        >
+                                          <div className="flex items-start gap-3">
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() => toggleExtraSelection(extra.id)}
+                                              className="w-5 h-5 mt-1"
+                                              style={{ accentColor: "#ffcf00" }}
+                                            />
+                                            <div className="flex-1">
+                                              <div className="flex items-start justify-between mb-2">
+                                                <div>
+                                                  <p className="font-bold text-[#0e181f]">
+                                                    {extra.name}
+                                                  </p>
+                                                  <p className="text-sm text-gray-600 mt-1">
+                                                    {extra.impactDescription}
+                                                  </p>
+                                                </div>
+                                                <div className="text-right ml-4">
+                                                  <p className="text-lg font-bold text-[#0e181f]">
+                                                    ${extra.price.toLocaleString()}
+                                                  </p>
+                                                  <p className="text-xs text-gray-600">+ GST</p>
+                                                </div>
+                                              </div>
+
+                                              {/* ROI Impact */}
+                                              <div className="bg-gradient-to-r from-[#86dbdf]/10 to-[#ffcf00]/10 rounded-lg p-3 mt-2">
+                                                <div className="grid grid-cols-2 gap-3 text-center">
+                                                  <div>
+                                                    <p className="text-xs text-gray-600 mb-1">
+                                                      ROI Boost
+                                                    </p>
+                                                    <p className="text-lg font-bold text-[#ec874c]">
+                                                      +{roiData.roiBoost.toFixed(2)}%
+                                                    </p>
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-xs text-gray-600 mb-1">
+                                                      Annual Profit Increase
+                                                    </p>
+                                                    <p className="text-lg font-bold text-[#86dbdf]">
+                                                      +${roiData.annualProfitIncrease.toLocaleString()}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+
+                                  {/* Purchase Button */}
+                                  {selectedForPurchase.length > 0 && (
+                                    <div className="bg-white rounded-lg p-4 border-2 border-[#ffcf00]">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <div>
+                                          <p className="font-bold text-[#0e181f]">
+                                            {selectedForPurchase.length} Extra{selectedForPurchase.length !== 1 ? "s" : ""} Selected
+                                          </p>
+                                          <p className="text-sm text-gray-600">
+                                            Total: ${totalSelectedCost.toLocaleString()} + GST
+                                          </p>
+                                        </div>
+                                        <button
+                                          onClick={handlePurchaseExtras}
+                                          disabled={purchasingExtras}
+                                          className="px-6 py-3 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f] disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                          {purchasingExtras ? "Processing..." : "Purchase Now"}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="text-center py-6 bg-white rounded-lg border-2 border-dashed border-gray-300">
+                                  <p className="text-gray-600">
+                                    🎉 All extras purchased for this cabin!
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   ))}
