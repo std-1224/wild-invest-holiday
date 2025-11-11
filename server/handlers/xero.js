@@ -62,45 +62,100 @@ async function getValidXeroClient(userId) {
     redirectUris: [redirectUri],
     scopes: 'openid profile email accounting.transactions accounting.contacts accounting.settings offline_access'.split(' '),
   });
-  
+
+  // ✅ Initialize the OAuth client (required for token refresh to work)
+  await xero.initialize();
+
+  // 🔍 DEBUG: Decrypt and validate tokens
+  const decryptedAccessToken = connection.getAccessToken();
+  const decryptedRefreshToken = connection.getRefreshToken();
+
+  console.log('\n🔍 ===== XERO TOKEN DEBUG INFO =====');
+  console.log('📅 Token expires at:', connection.tokenExpiresAt);
+  console.log('📅 Current time:', new Date());
+  console.log('⏰ Time until expiry:', Math.floor((connection.tokenExpiresAt - new Date()) / 1000 / 60), 'minutes');
+  console.log('🔄 Needs refresh?', connection.needsRefresh());
+  console.log('🔑 XERO_ENCRYPTION_KEY exists:', !!process.env.XERO_ENCRYPTION_KEY);
+  console.log('🔑 XERO_ENCRYPTION_KEY length:', process.env.XERO_ENCRYPTION_KEY?.length);
+  console.log('🎫 Access token length:', decryptedAccessToken.length);
+  console.log('🎫 Refresh token length:', decryptedRefreshToken.length);
+
+  if (decryptedAccessToken.length > 0) {
+    console.log('🎫 Access token preview:', decryptedAccessToken.substring(0, 20) + '...');
+  }
+  if (decryptedRefreshToken.length > 0) {
+    console.log('🎫 Refresh token preview:', decryptedRefreshToken.substring(0, 20) + '...');
+  }
+  console.log('===================================\n');
+
+  // ✅ Validate that tokens were decrypted successfully
+  if (!decryptedAccessToken || !decryptedRefreshToken) {
+    console.error('❌ Token decryption failed!');
+    console.error('💡 This usually means:');
+    console.error('   1. XERO_ENCRYPTION_KEY is missing from environment variables');
+    console.error('   2. XERO_ENCRYPTION_KEY has changed since tokens were encrypted');
+    console.error('   3. Tokens in database are corrupted');
+    console.error('');
+    console.error('🔧 Solution: Reconnect your Xero account to generate new tokens');
+    throw new Error('Token decryption failed. The encryption key may have changed. Please reconnect your Xero account.');
+  }
+
   // Check if token needs refresh (expired or expires in < 5 minutes)
   if (connection.needsRefresh()) {
     console.log('🔄 Xero access token expired or expiring soon, refreshing...');
-    
+
     try {
       // Set the current token set for refresh
       xero.setTokenSet({
-        access_token: connection.getAccessToken(),
-        refresh_token: connection.getRefreshToken(),
+        access_token: decryptedAccessToken,
+        refresh_token: decryptedRefreshToken,
         expires_at: Math.floor(connection.tokenExpiresAt.getTime() / 1000),
         token_type: connection.tokenType,
       });
-      
+
+      console.log('📡 Calling Xero API to refresh token...');
+
       // Refresh the token
       const newTokenSet = await xero.refreshToken();
-      
-      console.log('✅ Xero token refreshed successfully');
-      console.log('New expires at:', new Date((newTokenSet.expires_at || 0) * 1000).toISOString());
-      
+
+      console.log('✅ Xero token refreshed successfully!');
+      console.log('📅 New expires at:', new Date((newTokenSet.expires_at || 0) * 1000).toISOString());
+      console.log('🎫 New access token length:', newTokenSet.access_token?.length || 0);
+      console.log('🎫 New refresh token length:', newTokenSet.refresh_token?.length || 0);
+
       // Update connection with new tokens
       connection.setAccessToken(newTokenSet.access_token);
       connection.setRefreshToken(newTokenSet.refresh_token);
       connection.tokenExpiresAt = new Date((newTokenSet.expires_at || 0) * 1000);
       connection.tokenType = newTokenSet.token_type || 'Bearer';
-      
+
       await connection.save();
-      
+      console.log('💾 New tokens saved to database');
+
       // Set the new token set in the client
       xero.setTokenSet(newTokenSet);
     } catch (error) {
-      console.error('❌ Error refreshing Xero token:', error.message);
+      console.error('\n❌ ===== XERO TOKEN REFRESH FAILED =====');
+      console.error('Error message:', error.message);
+      console.error('Error name:', error.name);
+      console.error('Error stack:', error.stack);
+      console.error('');
+      console.error('💡 Common causes:');
+      console.error('   1. Refresh token is invalid or expired (>60 days old)');
+      console.error('   2. Refresh token was already used (Xero invalidates old refresh tokens)');
+      console.error('   3. User revoked access from Xero side');
+      console.error('   4. Network/API error');
+      console.error('');
+      console.error('🔧 Solution: Reconnect your Xero account');
+      console.error('======================================\n');
       throw new Error('Failed to refresh Xero token. Please reconnect your Xero account.');
     }
   } else {
     // Token is still valid, use it
+    console.log('✅ Xero token is still valid, using existing token');
     xero.setTokenSet({
-      access_token: connection.getAccessToken(),
-      refresh_token: connection.getRefreshToken(),
+      access_token: decryptedAccessToken,
+      refresh_token: decryptedRefreshToken,
       expires_at: Math.floor(connection.tokenExpiresAt.getTime() / 1000),
       token_type: connection.tokenType,
     });

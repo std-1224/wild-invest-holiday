@@ -78,6 +78,32 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
     }
   };
 
+  // Validate Xero connection by making an actual API call
+  // This triggers the automatic token refresh in the backend
+  const validateXeroConnection = async () => {
+    try {
+      console.log('🔄 Validating Xero connection (triggers token refresh if needed)...');
+
+      // Make a lightweight API call to Xero to trigger token refresh
+      // We fetch invoices but don't display them - just to validate the connection
+      await apiClient.getXeroInvoices();
+
+      console.log('✅ Xero connection validated successfully');
+      setXeroError("");
+    } catch (error: any) {
+      console.error('❌ Xero connection validation failed:', error);
+
+      // Only show error if it's a real token issue
+      if (error.message && (
+        error.message.includes('Failed to refresh Xero token') ||
+        error.message.includes('Token decryption failed') ||
+        error.message.includes('Please reconnect')
+      )) {
+        setXeroError('Xero token has expired or is invalid. Please reconnect your Xero account.');
+      }
+    }
+  };
+
   // Load all owners on mount
   useEffect(() => {
     loadOwners();
@@ -96,6 +122,29 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
       window.removeEventListener('focus', handleXeroConnectionChange);
     };
   }, []);
+
+  // Periodically validate Xero connection to trigger automatic token refresh
+  useEffect(() => {
+    // Initial validation after checking status
+    const initialValidation = setTimeout(() => {
+      if (xeroConnected) {
+        validateXeroConnection();
+      }
+    }, 2000); // Wait 2 seconds after mount
+
+    // Validate every 5 minutes to trigger token refresh
+    const intervalId = setInterval(() => {
+      if (xeroConnected) {
+        console.log('🔄 Periodic Xero validation (5-minute interval)...');
+        validateXeroConnection();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => {
+      clearTimeout(initialValidation);
+      clearInterval(intervalId);
+    };
+  }, [xeroConnected]);
 
   // Load agreements when owner is selected
   useEffect(() => {
@@ -245,10 +294,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
 
         {/* Xero Connect Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
-            Xero Integration
-          </h2>
-
           {/* Show Xero error if exists */}
           {xeroError && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
