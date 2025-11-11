@@ -307,7 +307,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
             </div>
           )}
 
-          <XeroConnect />
+          <XeroConnect hasError={!!xeroError} />
         </div>
 
         {/* Main Content Grid */}

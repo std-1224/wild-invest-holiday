@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "../api/client";
 
+interface XeroConnectProps {
+  hasError?: boolean;
+}
+
 /**
  * XeroConnect Component
  * Provides a button to connect to Xero via OAuth
@@ -8,7 +12,7 @@ import apiClient from "../api/client";
  *
  * IMPORTANT: Only admin users can connect Xero (centralized admin Xero for all owners)
  */
-export const XeroConnect: React.FC = () => {
+export const XeroConnect: React.FC<XeroConnectProps> = ({ hasError = false }) => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
   const [isConnected, setIsConnected] = useState(false);
   const [tenantName, setTenantName] = useState<string>("");
@@ -207,24 +211,29 @@ export const XeroConnect: React.FC = () => {
               </svg>
             </div>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-              <div className="space-y-2">
-                {tenantName && (
-                  <p className="text-sm text-green-800">
-                    <strong>Organization:</strong> {tenantName}
-                  </p>
-                )}
-                {connectedAt && (
-                  <p className="text-xs text-green-600">
-                    Connected on {formatDate(connectedAt)}
-                  </p>
-                )}
-              </div>
-            </div>
+            {/* Only show success section if there's no error */}
+            {!hasError && (
+              <>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <div className="space-y-2">
+                    {tenantName && (
+                      <p className="text-sm text-green-800">
+                        <strong>Organization:</strong> {tenantName}
+                      </p>
+                    )}
+                    {connectedAt && (
+                      <p className="text-xs text-green-600">
+                        Connected on {formatDate(connectedAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-            <p className="text-sm text-gray-600 mb-4">
-              Your Xero account is connected. You can now view and pay invoices directly from the Wild Things portal.
-            </p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Your Xero account is connected. You can now view and pay invoices directly from the Wild Things portal.
+                </p>
+              </>
+            )}
 
             <div className="flex gap-3">
               <button
