@@ -8,6 +8,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   referralCode?: string;
+  balance?: number;
   role?: string;
   createdAt?: string;
   updatedAt?: string;

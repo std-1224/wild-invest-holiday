@@ -13,6 +13,28 @@ import { Resend } from 'resend';
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 /**
+ * Helper function to calculate user balance from ReferralTransaction records
+ * @param {string} userId - User ID to calculate balance for
+ * @returns {Promise<number>} Total balance from referral credits
+ */
+async function calculateUserBalance(userId) {
+  try {
+    // Get all completed transactions where this user received credits
+    const transactions = await ReferralTransaction.find({
+      toUserId: userId,
+      status: 'completed',
+    });
+
+    // Sum up all the amounts
+    const balance = transactions.reduce((total, tx) => total + tx.amount, 0);
+    return balance;
+  } catch (error) {
+    console.error('Error calculating user balance:', error);
+    return 0;
+  }
+}
+
+/**
  * POST /api/auth/register
  * Register a new user
  */
@@ -60,20 +82,62 @@ export async function handleRegister(req, res) {
       role: 'owner',
     });
 
+    // If a referral code was used, create referral transactions and update balances
+    if (referrerUser) {
+      try {
+        // Create two transactions: one for referrer, one for referee
+        await ReferralTransaction.create([
+          {
+            fromUserId: user._id,
+            toUserId: referrerUser._id,
+            amount: 1000,
+            status: 'completed',
+            type: 'referrer_credit',
+            notes: `Referral credit for referring ${user.name}`,
+          },
+          {
+            fromUserId: referrerUser._id,
+            toUserId: user._id,
+            amount: 1000,
+            status: 'completed',
+            type: 'referee_credit',
+            notes: `Referral credit for using ${referrerUser.name}'s code`,
+          },
+        ]);
+
+        // Update balances for both users
+        await User.findByIdAndUpdate(referrerUser._id, {
+          $inc: { balance: 1000 },
+        });
+        await User.findByIdAndUpdate(user._id, {
+          $inc: { balance: 1000 },
+        });
+
+        console.log(`✅ Referral credits applied: $1,000 to ${referrerUser.name} and $1,000 to ${user.name}`);
+      } catch (error) {
+        console.error('❌ Error creating referral transactions:', error);
+        // Don't fail registration if referral credits fail
+      }
+    }
+
     // Generate JWT token
     const token = generateToken(user._id);
+
+    // Get updated user with balance
+    const updatedUser = await User.findById(user._id);
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       token,
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        referralCode: user.referralCode,
-        role: user.role,
-        createdAt: user.createdAt,
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        referralCode: updatedUser.referralCode,
+        balance: updatedUser.balance,
+        role: updatedUser.role,
+        createdAt: updatedUser.createdAt,
       },
     });
   } catch (error) {
@@ -135,6 +199,7 @@ export async function handleLogin(req, res) {
         name: user.name,
         email: user.email,
         referralCode: user.referralCode,
+        balance: user.balance || 0,
         role: user.role,
         createdAt: user.createdAt,
       },
@@ -342,6 +407,7 @@ export async function handleGetProfile(req, res) {
         name: user.name,
         email: user.email,
         referralCode: user.referralCode,
+        balance: user.balance || 0,
         role: user.role,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
