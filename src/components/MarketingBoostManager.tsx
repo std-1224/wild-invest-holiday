@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   TrendingUp,
   Pause,
@@ -8,6 +8,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import apiClient from "../api/client";
 
 interface BillingRecord {
   id: string;
@@ -18,26 +19,161 @@ interface BillingRecord {
 }
 
 interface MarketingBoostManagerProps {
-  isActive: boolean;
-  monthlyFee: number;
-  nextBillingDate: string;
-  billingHistory: BillingRecord[];
-  onPause: () => void;
-  onCancel: () => void;
-  onResume: () => void;
+  boostId?: string; // Optional: specific boost ID to manage
+  investmentId?: string; // Optional: filter by investment
 }
 
 export const MarketingBoostManager = ({
-  isActive,
-  monthlyFee,
-  nextBillingDate,
-  billingHistory,
-  onPause,
-  onCancel,
-  onResume,
+  boostId,
+  investmentId,
 }: MarketingBoostManagerProps) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [boost, setBoost] = useState<any>(null);
+  const [billingHistory, setBillingHistory] = useState<BillingRecord[]>([]);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+
+  // Fetch boost data and billing history
+  useEffect(() => {
+    fetchBoostData();
+  }, [boostId, investmentId]);
+
+  const fetchBoostData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch all boosts for the user
+      const boostsData = await apiClient.listMarketingBoosts();
+
+      // Find the specific boost (by ID or investment ID)
+      let selectedBoost = null;
+      if (boostId) {
+        selectedBoost = boostsData.boosts.find((b: any) => b.id === boostId);
+      } else if (investmentId) {
+        selectedBoost = boostsData.boosts.find((b: any) => b.investmentId === investmentId && b.status === 'active');
+      } else {
+        // Get the first active boost
+        selectedBoost = boostsData.boosts.find((b: any) => b.status === 'active');
+      }
+
+      if (!selectedBoost) {
+        setError('No active marketing boost found');
+        setLoading(false);
+        return;
+      }
+
+      setBoost(selectedBoost);
+
+      // Fetch billing history for this boost
+      const paymentsData = await apiClient.getBoostPayments(selectedBoost.id);
+
+      // Transform to BillingRecord format
+      const formattedHistory: BillingRecord[] = paymentsData.payments.map((p: any) => ({
+        id: p.id,
+        date: p.date,
+        amount: p.amount,
+        status: p.status === 'completed' ? 'paid' : p.status,
+        invoiceUrl: undefined, // Could add Xero invoice URL if available
+      }));
+
+      setBillingHistory(formattedHistory);
+    } catch (err: any) {
+      console.error('Error fetching boost data:', err);
+      setError(err.message || 'Failed to load marketing boost data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePause = async () => {
+    try {
+      await apiClient.pauseMarketingBoost(boost.id);
+      await fetchBoostData(); // Refresh data
+    } catch (err: any) {
+      console.error('Error pausing boost:', err);
+      alert('Failed to pause marketing boost: ' + err.message);
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      await apiClient.cancelMarketingBoost(boost.id);
+      await fetchBoostData(); // Refresh data
+    } catch (err: any) {
+      console.error('Error cancelling boost:', err);
+      alert('Failed to cancel marketing boost: ' + err.message);
+    }
+  };
+
+  const handleResume = async () => {
+    try {
+      await apiClient.resumeMarketingBoost(boost.id);
+      await fetchBoostData(); // Refresh data
+    } catch (err: any) {
+      console.error('Error resuming boost:', err);
+      alert('Failed to resume marketing boost: ' + err.message);
+    }
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <TrendingUp className="w-6 h-6 text-[#86dbdf]" />
+          <h3 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+            MARKETING BOOST
+          </h3>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading marketing boost...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <TrendingUp className="w-6 h-6 text-[#86dbdf]" />
+          <h3 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+            MARKETING BOOST
+          </h3>
+        </div>
+        <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-lg">
+          <AlertCircle className="w-6 h-6 text-yellow-600" />
+          <div>
+            <p className="font-semibold text-yellow-900">No Active Marketing Boost</p>
+            <p className="text-sm text-yellow-700">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No boost found
+  if (!boost) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <TrendingUp className="w-6 h-6 text-[#86dbdf]" />
+          <h3 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+            MARKETING BOOST
+          </h3>
+        </div>
+        <p className="text-gray-600">No active marketing boost subscription found.</p>
+      </div>
+    );
+  }
+
+  const isActive = boost.status === 'active';
+  const monthlyFee = boost.monthlyPrice || 0;
+  const nextBillingDate = boost.nextBillingDate || '';
 
   const totalPaid = billingHistory
     .filter((b) => b.status === "paid")
@@ -70,7 +206,7 @@ export const MarketingBoostManager = ({
           </button>
           <button
             onClick={() => {
-              onPause();
+              handlePause();
               setShowPauseModal(false);
             }}
             className="flex-1 px-4 py-2 bg-[#ffcf00] text-[#0e181f] rounded-lg font-semibold hover:opacity-90 transition-all"
@@ -117,7 +253,7 @@ export const MarketingBoostManager = ({
           </button>
           <button
             onClick={() => {
-              onCancel();
+              handleCancel();
               setShowCancelModal(false);
             }}
             className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all"
@@ -235,7 +371,7 @@ export const MarketingBoostManager = ({
           </>
         ) : (
           <button
-            onClick={onResume}
+            onClick={handleResume}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#ffcf00] text-[#0e181f] rounded-lg font-semibold hover:opacity-90 transition-all"
           >
             <TrendingUp className="w-5 h-5" />

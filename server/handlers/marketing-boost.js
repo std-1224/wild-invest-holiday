@@ -10,6 +10,7 @@ import User from '../models/User.js';
 import StripeCustomer from '../models/StripeCustomer.js';
 import PaymentMethod from '../models/PaymentMethod.js';
 import MarketingBoost from '../models/MarketingBoost.js';
+import BoostPayment from '../models/BoostPayment.js';
 import XeroConnection from '../models/XeroConnection.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -454,7 +455,7 @@ export async function handleActivateBoost(req, res) {
     // Step 3: Create marketing boost subscription
     const nextBillingDate = new Date();
     nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
-    
+
     const boost = await MarketingBoost.create({
       userId: user._id,
       investmentId,
@@ -470,8 +471,38 @@ export async function handleActivateBoost(req, res) {
       lastBillingDate: new Date(),
       nextBillingDate,
     });
-    
+
     console.log('✅ Marketing boost activated:', boost._id);
+
+    // Step 4: Record the payment in BoostPayment collection
+    const billingPeriodStart = new Date();
+    const billingPeriodEnd = new Date(nextBillingDate);
+
+    await BoostPayment.create({
+      userId: user._id,
+      boostId: boost._id,
+      investmentId,
+      stripePaymentIntentId: paymentIntent.id,
+      stripeCustomerId: stripeCustomer.stripeCustomerId,
+      stripePaymentMethodId: paymentMethodId,
+      xeroInvoiceId: xeroInvoiceId || null,
+      xeroPaymentId: null, // Could be populated if we track Xero payment IDs
+      xeroContactId: xeroContactId || null,
+      amount: monthlyPrice,
+      currency: 'AUD',
+      status: paymentIntent.status === 'succeeded' ? 'succeeded' : 'pending',
+      tier,
+      tierName,
+      description: `Marketing Boost - ${tierName} Package`,
+      billingPeriodStart,
+      billingPeriodEnd,
+      metadata: {
+        cabinType,
+        location,
+      },
+    });
+
+    console.log('✅ Boost payment recorded');
     
     return res.json({
       success: true,

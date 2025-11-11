@@ -52,6 +52,10 @@ import {
   handlePauseBoost,
   handleResumeBoost,
 } from '../server/handlers/marketing-boost.js';
+import {
+  handleGetPaymentHistory,
+  handleGetBoostPayments,
+} from '../server/handlers/payments.js';
 
 // Initialize Stripe
 const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
@@ -186,6 +190,12 @@ export default async function handler(
       return await handlePauseBoost(req, res);
     } else if (path.includes('/marketing-boost/resume')) {
       return await handleResumeBoost(req, res);
+    }
+    // Payment History routes
+    else if (path.includes('/payments/history')) {
+      return await handleGetPaymentHistory(req, res);
+    } else if (path.includes('/payments/boost-payments')) {
+      return await handleGetBoostPayments(req, res);
     }
     // Agreement routes - Order matters! Check specific routes before generic patterns
     else if (path.includes('/agreements/owners')) {

@@ -55,6 +55,10 @@ import {
   handlePauseBoost,
   handleResumeBoost,
 } from '../server/handlers/marketing-boost.js';
+import {
+  handleGetPaymentHistory,
+  handleGetBoostPayments,
+} from '../server/handlers/payments.js';
 
 const app = express();
 const PORT = 3001;
@@ -299,6 +303,13 @@ app.get('/api/marketing-boost/list', handleListBoosts);
 app.post('/api/marketing-boost/cancel', handleCancelBoost);
 app.post('/api/marketing-boost/pause', handlePauseBoost);
 app.post('/api/marketing-boost/resume', handleResumeBoost);
+
+// ============================================================================
+// PAYMENT HISTORY API ENDPOINTS
+// ============================================================================
+
+app.get('/api/payments/history', handleGetPaymentHistory);
+app.get('/api/payments/boost-payments', handleGetBoostPayments);
 
 // ============================================================================
 // AGREEMENT API ENDPOINTS

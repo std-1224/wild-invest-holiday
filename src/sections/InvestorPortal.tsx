@@ -456,58 +456,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
     },
   ];
 
-  // Mock payment data
-  const mockPayments = [
-    {
-      id: "1",
-      date: "2024-10-01",
-      description: "Monthly Payment - Cabin #1",
-      amount: 2500,
-      status: "completed" as const,
-      method: "Bank Transfer",
-      invoiceUrl: "#",
-      type: "payment" as const,
-    },
-    {
-      id: "2",
-      date: "2024-09-01",
-      description: "Monthly Payment - Cabin #1",
-      amount: 2500,
-      status: "completed" as const,
-      method: "Bank Transfer",
-      invoiceUrl: "#",
-      type: "payment" as const,
-    },
-    {
-      id: "3",
-      date: "2024-08-15",
-      description: "Deposit - Cabin #1",
-      amount: 25000,
-      status: "completed" as const,
-      method: "Bank Transfer",
-      invoiceUrl: "#",
-      type: "deposit" as const,
-    },
-  ];
-
-  // Mock Marketing Boost data
-  const [marketingBoostActive, setMarketingBoostActive] = useState(true);
-  const mockMarketingBoostBilling = [
-    {
-      id: "1",
-      date: "2024-11-01",
-      amount: 199,
-      status: "paid" as const,
-      invoiceUrl: "#",
-    },
-    {
-      id: "2",
-      date: "2024-10-01",
-      amount: 199,
-      status: "paid" as const,
-      invoiceUrl: "#",
-    },
-  ];
+  // Payment History and Marketing Boost now fetch their own data from API
+  // No need for mock data anymore
 
   // Payout System State
   const [showPayoutRequestModal, setShowPayoutRequestModal] = useState(false);
@@ -1321,31 +1271,18 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 paymentMethods={savedPaymentMethods}
               />
 
-              <PaymentHistory payments={mockPayments} />
+              {/* PaymentHistory now fetches its own data from API */}
+              <PaymentHistory />
+
               <SavedPaymentMethods
                 paymentMethods={savedPaymentMethods}
                 onAddPaymentMethod={handleAddPaymentMethod}
                 onRemovePaymentMethod={handleRemovePaymentMethod}
                 onSetDefault={handleSetDefaultPaymentMethod}
               />
-              <MarketingBoostManager
-                isActive={marketingBoostActive}
-                monthlyFee={199}
-                nextBillingDate="2024-12-01"
-                billingHistory={mockMarketingBoostBilling}
-                onPause={() => {
-                  setMarketingBoostActive(false);
-                  alert("Marketing Boost paused");
-                }}
-                onCancel={() => {
-                  setMarketingBoostActive(false);
-                  alert("Marketing Boost cancelled");
-                }}
-                onResume={() => {
-                  setMarketingBoostActive(true);
-                  alert("Marketing Boost resumed");
-                }}
-              />
+
+              {/* MarketingBoostManager now fetches its own data from API */}
+              <MarketingBoostManager />
             </div>
           )}
 

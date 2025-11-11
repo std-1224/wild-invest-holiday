@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CreditCard,
   Download,
@@ -6,7 +6,9 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  AlertCircle,
 } from "lucide-react";
+import apiClient from "../api/client";
 
 interface Payment {
   id: string;
@@ -17,17 +19,44 @@ interface Payment {
   method: string;
   invoiceUrl?: string;
   type: "deposit" | "payment" | "refund" | "fee";
+  category?: "invoice" | "boost";
+  metadata?: any;
 }
 
 interface PaymentHistoryProps {
-  payments: Payment[];
+  // Optional: can pass payments directly or fetch from API
+  payments?: Payment[];
 }
 
-export const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
+export const PaymentHistory = ({ payments: propPayments }: PaymentHistoryProps) => {
+  const [payments, setPayments] = useState<Payment[]>(propPayments || []);
+  const [loading, setLoading] = useState(!propPayments);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<
     "all" | "completed" | "pending" | "failed"
   >("all");
   const [sortBy, setSortBy] = useState<"date" | "amount">("date");
+
+  // Fetch payment history from API if not provided via props
+  useEffect(() => {
+    if (!propPayments) {
+      fetchPaymentHistory();
+    }
+  }, [propPayments]);
+
+  const fetchPaymentHistory = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await apiClient.getPaymentHistory();
+      setPayments(data.payments || []);
+    } catch (err: any) {
+      console.error('Error fetching payment history:', err);
+      setError(err.message || 'Failed to load payment history');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredPayments = payments
     .filter((p) => filter === "all" || p.status === filter)
@@ -72,6 +101,55 @@ export const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
   const totalPending = payments
     .filter((p) => p.status === "pending")
     .reduce((sum, p) => sum + p.amount, 0);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <CreditCard className="w-6 h-6 text-[#86dbdf]" />
+            <h3 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+              PAYMENT HISTORY
+            </h3>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading payment history...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <CreditCard className="w-6 h-6 text-[#86dbdf]" />
+            <h3 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+              PAYMENT HISTORY
+            </h3>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg">
+          <AlertCircle className="w-6 h-6 text-red-600" />
+          <div>
+            <p className="font-semibold text-red-900">Error loading payment history</p>
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        </div>
+        <button
+          onClick={fetchPaymentHistory}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">

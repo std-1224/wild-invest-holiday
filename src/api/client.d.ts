@@ -126,6 +126,10 @@ export class WildThingsAPI {
     description: string;
   }): Promise<{ success: boolean; paymentIntent: any; xeroPayment: any; xeroError: string | null }>;
 
+  // Payment History
+  getPaymentHistory(): Promise<{ success: boolean; payments: any[]; summary: any }>;
+  getBoostPayments(boostId?: string): Promise<{ success: boolean; payments: any[] }>;
+
   // Marketing Boost integration
   activateMarketingBoost(boostData: {
     investmentId: string;

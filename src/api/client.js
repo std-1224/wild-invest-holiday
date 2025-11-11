@@ -504,6 +504,28 @@ class WildThingsAPI {
     });
   }
 
+  // ============================================================================
+  // PAYMENT HISTORY METHODS
+  // ============================================================================
+
+  /**
+   * Get all payment history for authenticated user (invoice + boost payments)
+   * @returns {Promise<{success: boolean, payments: Array, summary: Object}>}
+   */
+  async getPaymentHistory() {
+    return this.request('/api/payments/history');
+  }
+
+  /**
+   * Get boost payment history
+   * @param {string} boostId - Optional boost ID to filter by specific boost
+   * @returns {Promise<{success: boolean, payments: Array}>}
+   */
+  async getBoostPayments(boostId = '') {
+    const queryParam = boostId ? `?boostId=${boostId}` : '';
+    return this.request(`/api/payments/boost-payments${queryParam}`);
+  }
+
   // RMS integration
   async syncRMSCalendar(investmentId) {
     return this.request('/integrations/rms/sync-calendar', {
