@@ -51,23 +51,38 @@ async function getAuthenticatedUser(req) {
  * Only the admin user has Xero connected, and all owner invoices are created in admin's Xero
  */
 async function getAdminXeroClient() {
+  console.log('🔍 Looking for admin user in database...');
+
+  // Ensure database connection
+  await connectDB();
+
+  // Debug: Check all users and their roles
+  const allUsers = await User.find({}, 'email role').lean();
+  console.log('📊 All users in database:', allUsers.map(u => ({ email: u.email, role: u.role })));
+
   // Find the single admin user
   const adminUser = await User.findOne({ role: 'admin' });
 
   if (!adminUser) {
     console.log('⚠️ No admin user found in system');
+    console.log('💡 Tip: Make sure you have a user with role="admin" in your database');
+    console.log('💡 You can update a user to admin with: db.users.updateOne({ email: "admin@example.com" }, { $set: { role: "admin" } })');
     return null;
   }
 
-  console.log('✅ Found admin user:', adminUser.email);
+  console.log('✅ Found admin user:', adminUser.email, '(ID:', adminUser._id, ')');
 
   // Get admin's Xero connection
+  console.log('🔍 Looking for Xero connection for admin user...');
   const connection = await XeroConnection.findByUserId(adminUser._id);
 
   if (!connection) {
     console.log('⚠️ Admin has not connected Xero yet');
+    console.log('💡 Tip: Admin user must connect Xero via Admin Portal before owner invoices can be created');
     return null;
   }
+
+  console.log('✅ Found Xero connection for admin (Tenant:', connection.tenantName || connection.tenantId, ')');
 
   console.log('Token expires at:', connection.tokenExpiresAt);
   console.log('Current time:', new Date());
@@ -371,6 +386,8 @@ export async function handleActivateBoost(req, res) {
     let xeroInvoiceId = null;
     let xeroContactId = null;
 
+    console.log('📋 Step 2: Attempting to create Xero invoice...');
+
     try {
       // Get admin's Xero client (centralized for all owners)
       const xeroClient = await getAdminXeroClient();
@@ -382,6 +399,7 @@ export async function handleActivateBoost(req, res) {
 
         // Create contact in admin's Xero for this owner
         xeroContactId = await getOrCreateXeroContact(xero, connection.tenantId, user);
+        console.log('✅ Xero contact ID:', xeroContactId);
 
         // Create invoice in admin's Xero
         xeroInvoiceId = await createXeroInvoice(
@@ -395,6 +413,7 @@ export async function handleActivateBoost(req, res) {
         console.log('✅ Xero invoice created in admin\'s account:', xeroInvoiceId);
       } else {
         console.log('⚠️ Admin Xero not connected, skipping invoice creation');
+        console.log('💡 This is non-critical - boost will still be activated');
       }
     } catch (xeroError) {
       const errorMsg = xeroError?.message || xeroError?.toString() || 'Unknown error';
@@ -402,6 +421,7 @@ export async function handleActivateBoost(req, res) {
       if (xeroError?.response?.body) {
         console.error('Xero API error details:', JSON.stringify(xeroError.response.body, null, 2));
       }
+      console.error('Full error stack:', xeroError);
       // Continue even if Xero fails
     }
     
