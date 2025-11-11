@@ -1,7 +1,11 @@
 import { XeroClient } from 'xero-node';
 import jwt from 'jsonwebtoken';
+import Stripe from 'stripe';
 import XeroConnection from '../models/XeroConnection.js';
 import User from '../models/User.js';
+import StripeCustomer from '../models/StripeCustomer.js';
+import InvoicePayment from '../models/InvoicePayment.js';
+import { connectDB } from '../lib/db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -285,6 +289,314 @@ export async function handleRecordXeroPayment(req, res) {
     return res.status(500).json({
       success: false,
       error: error.message,
+    });
+  }
+}
+
+/**
+ * GET /api/xero/get-invoices
+ * Get unpaid invoices from admin's Xero for a specific contact (owner)
+ * Query params: contactId (optional - uses user's xeroContactId if not provided)
+ */
+export async function handleGetInvoicesForContact(req, res) {
+  try {
+    await connectDB();
+
+    const user = await getAuthenticatedUser(req);
+    const { contactId } = req.query;
+
+    console.log('📋 Fetching invoices for user:', user.email);
+    console.log('Contact ID from query:', contactId);
+    console.log('User xeroContactId:', user.xeroContactId);
+
+    // Use contactId from query or user's xeroContactId
+    const xeroContactId = contactId || user.xeroContactId;
+
+    if (!xeroContactId) {
+      console.log('⚠️ User does not have a Xero contact ID');
+      return res.status(400).json({
+        success: false,
+        error: 'No Xero contact ID found. Your account needs to be set up in Xero first. Please contact support.',
+        needsSetup: true,
+      });
+    }
+
+    console.log('✅ Using Xero contact ID:', xeroContactId);
+
+    // Get admin's Xero client (centralized Xero for all owners)
+    const adminUser = await User.findOne({ role: 'admin' });
+
+    if (!adminUser) {
+      return res.status(500).json({
+        success: false,
+        error: 'Admin user not found. Please contact support.',
+      });
+    }
+
+    const { xero, connection } = await getValidXeroClient(adminUser._id);
+
+    console.log('✅ Got admin Xero client, tenant:', connection.tenantId);
+
+    // Fetch invoices for this contact
+    // Filter: ContactID matches AND Status is AUTHORISED (unpaid)
+    const whereClause = `Contact.ContactID=Guid("${xeroContactId}") AND Status=="AUTHORISED"`;
+
+    console.log('🔍 Fetching invoices with filter:', whereClause);
+
+    const response = await xero.accountingApi.getInvoices(
+      connection.tenantId,
+      undefined, // ifModifiedSince
+      whereClause, // where filter
+      undefined, // order
+      undefined, // IDs
+      undefined, // invoiceNumbers
+      undefined, // contactIDs
+      undefined, // statuses
+      undefined, // page
+      true // includeArchived
+    );
+
+    const invoices = response.body.invoices || [];
+
+    console.log(`✅ Found ${invoices.length} unpaid invoices for contact ${xeroContactId}`);
+
+    return res.json({
+      success: true,
+      invoices,
+      count: invoices.length,
+    });
+  } catch (error) {
+    console.error('❌ Error fetching invoices:', error);
+
+    if (error.message === 'Not authenticated' || error.message === 'Invalid or expired token') {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated',
+      });
+    }
+
+    if (error.message.includes('Xero not connected')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Admin has not connected Xero. Please contact support.',
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch invoices',
+    });
+  }
+}
+
+/**
+ * POST /api/xero/pay-invoice
+ * Pay a Xero invoice using Stripe and record payment in Xero
+ * Body: { invoiceId, invoiceNumber, amount, currency, paymentMethodId, xeroContactId, description }
+ */
+export async function handlePayInvoice(req, res) {
+  try {
+    await connectDB();
+
+    const user = await getAuthenticatedUser(req);
+    const {
+      invoiceId,
+      invoiceNumber,
+      amount,
+      currency = 'AUD',
+      paymentMethodId,
+      xeroContactId,
+      description,
+    } = req.body;
+
+    console.log('💳 Processing invoice payment:', {
+      user: user.email,
+      invoiceId,
+      invoiceNumber,
+      amount,
+      currency,
+      paymentMethodId,
+    });
+
+    // Validate required fields
+    if (!invoiceId || !invoiceNumber || !amount || !paymentMethodId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: invoiceId, invoiceNumber, amount, paymentMethodId',
+      });
+    }
+
+    // Get user's Stripe customer
+    const stripeCustomer = await StripeCustomer.findOne({ userId: user._id });
+
+    if (!stripeCustomer) {
+      return res.status(400).json({
+        success: false,
+        error: 'No Stripe customer found. Please add a payment method first.',
+      });
+    }
+
+    // Initialize Stripe
+    const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
+    const stripe = new Stripe(stripeKey, {
+      apiVersion: '2024-11-20.acacia',
+    });
+
+    // Step 1: Create Stripe PaymentIntent
+    console.log('💳 Creating Stripe PaymentIntent...');
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Convert to cents
+      currency: currency.toLowerCase(),
+      customer: stripeCustomer.stripeCustomerId,
+      payment_method: paymentMethodId,
+      confirm: true, // Immediately confirm the payment
+      description: description || `Payment for invoice ${invoiceNumber}`,
+      metadata: {
+        invoiceId,
+        invoiceNumber,
+        xeroContactId: xeroContactId || user.xeroContactId || '',
+        userId: user._id.toString(),
+      },
+      return_url: `${process.env.VITE_APP_URL || 'http://localhost:5173'}/investor-portal?tab=payments`,
+    });
+
+    console.log('✅ Stripe PaymentIntent created:', paymentIntent.id, 'Status:', paymentIntent.status);
+
+    if (paymentIntent.status !== 'succeeded') {
+      // Save failed payment record
+      await InvoicePayment.create({
+        userId: user._id,
+        xeroInvoiceId: invoiceId,
+        xeroInvoiceNumber: invoiceNumber,
+        xeroContactId: xeroContactId || user.xeroContactId || '',
+        stripePaymentIntentId: paymentIntent.id,
+        stripeCustomerId: stripeCustomer.stripeCustomerId,
+        stripePaymentMethodId: paymentMethodId,
+        amount,
+        currency: currency.toUpperCase(),
+        status: 'failed',
+        description,
+        errorMessage: `Payment status: ${paymentIntent.status}`,
+      });
+
+      return res.status(400).json({
+        success: false,
+        error: 'Payment failed',
+        status: paymentIntent.status,
+        message: 'The payment could not be processed. Please check your payment method.',
+      });
+    }
+
+    // Step 2: Record payment in admin's Xero
+    let xeroPayment = null;
+    let xeroError = null;
+
+    try {
+      console.log('📝 Recording payment in Xero...');
+
+      // Get admin's Xero client
+      const adminUser = await User.findOne({ role: 'admin' });
+
+      if (!adminUser) {
+        throw new Error('Admin user not found');
+      }
+
+      const { xero, connection } = await getValidXeroClient(adminUser._id);
+
+      // Get first bank account
+      const accountsResponse = await xero.accountingApi.getAccounts(
+        connection.tenantId,
+        undefined,
+        'Type=="BANK"'
+      );
+
+      const bankAccount = accountsResponse.body.accounts?.[0];
+
+      if (!bankAccount) {
+        throw new Error('No bank account found in Xero');
+      }
+
+      // Create payment in Xero
+      const payment = {
+        invoice: {
+          invoiceID: invoiceId,
+        },
+        account: {
+          accountID: bankAccount.accountID,
+        },
+        date: new Date().toISOString().split('T')[0],
+        amount: parseFloat(amount),
+        reference: `Stripe: ${paymentIntent.id}`,
+      };
+
+      const paymentResponse = await xero.accountingApi.createPayment(
+        connection.tenantId,
+        payment
+      );
+
+      xeroPayment = paymentResponse.body.payments?.[0];
+
+      console.log('✅ Payment recorded in Xero:', xeroPayment?.paymentID);
+    } catch (error) {
+      console.error('⚠️ Error recording payment in Xero (non-critical):', error.message);
+      xeroError = error.message;
+      // Continue even if Xero fails - payment was successful in Stripe
+    }
+
+    // Step 3: Save payment record to database
+    const invoicePayment = await InvoicePayment.create({
+      userId: user._id,
+      xeroInvoiceId: invoiceId,
+      xeroInvoiceNumber: invoiceNumber,
+      xeroContactId: xeroContactId || user.xeroContactId || '',
+      stripePaymentIntentId: paymentIntent.id,
+      stripeCustomerId: stripeCustomer.stripeCustomerId,
+      stripePaymentMethodId: paymentMethodId,
+      xeroPaymentId: xeroPayment?.paymentID || null,
+      amount,
+      currency: currency.toUpperCase(),
+      status: 'succeeded',
+      description,
+      metadata: {
+        xeroError: xeroError || null,
+      },
+    });
+
+    console.log('✅ Invoice payment saved to database:', invoicePayment._id);
+
+    return res.json({
+      success: true,
+      message: 'Payment successful',
+      paymentIntent: {
+        id: paymentIntent.id,
+        status: paymentIntent.status,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+      },
+      xeroPayment: xeroPayment ? {
+        paymentID: xeroPayment.paymentID,
+        status: xeroPayment.status,
+      } : null,
+      xeroError: xeroError || null,
+      invoicePayment: {
+        id: invoicePayment._id,
+        createdAt: invoicePayment.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('❌ Error processing invoice payment:', error);
+
+    if (error.message === 'Not authenticated' || error.message === 'Invalid or expired token') {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated',
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to process payment',
     });
   }
 }

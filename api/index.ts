@@ -42,6 +42,8 @@ import {
   handleXeroDisconnect,
   handleGetXeroInvoices,
   handleRecordXeroPayment,
+  handleGetInvoicesForContact,
+  handlePayInvoice,
 } from '../server/handlers/xero.js';
 import {
   handleActivateBoost,
@@ -168,6 +170,10 @@ export default async function handler(
       return await handleGetXeroInvoices(req, res);
     } else if (path.includes('/xero/record-payment')) {
       return await handleRecordXeroPayment(req, res);
+    } else if (path.includes('/xero/get-invoices')) {
+      return await handleGetInvoicesForContact(req, res);
+    } else if (path.includes('/xero/pay-invoice')) {
+      return await handlePayInvoice(req, res);
     }
     // Marketing Boost routes
     else if (path.includes('/marketing-boost/activate')) {

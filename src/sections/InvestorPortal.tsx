@@ -1316,8 +1316,8 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               <XeroConnect key={xeroRefreshKey} />
 
               {/* Xero Invoices - Pay with Saved Cards */}
+              {/* xeroContactId is optional - backend will use user's xeroContactId from profile */}
               <XeroInvoices
-                xeroContactId="CONTACT-001" // In production, this would come from user profile
                 paymentMethods={savedPaymentMethods}
               />
 

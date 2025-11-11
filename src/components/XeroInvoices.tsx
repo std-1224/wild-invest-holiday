@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, CreditCard, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-
-// Get API URL from environment variable
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import apiClient from '../api/client';
 
 interface XeroInvoice {
   invoiceID: string;
@@ -40,7 +38,7 @@ interface PaymentMethod {
 }
 
 interface XeroInvoicesProps {
-  xeroContactId: string; // Xero contact ID
+  xeroContactId?: string; // Xero contact ID (optional - uses user's xeroContactId if not provided)
   paymentMethods: PaymentMethod[];
 }
 
@@ -51,6 +49,7 @@ export const XeroInvoices: React.FC<XeroInvoicesProps> = ({
   const [invoices, setInvoices] = useState<XeroInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsSetup, setNeedsSetup] = useState(false);
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
 
@@ -73,20 +72,22 @@ export const XeroInvoices: React.FC<XeroInvoicesProps> = ({
     try {
       setLoading(true);
       setError(null);
+      setNeedsSetup(false);
 
-      const response = await fetch(
-        `${API_URL}/api/xero/get-invoices?contactId=${xeroContactId}&customerId=${customerId}`
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch invoices');
-      }
-
-      const data = await response.json();
+      // Use apiClient which handles authentication automatically
+      // Pass xeroContactId if provided, otherwise backend uses user's xeroContactId
+      const data = await apiClient.getXeroInvoices(xeroContactId);
       setInvoices(data.invoices || []);
     } catch (err: any) {
       console.error('Error fetching invoices:', err);
-      setError(err.message || 'Failed to load invoices');
+
+      // Check if this is a "needs setup" error
+      if (err.response?.data?.needsSetup) {
+        setNeedsSetup(true);
+        setError(err.response.data.error || 'Your Xero account needs to be set up. Please contact support.');
+      } else {
+        setError(err.message || 'Failed to load invoices');
+      }
     } finally {
       setLoading(false);
     }
@@ -105,31 +106,22 @@ export const XeroInvoices: React.FC<XeroInvoicesProps> = ({
     try {
       setPayingInvoiceId(invoice.invoiceID);
 
-      const response = await fetch(`${API_URL}/api/xero/pay-invoice`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          invoiceId: invoice.invoiceID,
-          invoiceNumber: invoice.invoiceNumber,
-          amount: invoice.amountDue,
-          currency: invoice.currencyCode,
-          customerId: customerId,
-          paymentMethodId: selectedPaymentMethod,
-          xeroContactId: xeroContactId,
-          description: `Payment for ${invoice.invoiceNumber} - ${invoice.lineItems[0]?.description || 'Invoice'}`,
-        }),
+      // Use apiClient which handles authentication automatically
+      const data = await apiClient.payXeroInvoice({
+        invoiceId: invoice.invoiceID,
+        invoiceNumber: invoice.invoiceNumber,
+        amount: invoice.amountDue,
+        currency: invoice.currencyCode,
+        paymentMethodId: selectedPaymentMethod,
+        xeroContactId: xeroContactId || '', // Backend will use user's xeroContactId if empty
+        description: `Payment for ${invoice.invoiceNumber} - ${invoice.lineItems[0]?.description || 'Invoice'}`,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Payment failed');
+      if (data.xeroPayment) {
+        alert(`✅ Payment successful!\n\nStripe Payment ID: ${data.paymentIntent.id}\nXero Payment ID: ${data.xeroPayment.paymentID}`);
+      } else {
+        alert(`✅ Payment successful!\n\nStripe Payment ID: ${data.paymentIntent.id}\n\n⚠️ Note: Payment recorded in Stripe but not in Xero. Please contact support.`);
       }
-
-      const data = await response.json();
-      
-      alert(`✅ Payment successful!\n\nStripe Payment ID: ${data.paymentIntent.id}\nXero Payment ID: ${data.xeroPayment.paymentID}`);
 
       // Refresh invoices
       await fetchInvoices();
@@ -205,19 +197,28 @@ export const XeroInvoices: React.FC<XeroInvoicesProps> = ({
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-xl font-bold mb-4 text-[#0e181f]">📄 Xero Invoices</h3>
-        <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg">
-          <AlertCircle className="w-6 h-6 text-red-600" />
+        <div className={`flex items-center gap-3 p-4 rounded-lg ${needsSetup ? 'bg-yellow-50' : 'bg-red-50'}`}>
+          <AlertCircle className={`w-6 h-6 ${needsSetup ? 'text-yellow-600' : 'text-red-600'}`} />
           <div>
-            <p className="font-semibold text-red-900">Error loading invoices</p>
-            <p className="text-sm text-red-700">{error}</p>
+            <p className={`font-semibold ${needsSetup ? 'text-yellow-900' : 'text-red-900'}`}>
+              {needsSetup ? 'Account Setup Required' : 'Error loading invoices'}
+            </p>
+            <p className={`text-sm ${needsSetup ? 'text-yellow-700' : 'text-red-700'}`}>{error}</p>
+            {needsSetup && (
+              <p className="text-sm text-yellow-700 mt-2">
+                💡 Your account needs to be linked to a Xero contact. Please contact our support team to complete the setup.
+              </p>
+            )}
           </div>
         </div>
-        <button
-          onClick={fetchInvoices}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Retry
-        </button>
+        {!needsSetup && (
+          <button
+            onClick={fetchInvoices}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        )}
       </div>
     );
   }

@@ -45,6 +45,8 @@ import {
   handleXeroDisconnect,
   handleGetXeroInvoices,
   handleRecordXeroPayment,
+  handleGetInvoicesForContact,
+  handlePayInvoice,
 } from '../server/handlers/xero.js';
 import {
   handleActivateBoost,
@@ -283,6 +285,10 @@ app.post('/api/xero/disconnect', handleXeroDisconnect);
 // Xero data endpoints
 app.get('/api/xero/invoices', handleGetXeroInvoices);
 app.post('/api/xero/record-payment', handleRecordXeroPayment);
+
+// Xero invoice endpoints (for owners to view and pay invoices)
+app.get('/api/xero/get-invoices', handleGetInvoicesForContact);
+app.post('/api/xero/pay-invoice', handlePayInvoice);
 
 // ============================================================================
 // MARKETING BOOST API ENDPOINTS

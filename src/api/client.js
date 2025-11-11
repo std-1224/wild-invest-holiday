@@ -28,7 +28,10 @@ class WildThingsAPI {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        const error = new Error(errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        // Preserve the full response data for error handling
+        error.response = { data: errorData, status: response.status };
+        throw error;
       }
 
       return await response.json();
@@ -473,12 +476,12 @@ class WildThingsAPI {
 
   /**
    * Get unpaid invoices from Xero for a specific contact
-   * @param {string} contactId - Xero contact ID
-   * @param {string} customerId - Stripe customer ID
+   * @param {string} contactId - Xero contact ID (optional - uses user's xeroContactId if not provided)
    * @returns {Promise<{success: boolean, invoices: Array, count: number}>}
    */
-  async getXeroInvoices(contactId, customerId) {
-    return this.request(`/api/xero/get-invoices?contactId=${contactId}&customerId=${customerId}`);
+  async getXeroInvoices(contactId = '') {
+    const queryParam = contactId ? `?contactId=${contactId}` : '';
+    return this.request(`/api/xero/get-invoices${queryParam}`);
   }
 
   /**

@@ -55,6 +55,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
+    xeroContactId: {
+      type: String,
+      default: null,
+      trim: true,
+      index: true, // For faster lookups when fetching invoices
+    },
     resetPasswordToken: {
       type: String,
       default: null,

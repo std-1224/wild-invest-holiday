@@ -114,8 +114,17 @@ export class WildThingsAPI {
   // Xero integration
   getXeroStatus(): Promise<{ success: boolean; connected: boolean; tenantId?: string; tenantName?: string; connectedAt?: string }>;
   disconnectXero(): Promise<{ success: boolean; message: string }>;
-  getXeroInvoices(): Promise<{ success: boolean; invoices: any[] }>;
+  getXeroInvoices(contactId?: string): Promise<{ success: boolean; invoices: any[]; count: number }>;
   recordXeroPayment(invoiceId: string, amount: number, paymentDate?: string, reference?: string): Promise<{ success: boolean; payment: any }>;
+  payXeroInvoice(paymentData: {
+    invoiceId: string;
+    invoiceNumber: string;
+    amount: number;
+    currency: string;
+    paymentMethodId: string;
+    xeroContactId: string;
+    description: string;
+  }): Promise<{ success: boolean; paymentIntent: any; xeroPayment: any; xeroError: string | null }>;
 
   // Marketing Boost integration
   activateMarketingBoost(boostData: {
