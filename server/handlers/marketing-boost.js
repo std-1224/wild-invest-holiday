@@ -108,9 +108,24 @@ async function getAdminXeroClient() {
   await xero.initialize();
 
   // ✅ Set the current token
+  const decryptedAccessToken = connection.getAccessToken();
+  const decryptedRefreshToken = connection.getRefreshToken();
+
+  // ⚠️ Check if decryption failed (returns empty string on error)
+  if (!decryptedAccessToken || !decryptedRefreshToken) {
+    console.error('❌ Token decryption failed!');
+    console.error('💡 This usually means XERO_ENCRYPTION_KEY is missing or changed');
+    console.error('💡 Admin needs to reconnect Xero to generate new tokens');
+    return null;
+  }
+
+  console.log('✅ Tokens decrypted successfully');
+  console.log('Access token length:', decryptedAccessToken.length);
+  console.log('Refresh token length:', decryptedRefreshToken.length);
+
   const currentTokenSet = {
-    access_token: connection.getAccessToken(),
-    refresh_token: connection.getRefreshToken(),
+    access_token: decryptedAccessToken,
+    refresh_token: decryptedRefreshToken,
     expires_at: Math.floor(connection.tokenExpiresAt.getTime() / 1000),
     token_type: connection.tokenType,
   };
