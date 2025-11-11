@@ -137,45 +137,6 @@ export const XeroConnect: React.FC<XeroConnectProps> = ({ hasError = false }) =>
     });
   };
 
-  // If user is owner (not admin), show info message
-  if (userRole === 'owner') {
-    return (
-      <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-200">
-        <div className="flex items-start gap-4">
-          {/* Xero Logo */}
-          <div className="flex-shrink-0">
-            <img
-              src={`/xero.png`}
-              alt={"xero-logo"}
-              className="w-12 h-8 object-contain"
-            />
-          </div>
-
-          {/* Content */}
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">
-              Xero Integration
-            </h3>
-            <p className="text-sm text-blue-800 mb-3">
-              Your invoices are automatically managed through Wild Things' centralized Xero accounting system.
-            </p>
-            <div className="bg-white border border-blue-200 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-blue-900 mb-2">
-                ℹ️ How it works:
-              </h4>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• When you activate a marketing boost, an invoice is automatically created</li>
-                <li>• Your payment is processed via Stripe and recorded in our accounting system</li>
-                <li>• All invoices are managed by the Wild Things admin team</li>
-                <li>• You don't need to connect your own Xero account</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // If connected, show connected state (admin only)
   if (isConnected) {
     return (
