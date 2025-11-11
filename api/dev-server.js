@@ -42,6 +42,7 @@ import {
 } from '../server/handlers/xero-oauth.js';
 import {
   handleXeroStatus,
+  handleValidateXeroConnection,
   handleXeroDisconnect,
   handleGetXeroInvoices,
   handleRecordXeroPayment,
@@ -284,6 +285,7 @@ app.get('/api/xero-callback', handleXeroCallback);
 
 // Xero connection management
 app.get('/api/xero/status', handleXeroStatus);
+app.get('/api/xero/validate-connection', handleValidateXeroConnection);
 app.post('/api/xero/disconnect', handleXeroDisconnect);
 
 // Xero data endpoints

@@ -84,12 +84,22 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
     try {
       console.log('🔄 Validating Xero connection (triggers token refresh if needed)...');
 
-      // Make a lightweight API call to Xero to trigger token refresh
-      // We fetch invoices but don't display them - just to validate the connection
-      await apiClient.getXeroInvoices();
+      // Call the dedicated validation endpoint
+      const response = await apiClient.validateXeroConnection();
 
-      console.log('✅ Xero connection validated successfully');
-      setXeroError("");
+      if (response.success && response.validated) {
+        console.log('✅ Xero connection validated successfully');
+        console.log(`🏢 Organization: ${response.organization?.name}`);
+        if (response.tokenExpiresAt) {
+          console.log(`⏰ Token expires: ${new Date(response.tokenExpiresAt).toLocaleString()}`);
+        }
+        setXeroError("");
+      } else if (response.requiresReconnect) {
+        console.error('❌ Xero connection requires reconnection');
+        setXeroError('Xero token has expired or is invalid. Please reconnect your Xero account.');
+      } else {
+        console.warn('⚠️ Xero validation returned unexpected result:', response);
+      }
     } catch (error: any) {
       console.error('❌ Xero connection validation failed:', error);
 
@@ -97,7 +107,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
       if (error.message && (
         error.message.includes('Failed to refresh Xero token') ||
         error.message.includes('Token decryption failed') ||
-        error.message.includes('Please reconnect')
+        error.message.includes('Please reconnect') ||
+        error.message.includes('requiresReconnect')
       )) {
         setXeroError('Xero token has expired or is invalid. Please reconnect your Xero account.');
       }

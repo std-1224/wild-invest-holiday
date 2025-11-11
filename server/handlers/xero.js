@@ -172,14 +172,14 @@ export async function handleXeroStatus(req, res) {
   try {
     const user = await getAuthenticatedUser(req);
     const connection = await XeroConnection.findByUserId(user._id);
-    
+
     if (!connection) {
       return res.json({
         success: true,
         connected: false,
       });
     }
-    
+
     return res.json({
       success: true,
       connected: true,
@@ -191,14 +191,124 @@ export async function handleXeroStatus(req, res) {
     });
   } catch (error) {
     console.error('Error checking Xero status:', error);
-    
+
     if (error.message === 'Not authenticated' || error.message === 'Invalid or expired token') {
       return res.status(401).json({
         success: false,
         error: 'Not authenticated',
       });
     }
-    
+
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+}
+
+/**
+ * GET /api/xero/validate-connection
+ * Validate Xero connection by making an actual API call
+ * This triggers automatic token refresh if needed
+ *
+ * This is a lightweight endpoint specifically designed for:
+ * - Periodic background validation
+ * - Triggering automatic token refresh
+ * - Verifying the connection is working
+ *
+ * Unlike /api/xero/status which only checks the database,
+ * this endpoint makes an actual Xero API call to validate the connection.
+ */
+export async function handleValidateXeroConnection(req, res) {
+  try {
+    await connectDB();
+    const user = await getAuthenticatedUser(req);
+
+    console.log(`\n🔍 ===== VALIDATING XERO CONNECTION =====`);
+    console.log(`👤 User: ${user.email}`);
+    console.log(`📅 Timestamp: ${new Date().toISOString()}`);
+
+    // Check if Xero is connected
+    const connection = await XeroConnection.findByUserId(user._id);
+
+    if (!connection) {
+      console.log('❌ No Xero connection found');
+      console.log('========================================\n');
+      return res.json({
+        success: false,
+        connected: false,
+        message: 'Xero not connected',
+      });
+    }
+
+    console.log(`✅ Xero connection found`);
+    console.log(`🏢 Tenant: ${connection.tenantName}`);
+    console.log(`⏰ Token expires: ${connection.tokenExpiresAt}`);
+    console.log(`🔄 Needs refresh: ${connection.needsRefresh()}`);
+
+    // Get valid Xero client (this will auto-refresh tokens if needed)
+    const { xero, tenantId } = await getValidXeroClient(user._id);
+
+    // Make a lightweight API call to validate the connection
+    // We'll just get the organization info - it's fast and doesn't return much data
+    console.log('📡 Making test API call to Xero...');
+    const response = await xero.accountingApi.getOrganisations(tenantId);
+
+    if (response && response.body && response.body.organisations && response.body.organisations.length > 0) {
+      const org = response.body.organisations[0];
+      console.log(`✅ Xero API call successful`);
+      console.log(`🏢 Organization: ${org.name}`);
+      console.log(`🆔 Organization ID: ${org.organisationID}`);
+      console.log('========================================\n');
+
+      return res.json({
+        success: true,
+        connected: true,
+        validated: true,
+        organization: {
+          name: org.name,
+          id: org.organisationID,
+          countryCode: org.countryCode,
+        },
+        tokenExpiresAt: connection.tokenExpiresAt,
+        message: 'Xero connection validated successfully',
+      });
+    } else {
+      console.log('⚠️ Unexpected API response');
+      console.log('========================================\n');
+
+      return res.json({
+        success: false,
+        connected: true,
+        validated: false,
+        message: 'Unexpected response from Xero API',
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error validating Xero connection:', error);
+    console.error('Error details:', error.message);
+    console.log('========================================\n');
+
+    if (error.message === 'Not authenticated' || error.message === 'Invalid or expired token') {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated',
+      });
+    }
+
+    // Check if it's a token refresh error
+    if (error.message.includes('Failed to refresh Xero token') ||
+        error.message.includes('Token decryption failed') ||
+        error.message.includes('Please reconnect')) {
+      return res.status(401).json({
+        success: false,
+        connected: true,
+        validated: false,
+        error: error.message,
+        requiresReconnect: true,
+      });
+    }
+
     return res.status(500).json({
       success: false,
       error: error.message,

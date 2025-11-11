@@ -374,10 +374,21 @@ class WildThingsAPI {
   // Xero integration
   /**
    * Check Xero connection status for authenticated user
+   * This only checks the database - does not make an actual Xero API call
    * @returns {Promise<Object>} Response with connection status
    */
   async getXeroStatus() {
     return this.request('/api/xero/status');
+  }
+
+  /**
+   * Validate Xero connection by making an actual API call
+   * This triggers automatic token refresh if needed
+   * Use this for periodic background validation
+   * @returns {Promise<Object>} Response with validation result and organization info
+   */
+  async validateXeroConnection() {
+    return this.request('/api/xero/validate-connection');
   }
 
   /**
