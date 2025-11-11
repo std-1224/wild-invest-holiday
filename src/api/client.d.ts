@@ -116,6 +116,21 @@ export class WildThingsAPI {
   disconnectXero(): Promise<{ success: boolean; message: string }>;
   getXeroInvoices(): Promise<{ success: boolean; invoices: any[] }>;
   recordXeroPayment(invoiceId: string, amount: number, paymentDate?: string, reference?: string): Promise<{ success: boolean; payment: any }>;
+
+  // Marketing Boost integration
+  activateMarketingBoost(boostData: {
+    investmentId: string;
+    cabinType: string;
+    location: string;
+    tier: string;
+    tierName: string;
+    monthlyPrice: number;
+    paymentMethodId: string;
+  }): Promise<{ success: boolean; boost: any; payment: any; xero: any; message: string }>;
+  listMarketingBoosts(): Promise<{ success: boolean; boosts: any[] }>;
+  cancelMarketingBoost(boostId: string): Promise<{ success: boolean; message: string }>;
+  pauseMarketingBoost(boostId: string): Promise<{ success: boolean; message: string }>;
+  resumeMarketingBoost(boostId: string): Promise<{ success: boolean; message: string }>;
 }
 
 declare const apiClient: WildThingsAPI;

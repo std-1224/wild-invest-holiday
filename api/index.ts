@@ -43,6 +43,13 @@ import {
   handleGetXeroInvoices,
   handleRecordXeroPayment,
 } from '../server/handlers/xero.js';
+import {
+  handleActivateBoost,
+  handleListBoosts,
+  handleCancelBoost,
+  handlePauseBoost,
+  handleResumeBoost,
+} from '../server/handlers/marketing-boost.js';
 
 // Initialize Stripe
 const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
@@ -161,6 +168,18 @@ export default async function handler(
       return await handleGetXeroInvoices(req, res);
     } else if (path.includes('/xero/record-payment')) {
       return await handleRecordXeroPayment(req, res);
+    }
+    // Marketing Boost routes
+    else if (path.includes('/marketing-boost/activate')) {
+      return await handleActivateBoost(req, res);
+    } else if (path.includes('/marketing-boost/list')) {
+      return await handleListBoosts(req, res);
+    } else if (path.includes('/marketing-boost/cancel')) {
+      return await handleCancelBoost(req, res);
+    } else if (path.includes('/marketing-boost/pause')) {
+      return await handlePauseBoost(req, res);
+    } else if (path.includes('/marketing-boost/resume')) {
+      return await handleResumeBoost(req, res);
     }
     // Agreement routes - Order matters! Check specific routes before generic patterns
     else if (path.includes('/agreements/owners')) {

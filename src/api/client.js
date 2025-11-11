@@ -411,6 +411,66 @@ class WildThingsAPI {
     });
   }
 
+  // ============================================================================
+  // MARKETING BOOST METHODS
+  // ============================================================================
+
+  /**
+   * Activate marketing boost subscription
+   * @param {Object} boostData - Boost subscription data
+   * @returns {Promise<Object>} Response with boost details
+   */
+  async activateMarketingBoost(boostData) {
+    return this.request('/api/marketing-boost/activate', {
+      method: 'POST',
+      body: JSON.stringify(boostData),
+    });
+  }
+
+  /**
+   * Get all marketing boosts for authenticated user
+   * @returns {Promise<Object>} Response with boosts array
+   */
+  async listMarketingBoosts() {
+    return this.request('/api/marketing-boost/list');
+  }
+
+  /**
+   * Cancel marketing boost subscription
+   * @param {string} boostId - Boost ID
+   * @returns {Promise<Object>} Response with success message
+   */
+  async cancelMarketingBoost(boostId) {
+    return this.request('/api/marketing-boost/cancel', {
+      method: 'POST',
+      body: JSON.stringify({ boostId }),
+    });
+  }
+
+  /**
+   * Pause marketing boost subscription
+   * @param {string} boostId - Boost ID
+   * @returns {Promise<Object>} Response with success message
+   */
+  async pauseMarketingBoost(boostId) {
+    return this.request('/api/marketing-boost/pause', {
+      method: 'POST',
+      body: JSON.stringify({ boostId }),
+    });
+  }
+
+  /**
+   * Resume paused marketing boost subscription
+   * @param {string} boostId - Boost ID
+   * @returns {Promise<Object>} Response with success message
+   */
+  async resumeMarketingBoost(boostId) {
+    return this.request('/api/marketing-boost/resume', {
+      method: 'POST',
+      body: JSON.stringify({ boostId }),
+    });
+  }
+
   /**
    * Get unpaid invoices from Xero for a specific contact
    * @param {string} contactId - Xero contact ID

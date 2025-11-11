@@ -46,6 +46,13 @@ import {
   handleGetXeroInvoices,
   handleRecordXeroPayment,
 } from '../server/handlers/xero.js';
+import {
+  handleActivateBoost,
+  handleListBoosts,
+  handleCancelBoost,
+  handlePauseBoost,
+  handleResumeBoost,
+} from '../server/handlers/marketing-boost.js';
 
 const app = express();
 const PORT = 3001;
@@ -276,6 +283,16 @@ app.post('/api/xero/disconnect', handleXeroDisconnect);
 // Xero data endpoints
 app.get('/api/xero/invoices', handleGetXeroInvoices);
 app.post('/api/xero/record-payment', handleRecordXeroPayment);
+
+// ============================================================================
+// MARKETING BOOST API ENDPOINTS
+// ============================================================================
+
+app.post('/api/marketing-boost/activate', handleActivateBoost);
+app.get('/api/marketing-boost/list', handleListBoosts);
+app.post('/api/marketing-boost/cancel', handleCancelBoost);
+app.post('/api/marketing-boost/pause', handlePauseBoost);
+app.post('/api/marketing-boost/resume', handleResumeBoost);
 
 // ============================================================================
 // AGREEMENT API ENDPOINTS

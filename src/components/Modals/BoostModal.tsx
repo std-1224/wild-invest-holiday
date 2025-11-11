@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AddPaymentMethodModal } from "../AddPaymentMethodModal";
+import apiClient from "../../api/client";
 
 interface Investment {
   cabinType: string;
@@ -45,6 +46,8 @@ export const BoostModal = ({
     string | null
   >(savedPaymentMethods.find((pm) => pm.isDefault)?.id || null);
   const [showAddPaymentMethodModal, setShowAddPaymentMethodModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const boostTiers: BoostTier[] = [
     {
@@ -92,22 +95,46 @@ export const BoostModal = ({
     setShowAddPaymentMethodModal(false);
   };
 
-  const handleBoostSubmit = () => {
+  const handleBoostSubmit = async () => {
     const tier = boostTiers.find((t) => t.id === selectedBoostTier);
-    if (!tier) return;
+    if (!tier || !selectedPaymentMethod || !selectedInvestment) return;
 
-    console.log("Boost activated:", {
-      investment: selectedInvestment,
-      tier: tier.name,
-      price: tier.price,
-      paymentMethod: selectedPaymentMethod,
-    });
+    setLoading(true);
+    setError(null);
 
-    alert(
-      `Boost activated! Your ${tier.name} package ($${tier.price}/month) is now active.`
-    );
-    onClose();
-    setSelectedBoostTier(null);
+    try {
+      const response = await apiClient.activateMarketingBoost({
+        investmentId: selectedInvestment.id.toString(),
+        cabinType: selectedInvestment.cabinType,
+        location: selectedInvestment.location,
+        tier: tier.id,
+        tierName: tier.name,
+        monthlyPrice: tier.price,
+        paymentMethodId: selectedPaymentMethod,
+      });
+
+      if (!response.success) {
+        throw new Error((response as any).error || 'Failed to activate boost');
+      }
+
+      console.log("✅ Boost activated:", response);
+
+      // Show success message
+      alert(
+        `Boost activated! Your ${tier.name} package ($${tier.price}/month) is now active.\n\n` +
+        `Payment ID: ${response.payment.id}\n` +
+        (response.xero ? `Xero Invoice: ${response.xero.invoiceId}` : 'Xero invoice will be created on next sync.')
+      );
+
+      onClose();
+      setSelectedBoostTier(null);
+    } catch (err: any) {
+      console.error("❌ Error activating boost:", err);
+      setError(err.message || 'Failed to activate marketing boost');
+      alert(`Error: ${err.message || 'Failed to activate marketing boost'}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen || !selectedInvestment) return null;
@@ -228,6 +255,13 @@ export const BoostModal = ({
           </div>
         )}
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+            <p className="text-red-600 font-semibold">{error}</p>
+          </div>
+        )}
+
         {/* Summary & Confirm */}
         {selectedBoostTier && selectedPaymentMethod && (
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
@@ -280,10 +314,10 @@ export const BoostModal = ({
         <div className="flex gap-3">
           <button
             onClick={handleBoostSubmit}
-            disabled={!selectedBoostTier || !selectedPaymentMethod}
+            disabled={!selectedBoostTier || !selectedPaymentMethod || loading}
             className="flex-1 py-3 rounded-lg font-bold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed bg-[#ec874c] text-white"
           >
-            Activate Boost
+            {loading ? 'Processing...' : 'Activate Boost'}
           </button>
           <button
             onClick={() => {
