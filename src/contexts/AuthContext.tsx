@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { AuthLoginModal } from "../components/Modals/AuthLoginModal";
+import { AuthAdminLoginModal } from "../components/Modals/AuthAdminLoginModal";
 import { AuthRegisterModal } from "../components/Modals/AuthRegisterModal";
 import { ForgotPasswordModal } from "../components/Modals/ForgotPasswordModal";
 import { ResetPasswordModal } from "../components/Modals/ResetPasswordModal";
@@ -11,9 +12,11 @@ interface AuthContextType {
   isLoggedIn: boolean;
   setIsLoggedIn: (value: boolean) => void;
   showLoginModal: () => void;
+  showAdminLoginModal: () => void;
   showRegisterModal: () => void;
   showForgotPasswordModal: () => void;
   login: () => void;
+  adminLogin: () => void;
   logout: () => void;
   currentUser: any;
 }
@@ -31,11 +34,13 @@ export const useAuth = () => {
 interface AuthProviderProps {
   children: ReactNode;
   onNavigateToPortal?: () => void;
+  onNavigateToAdminPortal?: () => void;
 }
 
 export const AuthProvider = ({
   children,
   onNavigateToPortal,
+  onNavigateToAdminPortal,
 }: AuthProviderProps) => {
   const [isLoggedIn, setIsLoggedIn] = useState(apiClient.isAuthenticated());
   const [currentUser, setCurrentUser] = useState(apiClient.getUser());
@@ -53,6 +58,7 @@ export const AuthProvider = ({
   }, []);
   const [activeModal, setActiveModal] = useState<
     | "login"
+    | "adminLogin"
     | "register"
     | "forgotPassword"
     | "resetPassword"
@@ -65,6 +71,7 @@ export const AuthProvider = ({
   const [existingAccountEmail] = useState("");
 
   const showLoginModal = () => setActiveModal("login");
+  const showAdminLoginModal = () => setActiveModal("adminLogin");
   const showRegisterModal = () => setActiveModal("register");
   const showForgotPasswordModal = () => setActiveModal("forgotPassword");
   const closeAllModals = () => setActiveModal(null);
@@ -74,6 +81,13 @@ export const AuthProvider = ({
     setCurrentUser(apiClient.getUser());
     closeAllModals();
     onNavigateToPortal?.();
+  };
+
+  const adminLogin = () => {
+    setIsLoggedIn(true);
+    setCurrentUser(apiClient.getUser());
+    closeAllModals();
+    onNavigateToAdminPortal?.();
   };
 
   const logout = () => {
@@ -113,9 +127,11 @@ export const AuthProvider = ({
     isLoggedIn,
     setIsLoggedIn,
     showLoginModal,
+    showAdminLoginModal,
     showRegisterModal,
     showForgotPasswordModal,
     login,
+    adminLogin,
     logout,
     currentUser,
   };
@@ -131,6 +147,13 @@ export const AuthProvider = ({
         onLogin={login}
         onSwitchToRegister={() => setActiveModal("register")}
         onForgotPassword={() => setActiveModal("forgotPassword")}
+      />
+
+      {/* Admin Login Modal */}
+      <AuthAdminLoginModal
+        isOpen={activeModal === "adminLogin"}
+        onClose={closeAllModals}
+        onLogin={adminLogin}
       />
 
       {/* Register Modal */}

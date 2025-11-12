@@ -146,6 +146,11 @@ export class WildThingsAPI {
   cancelMarketingBoost(boostId: string): Promise<{ success: boolean; message: string }>;
   pauseMarketingBoost(boostId: string): Promise<{ success: boolean; message: string }>;
   resumeMarketingBoost(boostId: string): Promise<{ success: boolean; message: string }>;
+  getOwnerCabins(ownerId: string): Promise<{ success: boolean; cabins: any[]; count: number }>;
+  getMyCabins(): Promise<{ success: boolean; cabins: any[]; count: number }>;
+  searchOwners(query: string): Promise<{ success: boolean; owners: any[]; count: number }>;
+  getLocations(): Promise<{ success: boolean; locations: any[]; count: number }>;
+  createLocation(locationData: any): Promise<{ success: boolean; message: string; location: any }>;
 }
 
 declare const apiClient: WildThingsAPI;

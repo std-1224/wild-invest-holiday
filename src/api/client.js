@@ -691,6 +691,76 @@ class WildThingsAPI {
     });
   }
 
+  // Location methods
+  /**
+   * Get all locations
+   * @returns {Promise<Object>} Response with list of locations
+   */
+  async getLocations() {
+    return this.request('/api/locations');
+  }
+
+  /**
+   * Create a new location (admin only)
+   * @param {Object} locationData - Location data
+   * @returns {Promise<Object>} Response with created location
+   */
+  async createLocation(locationData) {
+    return this.request('/api/admin/locations', {
+      method: 'POST',
+      body: JSON.stringify(locationData),
+    });
+  }
+
+  /**
+   * Update a location (admin only)
+   * @param {string} locationId - Location ID
+   * @param {Object} updateData - Data to update
+   * @returns {Promise<Object>} Response with updated location
+   */
+  async updateLocation(locationId, updateData) {
+    return this.request(`/api/admin/locations/${locationId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  }
+
+  /**
+   * Get sites for a location
+   * @param {string} locationId - Location ID
+   * @returns {Promise<Object>} Response with list of sites
+   */
+  async getSitesByLocation(locationId) {
+    return this.request(`/api/locations/${locationId}/sites`);
+  }
+
+  // Cabin methods
+  /**
+   * Search owners by name or email (admin only)
+   * @param {string} query - Search query
+   * @returns {Promise<Object>} Response with list of matching owners
+   */
+  async searchOwners(query) {
+    return this.request(`/api/admin/owners/search?query=${encodeURIComponent(query)}`);
+  }
+
+  /**
+   * Get cabins owned by a specific owner (admin only)
+   * @param {string} ownerId - Owner's user ID
+   * @returns {Promise<Object>} Response with list of cabins
+   */
+  async getOwnerCabins(ownerId) {
+    return this.request(`/api/admin/owners/${ownerId}/cabins`);
+  }
+
+  /**
+   * Get all cabins for authenticated user
+   * @returns {Promise<Object>} Response with list of cabins
+   */
+  async getMyCabins() {
+    return this.request('/api/cabins/my-cabins');
+  }
+
   // Health check
   async healthCheck() {
     return this.request('/health');

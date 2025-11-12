@@ -33,7 +33,7 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
   }>({});
 
   // Use the auth context
-  const { isLoggedIn, setIsLoggedIn, showLoginModal, logout } = useAuth();
+  const { isLoggedIn, setIsLoggedIn, showLoginModal, showAdminLoginModal, logout } = useAuth();
 
   // Protect investor portal and admin portal - redirect to home if not logged in
   useEffect(() => {
@@ -43,9 +43,9 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
     }
     if (currentPage === "admin-portal" && !isLoggedIn) {
       setCurrentPage("home");
-      showLoginModal(); // Show login modal to prompt user to login
+      showAdminLoginModal(); // Show admin login modal to prompt admin to login
     }
-  }, [currentPage, isLoggedIn, showLoginModal]);
+  }, [currentPage, isLoggedIn, showLoginModal, showAdminLoginModal]);
 
   const handleCabinInvest = (cabin: any) => {
     setSelectedCabinForInvestment(cabin.id);
@@ -79,6 +79,7 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
     <div style={{ minHeight: "100vh" }}>
       <Navbar
         onLoginClick={showLoginModal}
+        onAdminLoginClick={showAdminLoginModal}
         isLoggedIn={isLoggedIn}
         onLogout={logout}
         onNavigate={setCurrentPage}
@@ -192,7 +193,10 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider onNavigateToPortal={() => setCurrentPage("investor-portal")}>
+    <AuthProvider
+      onNavigateToPortal={() => setCurrentPage("investor-portal")}
+      onNavigateToAdminPortal={() => setCurrentPage("admin-portal")}
+    >
       <AppContent currentPage={currentPage} setCurrentPage={setCurrentPage} />
     </AuthProvider>
   );

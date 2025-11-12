@@ -1,33 +1,47 @@
-export const getAvailableExtrasForCabin = (cabinType: any) => [
-  {
-    id: "offgrid",
-    name: "Off Grid Pack",
-    price: 20000,
-    nightlyImpact: 0,
-    energySavings: 2400,
-  }, // $200/month energy savings
-  {
-    id: "furniture",
-    name: "Premium Furniture Package",
-    price: 10000,
-    nightlyImpact: 30,
-  },
-  { id: "linen", name: "Linen Pack", price: 1000, nightlyImpact: 5 },
-  {
-    id: "artwork",
-    name: "Artwork Package",
-    price: 2000,
-    nightlyImpact: 8,
-  },
-  { id: "decking", name: "Decking", price: 10000, nightlyImpact: 12 },
-  {
-    id: "marketingBoost",
-    name: "Marketing Boost Package",
-    price: 5000,
-    nightlyImpact: 0,
-    occupancyBoost: 10,
-  }, // 10% occupancy boost
-];
+export const getAvailableExtrasForCabin = (cabinType: any) => {
+  const extras = [
+    {
+      id: "offgrid",
+      name: "Off Grid Pack",
+      price: 20000,
+      nightlyImpact: 0,
+      energySavings: 2400,
+    }, // $200/month energy savings
+    {
+      id: "furniture",
+      name: "Premium Furniture Package",
+      price: 10000,
+      nightlyImpact: 30,
+    },
+    { id: "linen", name: "Linen Pack", price: 1000, nightlyImpact: 5 },
+    {
+      id: "artwork",
+      name: "Artwork Package",
+      price: 2000,
+      nightlyImpact: 8,
+    },
+    { id: "decking", name: "Decking", price: 10000, nightlyImpact: 12 },
+    {
+      id: "marketingBoost",
+      name: "Marketing Boost Package",
+      price: 5000,
+      nightlyImpact: 0,
+      occupancyBoost: 10,
+    }, // 10% occupancy boost
+  ];
+
+  // Add Sauna/Spa only for 1BR cabins
+  if (cabinType === "1BR") {
+    extras.push({
+      id: "sauna",
+      name: "Sauna/Spa",
+      price: 25000,
+      nightlyImpact: 50,
+    });
+  }
+
+  return extras;
+};
 
 // ROI Calculation Functions (Root Level) - Wild Things Methodology
 export const calculateROI = (...args: any[]) => {
@@ -251,7 +265,7 @@ export const getExtrasForCabin = (cabinType: any) => {
   const deckingPrice = cabinType === "1BR" ? 10000 : 15000;
   const entertainmentPrice = cabinType === "1BR" ? 1000 : 2000;
 
-  return [
+  const extras = [
     {
       id: "furniture",
       name: "Furniture Pack",
@@ -302,6 +316,20 @@ export const getExtrasForCabin = (cabinType: any) => {
       annualCostSavings: 0,
     },
   ];
+
+  // Add Sauna/Spa only for 1BR cabins
+  if (cabinType === "1BR") {
+    extras.push({
+      id: "sauna",
+      name: "Sauna/Spa",
+      price: 25000,
+      nightlyImpact: 50,
+      impactDescription: "+$50/night - Premium wellness amenity",
+      annualCostSavings: 0,
+    });
+  }
+
+  return extras;
 };
 
 export const faqs = [

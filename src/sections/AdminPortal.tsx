@@ -25,19 +25,42 @@ interface Agreement {
   updatedAt: string;
 }
 
+interface Cabin {
+  _id: string;
+  cabinType: string;
+  purchasePrice: number;
+  purchaseDate: string;
+  status: string;
+  purchasedExtras: string[];
+  locationId: {
+    name: string;
+    slug: string;
+  };
+  siteId: {
+    siteNumber: string;
+  };
+}
+
 interface AdminPortalProps {
   setIsLoggedIn: (value: boolean) => void;
   onNavigate: (page: string) => void;
 }
 
 export const AdminPortal: React.FC<AdminPortalProps> = () => {
+  // Tab state
+  const [activeTab, setActiveTab] = useState<"owners" | "locations">("owners");
+
   const [owners, setOwners] = useState<Owner[]>([]);
   const [selectedOwner, setSelectedOwner] = useState<Owner | null>(null);
   const [ownerAgreements, setOwnerAgreements] = useState<Agreement[]>([]);
+  const [ownerCabins, setOwnerCabins] = useState<Cabin[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Owner[]>([]);
+  const [searching, setSearching] = useState(false);
 
   // Xero connection state
   const [xeroConnected, setXeroConnected] = useState(false);
@@ -47,6 +70,20 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [agreementType, setAgreementType] = useState("sale_agreement");
   const [cabinId, setCabinId] = useState("");
+
+  // Location management state
+  const [locations, setLocations] = useState<any[]>([]);
+  const [showLocationForm, setShowLocationForm] = useState(false);
+  const [locationForm, setLocationForm] = useState({
+    name: "",
+    description: "",
+    address: "",
+    totalSites: 0,
+    cabinTypeDistribution: {
+      "1BR": 50,
+      "2BR": 50,
+    },
+  });
 
   // Check Xero connection status
   const checkXeroStatus = async () => {
@@ -157,10 +194,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
     };
   }, [xeroConnected]);
 
-  // Load agreements when owner is selected
+  // Load agreements and cabins when owner is selected
   useEffect(() => {
     if (selectedOwner) {
       loadOwnerAgreements(selectedOwner.id);
+      loadOwnerCabins(selectedOwner.id);
     }
   }, [selectedOwner]);
 
@@ -195,6 +233,47 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
       setError(err.message || "Failed to load agreements");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadOwnerCabins = async (ownerId: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await apiClient.getOwnerCabins(ownerId);
+      if (response.success) {
+        setOwnerCabins(response.cabins || []);
+      } else {
+        setError((response as any).error || "Failed to load cabins");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load cabins");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const response = await apiClient.searchOwners(query);
+      if (response.success) {
+        setSearchResults(response.owners || []);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (err: any) {
+      console.error("Search error:", err);
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
     }
   };
 
@@ -277,6 +356,66 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
     };
     return types[type] || type;
   };
+
+  // Location management functions
+  const loadLocations = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await apiClient.getLocations();
+      if (response.success) {
+        setLocations(response.locations || []);
+      } else {
+        setError((response as any).error || "Failed to load locations");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load locations");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateLocation = async () => {
+    if (!locationForm.name || !locationForm.totalSites) {
+      setError("Please fill in location name and total sites");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const response = await apiClient.createLocation(locationForm);
+      if (response.success) {
+        setSuccess("Location created successfully!");
+        setShowLocationForm(false);
+        setLocationForm({
+          name: "",
+          description: "",
+          address: "",
+          totalSites: 0,
+          cabinTypeDistribution: {
+            "1BR": 50,
+            "2BR": 50,
+          },
+        });
+        loadLocations();
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError((response as any).error || "Failed to create location");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to create location");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load locations when switching to locations tab
+  useEffect(() => {
+    if (activeTab === "locations") {
+      loadLocations();
+    }
+  }, [activeTab]);
 
   return (
     <div className="min-h-screen pb-8 w-full max-w-full overflow-x-hidden bg-[#f5f5f5]">
@@ -366,28 +505,86 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
           <XeroConnect hasError={!!xeroError} />
         </div>
 
-        {/* Main Content Grid */}
+        {/* Tabs */}
+        <div className="mb-8">
+          <div className="flex gap-4 border-b-2 border-gray-200">
+            <button
+              onClick={() => setActiveTab("owners")}
+              className={`px-6 py-3 font-bold transition-all ${
+                activeTab === "owners"
+                  ? "border-b-4 border-[#ffcf00] text-[#0e181f]"
+                  : "text-gray-500 hover:text-[#0e181f]"
+              }`}
+            >
+              Owner Management
+            </button>
+            <button
+              onClick={() => setActiveTab("locations")}
+              className={`px-6 py-3 font-bold transition-all ${
+                activeTab === "locations"
+                  ? "border-b-4 border-[#ffcf00] text-[#0e181f]"
+                  : "text-gray-500 hover:text-[#0e181f]"
+              }`}
+            >
+              Location Management
+            </button>
+          </div>
+        </div>
+
+        {/* Owner Management Tab */}
+        {activeTab === "owners" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Owner List */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
               All Owners ({owners.length})
             </h2>
-            
+
+            {/* Search Input */}
+            <div className="mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search owners by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full px-4 py-2 pl-10 border-2 border-gray-300 rounded-lg focus:border-[#86dbdf] focus:outline-none"
+                />
+                <svg
+                  className="absolute left-3 top-3 w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                {searching && (
+                  <div className="absolute right-3 top-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#86dbdf]"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {loading && !selectedOwner && (
               <div className="text-center py-8">
                 <p className="text-gray-600">Loading owners...</p>
               </div>
             )}
 
-            {!loading && owners.length === 0 && (
+            {!loading && owners.length === 0 && searchQuery.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-gray-600">No owners found</p>
               </div>
             )}
 
             <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {owners.map((owner) => (
+              {(searchQuery.length >= 2 ? searchResults : owners).map((owner) => (
                 <div
                   key={owner.id}
                   onClick={() => setSelectedOwner(owner)}
@@ -519,6 +716,85 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
               )}
             </div>
 
+            {/* Cabins List */}
+            {selectedOwner && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
+                  Owned Cabins ({ownerCabins.length})
+                </h2>
+
+                {loading && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600">Loading cabins...</p>
+                  </div>
+                )}
+
+                {!loading && ownerCabins.length === 0 && (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <p className="text-gray-600">No cabins found for this owner</p>
+                  </div>
+                )}
+
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {ownerCabins.map((cabin) => (
+                    <div
+                      key={cabin._id}
+                      className="p-4 rounded-lg border-2 border-gray-200 hover:border-[#86dbdf] transition-all"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-bold text-[#0e181f] text-lg">
+                              {cabin.cabinType} Cabin
+                            </h3>
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              cabin.status === 'active'
+                                ? 'bg-green-100 text-green-800'
+                                : cabin.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {cabin.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Location:</span> {cabin.locationId?.name || 'N/A'}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Site:</span> {cabin.siteId?.siteNumber || 'N/A'}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Purchase Price:</span> ${cabin.purchasePrice.toLocaleString()}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold">Purchase Date:</span>{' '}
+                            {new Date(cabin.purchaseDate).toLocaleDateString()}
+                          </p>
+                          {cabin.purchasedExtras && cabin.purchasedExtras.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs font-semibold text-[#ec874c] mb-1">
+                                Extras:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {cabin.purchasedExtras.map((extra, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-1 bg-[#ffcda3] text-[#0e181f] rounded text-xs"
+                                  >
+                                    {extra}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Agreements List */}
             {selectedOwner && (
               <div className="bg-white rounded-lg shadow-lg p-6">
@@ -581,6 +857,225 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
             )}
           </div>
         </div>
+        )}
+
+        {/* Location Management Tab */}
+        {activeTab === "locations" && (
+          <div className="space-y-6">
+            {/* Create Location Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowLocationForm(!showLocationForm)}
+                className="px-6 py-3 bg-[#ffcf00] text-[#0e181f] rounded-lg font-bold hover:opacity-90 transition-opacity"
+              >
+                {showLocationForm ? "Cancel" : "Create New Location"}
+              </button>
+            </div>
+
+            {/* Create Location Form */}
+            {showLocationForm && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
+                  Create New Location
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-[#0e181f]">
+                      Location Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={locationForm.name}
+                      onChange={(e) =>
+                        setLocationForm({ ...locationForm, name: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86dbdf]"
+                      placeholder="e.g., Mansfield"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-[#0e181f]">
+                      Description
+                    </label>
+                    <textarea
+                      value={locationForm.description}
+                      onChange={(e) =>
+                        setLocationForm({ ...locationForm, description: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86dbdf]"
+                      rows={3}
+                      placeholder="Brief description of the location"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-[#0e181f]">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      value={locationForm.address}
+                      onChange={(e) =>
+                        setLocationForm({ ...locationForm, address: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86dbdf]"
+                      placeholder="Full address"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-[#0e181f]">
+                      Total Sites *
+                    </label>
+                    <input
+                      type="number"
+                      value={locationForm.totalSites}
+                      onChange={(e) =>
+                        setLocationForm({
+                          ...locationForm,
+                          totalSites: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86dbdf]"
+                      placeholder="e.g., 286"
+                      min="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-[#0e181f]">
+                      Cabin Type Distribution
+                    </label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">
+                          1BR Cabins (%)
+                        </label>
+                        <input
+                          type="number"
+                          value={locationForm.cabinTypeDistribution["1BR"]}
+                          onChange={(e) =>
+                            setLocationForm({
+                              ...locationForm,
+                              cabinTypeDistribution: {
+                                ...locationForm.cabinTypeDistribution,
+                                "1BR": parseInt(e.target.value) || 0,
+                                "2BR": 100 - (parseInt(e.target.value) || 0),
+                              },
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86dbdf]"
+                          min="0"
+                          max="100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">
+                          2BR Cabins (%)
+                        </label>
+                        <input
+                          type="number"
+                          value={locationForm.cabinTypeDistribution["2BR"]}
+                          onChange={(e) =>
+                            setLocationForm({
+                              ...locationForm,
+                              cabinTypeDistribution: {
+                                ...locationForm.cabinTypeDistribution,
+                                "2BR": parseInt(e.target.value) || 0,
+                                "1BR": 100 - (parseInt(e.target.value) || 0),
+                              },
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86dbdf]"
+                          min="0"
+                          max="100"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Total: {locationForm.cabinTypeDistribution["1BR"] + locationForm.cabinTypeDistribution["2BR"]}%
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleCreateLocation}
+                    disabled={loading}
+                    className="w-full px-6 py-3 bg-[#ec874c] text-white rounded-lg font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? "Creating..." : "Create Location"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Locations List */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
+                All Locations ({locations.length})
+              </h2>
+
+              {loading && (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">Loading locations...</p>
+                </div>
+              )}
+
+              {!loading && locations.length === 0 && (
+                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                  <p className="text-gray-600">No locations found</p>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {locations.map((location) => (
+                  <div
+                    key={location._id}
+                    className="p-4 rounded-lg border-2 border-gray-200 hover:border-[#86dbdf] transition-all"
+                  >
+                    <h3 className="font-bold text-[#0e181f] text-lg mb-2">
+                      {location.name}
+                    </h3>
+                    {location.description && (
+                      <p className="text-sm text-gray-600 mb-2">
+                        {location.description}
+                      </p>
+                    )}
+                    {location.address && (
+                      <p className="text-sm text-gray-600 mb-2">
+                        📍 {typeof location.address === 'string'
+                          ? location.address
+                          : [
+                              location.address.street,
+                              location.address.city,
+                              location.address.state,
+                              location.address.postcode,
+                              location.address.country
+                            ].filter(Boolean).join(', ')
+                        }
+                      </p>
+                    )}
+                    <div className="flex gap-4 text-sm">
+                      <span className="text-gray-600">
+                        <span className="font-semibold">Total Sites:</span> {location.totalSites}
+                      </span>
+                      <span className="text-gray-600">
+                        <span className="font-semibold">Available:</span> {location.availableSites}
+                      </span>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        location.status === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {location.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

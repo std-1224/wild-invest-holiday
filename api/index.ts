@@ -56,6 +56,17 @@ import {
   handleGetPaymentHistory,
   handleGetBoostPayments,
 } from '../server/handlers/payments.js';
+import {
+  handleGetLocations,
+  handleCreateLocation,
+  handleGetSitesByLocation,
+  handleUpdateLocation,
+} from '../server/handlers/locations.js';
+import {
+  handleGetOwnerCabins,
+  handleGetMyCabins,
+  handleSearchOwners,
+} from '../server/handlers/cabins.js';
 
 // Initialize Stripe
 const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
@@ -216,6 +227,32 @@ export default async function handler(
     // Upload routes
     else if (path.includes('/upload/agreement')) {
       return await handleUploadAgreement(req, res);
+    }
+    // Location routes
+    else if (path.includes('/admin/locations') && req.method === 'POST') {
+      return await handleCreateLocation(req, res);
+    } else if (path.match(/\/admin\/locations\/[a-f0-9]{24}$/) && req.method === 'PUT') {
+      const locationId = path.split('/').pop();
+      (req as any).params = { locationId };
+      return await handleUpdateLocation(req, res);
+    } else if (path.match(/\/locations\/[a-f0-9]{24}\/sites$/)) {
+      const parts = path.split('/');
+      const locationId = parts[parts.length - 2];
+      (req as any).params = { locationId };
+      return await handleGetSitesByLocation(req, res);
+    } else if (path.includes('/locations')) {
+      return await handleGetLocations(req, res);
+    }
+    // Cabin and Owner routes
+    else if (path.includes('/admin/owners/search')) {
+      return await handleSearchOwners(req, res);
+    } else if (path.match(/\/admin\/owners\/[a-f0-9]{24}\/cabins$/)) {
+      const parts = path.split('/');
+      const ownerId = parts[parts.length - 2];
+      (req as any).params = { ownerId };
+      return await handleGetOwnerCabins(req, res);
+    } else if (path.includes('/cabins/my-cabins')) {
+      return await handleGetMyCabins(req, res);
     } else {
       return res.status(404).json({
         success: false,

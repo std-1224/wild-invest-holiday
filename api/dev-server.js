@@ -60,6 +60,17 @@ import {
   handleGetPaymentHistory,
   handleGetBoostPayments,
 } from '../server/handlers/payments.js';
+import {
+  handleGetLocations,
+  handleCreateLocation,
+  handleGetSitesByLocation,
+  handleUpdateLocation,
+} from '../server/handlers/locations.js';
+import {
+  handleGetOwnerCabins,
+  handleGetMyCabins,
+  handleSearchOwners,
+} from '../server/handlers/cabins.js';
 
 const app = express();
 const PORT = 3001;
@@ -355,6 +366,70 @@ app.put('/api/agreements/:agreementId', async (req, res) => {
  */
 app.post('/api/upload/agreement', async (req, res) => {
   await handleUploadAgreement(req, res);
+});
+
+// ============================================================================
+// LOCATION & SITE API ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/locations
+ * Get all locations
+ */
+app.get('/api/locations', async (req, res) => {
+  await handleGetLocations(req, res);
+});
+
+/**
+ * POST /api/admin/locations
+ * Create a new location (Admin only)
+ */
+app.post('/api/admin/locations', async (req, res) => {
+  await handleCreateLocation(req, res);
+});
+
+/**
+ * PUT /api/admin/locations/:locationId
+ * Update a location (Admin only)
+ */
+app.put('/api/admin/locations/:locationId', async (req, res) => {
+  await handleUpdateLocation(req, res);
+});
+
+/**
+ * GET /api/locations/:locationId/sites
+ * Get sites for a location
+ */
+app.get('/api/locations/:locationId/sites', async (req, res) => {
+  await handleGetSitesByLocation(req, res);
+});
+
+// ============================================================================
+// CABIN & OWNER API ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/admin/owners/search
+ * Search owners by name or email (Admin only)
+ */
+app.get('/api/admin/owners/search', async (req, res) => {
+  await handleSearchOwners(req, res);
+});
+
+/**
+ * GET /api/admin/owners/:ownerId/cabins
+ * Get cabins owned by a specific owner (Admin only)
+ */
+app.get('/api/admin/owners/:ownerId/cabins', async (req, res) => {
+  await handleGetOwnerCabins(req, res);
+});
+
+/**
+ * GET /api/cabins/my-cabins
+ * Get all cabins for authenticated user
+ */
+app.get('/api/cabins/my-cabins', async (req, res) => {
+  await handleGetMyCabins(req, res);
 });
 
 // ============================================================================

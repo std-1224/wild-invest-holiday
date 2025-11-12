@@ -1,27 +1,23 @@
 import { useState } from "react";
 import { WildThingsAPI } from "../../api/client";
 
-interface AuthLoginModalProps {
+interface AuthAdminLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLogin: () => void;
-  onSwitchToRegister: () => void;
-  onForgotPassword: () => void;
 }
 
-export const AuthLoginModal = ({
+export const AuthAdminLoginModal = ({
   isOpen,
   onClose,
   onLogin,
-  onSwitchToRegister,
-  onForgotPassword,
-}: AuthLoginModalProps) => {
+}: AuthAdminLoginModalProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -31,16 +27,17 @@ export const AuthLoginModal = ({
       const response = await api.loginUser({ email, password });
 
       if (response.success) {
-        // Check if user is admin - admins cannot login through investor portal
-        if (response.user?.role === 'admin') {
-          // Clear the stored token and user data
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('user');
-          setError("Access denied. Owner credentials required.");
+        // Check if user is admin
+        const user = response.user;
+        if (user.role !== 'admin') {
+          setError("Access denied. Admin credentials required.");
+          // Logout the user
+          api.logout();
+          setLoading(false);
           return;
         }
 
-        // Login successful for non-admin users
+        // Admin login successful
         onLogin();
       } else {
         setError(response.error || "Login failed");
@@ -56,7 +53,7 @@ export const AuthLoginModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 relative">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -66,9 +63,12 @@ export const AuthLoginModal = ({
           ✕
         </button>
 
-        <h2 className="text-2xl font-bold mb-6 text-center italic font-[family-name:var(--font-eurostile,'Eurostile_Condensed','Arial_Black',Impact,sans-serif)] text-[#0e181f]">
-          Login to Your Account
+        <h2 className="text-2xl font-bold mb-2 text-center italic font-[family-name:var(--font-eurostile,'Eurostile_Condensed','Arial_Black',Impact,sans-serif)] text-[#0e181f]">
+          Admin Portal Login
         </h2>
+        <p className="text-sm text-gray-600 text-center mb-6">
+          Admin access only
+        </p>
 
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
@@ -76,10 +76,10 @@ export const AuthLoginModal = ({
           </div>
         )}
 
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleAdminLogin}>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2 text-[#0e181f]">
-              Email Address
+              Admin Email
             </label>
             <input
               type="email"
@@ -87,10 +87,11 @@ export const AuthLoginModal = ({
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86dbdf]"
               required
+              autoComplete="email"
             />
           </div>
 
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="block text-sm font-medium mb-2 text-[#0e181f]">
               Password
             </label>
@@ -100,48 +101,30 @@ export const AuthLoginModal = ({
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86dbdf]"
               required
+              autoComplete="current-password"
             />
           </div>
 
-          {/* Forgot Password Link */}
-          <div className="mb-6 text-right">
-            <button
-              type="button"
-              onClick={onForgotPassword}
-              className="text-sm text-[#86dbdf] hover:text-[#0e181f] font-semibold"
-            >
-              Forgot password?
-            </button>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Logging in..." : "Login"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#0e181f] text-white disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#ec874c] text-white py-3 rounded-lg font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Logging in..." : "Login as Admin"}
+          </button>
         </form>
 
-        <p className="text-center mt-4 text-sm text-[#0e181f]">
-          Don't have an account?{" "}
-          <button
-            onClick={onSwitchToRegister}
-            className="font-bold text-[#86dbdf] hover:text-[#0e181f]"
-          >
-            Register here
-          </button>
-        </p>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Not an admin?{" "}
+            <button
+              onClick={onClose}
+              className="text-[#86dbdf] hover:underline font-semibold"
+            >
+              Go back
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
