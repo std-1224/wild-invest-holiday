@@ -39,6 +39,7 @@ import {
 } from '../server/handlers/xero-oauth.js';
 import {
   handleXeroStatus,
+  handleValidateXeroConnection,
   handleXeroDisconnect,
   handleGetXeroInvoices,
   handleRecordXeroPayment,
@@ -179,6 +180,8 @@ export default async function handler(
       return await handleXeroCallback(req, res);
     } else if (path.includes('/xero/status')) {
       return await handleXeroStatus(req, res);
+    } else if (path.includes('/xero/validate-connection')) {
+      return await handleValidateXeroConnection(req, res);
     } else if (path.includes('/xero/disconnect')) {
       return await handleXeroDisconnect(req, res);
     } else if (path.includes('/xero/invoices')) {
