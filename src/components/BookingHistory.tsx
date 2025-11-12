@@ -51,8 +51,8 @@ export const BookingHistory = ({
 
   // Calculate actual ROI based on bookings
   const cabinPrices: any = {
-    "1BR": 110000,
-    "2BR": 135000,
+    "1BR": 190000,
+    "2BR": 380000,
     "3BR": 160000,
   };
   const cabinPrice = cabinPrices[cabinType] || 0;

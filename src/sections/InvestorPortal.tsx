@@ -85,16 +85,16 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
       cabinType: "2BR",
       location: "Mansfield",
       purchaseDate: "2024-01-15",
-      purchasePrice: 125000,
-      currentValue: 135000,
-      totalIncome: 8500,
-      monthlyIncome: 850,
-      averagePerNight: 285,
+      purchasePrice: 380000,
+      currentValue: 380000,
+      totalIncome: 89425, // Gross Revenue: $89,425
+      monthlyIncome: 7452, // Monthly average
+      averagePerNight: 350,
       status: "Active",
       nextPayment: "2024-11-15",
-      occupancyRate: 72,
+      occupancyRate: 70,
       nightsBooked: 21,
-      roi: 6.8,
+      roi: 18.33, // ROI: $44,765 / $380,000 = 11.78%
       bookedDates: [
         "2024-11-15",
         "2024-11-16",
@@ -119,16 +119,16 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
       cabinType: "1BR",
       location: "Mansfield",
       purchaseDate: "2024-03-20",
-      purchasePrice: 100000,
-      currentValue: 108000,
-      totalIncome: 6200,
-      monthlyIncome: 620,
-      averagePerNight: 240,
+      purchasePrice: 190000,
+      currentValue: 190000,
+      totalIncome: 56210, // Gross Revenue: $56,210
+      monthlyIncome: 4684,
+      averagePerNight: 220,
       status: "Active",
       nextPayment: "2024-11-20",
-      occupancyRate: 65,
+      occupancyRate: 70,
       nightsBooked: 19,
-      roi: 6.2,
+      roi: 13.26, // ROI: $25,193 / $190,000 = 13.26%
       bookedDates: [
         "2024-11-10",
         "2024-11-11",
@@ -1842,13 +1842,14 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                       <p className="font-bold text-sm text-[#ffcf00]">
                         ${cabin.price.toLocaleString()} + GST
                       </p>
-                      <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="mt-2 pt-2 border-gray-200">
                         {(() => {
-                          // Calculate ROI with default values (66% occupancy, $200 nightly rate)
+                          // Calculate ROI with default values (70% occupancy, cabin-specific nightly rate)
+                          const defaultNightlyRate = key === "1BR" ? 220 : 350;
                           const roiData = calculateROI({
                             cabinType: key as CabinType,
-                            occupancyRate: 66,
-                            nightlyRate: 200,
+                            occupancyRate: 70,
+                            nightlyRate: defaultNightlyRate,
                             selectedExtras: [],
                             financingType: "paid",
                             depositAmount: 0,

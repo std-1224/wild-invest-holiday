@@ -40,8 +40,8 @@ export const calculateROI = (
   depositAmount}:any
 ) => {
   const cabinPrices:any = {
-    "1BR": 110000,
-    "2BR": 135000,
+    "1BR": 190000,
+    "2BR": 380000,
     "3BR": 160000,
   };
   const availableExtras = getAvailableExtrasForCabin(cabinType);

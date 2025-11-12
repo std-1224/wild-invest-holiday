@@ -27,8 +27,8 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
     nightlyRate: number;
   }>({
     cabinType: "1BR",
-    occupancyRate: 66,
-    nightlyRate: 160,
+    occupancyRate: 70,
+    nightlyRate: 220,
   });
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
 
@@ -517,7 +517,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                   Estimated Annual ROI
                 </h3>
                 <div className="text-4xl font-bold text-white">
-                  {roiResults.roi.toFixed(1)}%
+                  {roiResults.roi.toFixed(2)}%
                 </div>
                 {roiResults.extrasCost > 0 && (
                   <p className="text-xs mt-2 text-white">

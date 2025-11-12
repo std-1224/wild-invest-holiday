@@ -17,8 +17,8 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
 
   const [inputs, setInputs] = useState<Inputs>({
     cabinType: "1BR",
-    occupancyRate: 66,
-    nightlyRate: 200, // Default $200 as specified
+    occupancyRate: 70,
+    nightlyRate: 220, // Default $220 for 1BR
     selectedExtras: [],
     financingType: "paid", // 'paid' or 'financed'
     depositAmount: 0,

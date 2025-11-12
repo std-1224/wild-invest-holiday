@@ -60,8 +60,8 @@ export const calculateROI = (...args: any[]) => {
   }
 
   const cabinPrices: any = {
-    "1BR": 110000,
-    "2BR": 135000,
+    "1BR": 190000,
+    "2BR": 380000,
   };
   const availableExtras = getAvailableExtrasForCabin(cabinType);
 
@@ -103,10 +103,11 @@ export const calculateROI = (...args: any[]) => {
   const actualInvestment =
     financingType === "financed" ? depositAmount || 0 : totalCabinPrice;
 
-  // Wild Things specific costs
-  const siteFees = 5000 * 1.1; // $5,000 + GST
-  const annualMaintenance = 2000;
-  const wildThingsCommission = 0.2; // 20% + GST = 22%
+  // Wild Things specific costs based on cabin type
+  const siteFees = 7000; // Annual site rental - $7,000 for both 1BR and 2BR
+  const cleaningMaintenance = 12775; // Fixed cleaning & maintenance cost (not shown separately but included)
+  const energyCosts = 0; // Energy costs (shown as $0 in the image)
+  const rentalManagementRate = cabinType === "1BR" ? 0.2 : 0; // 20% of gross revenue
 
   // Revenue calculations with occupancy boost
   const effectiveOccupancyRate = Math.min(
@@ -116,17 +117,22 @@ export const calculateROI = (...args: any[]) => {
   const nightsPerYear = 365 * (effectiveOccupancyRate / 100);
   const grossAnnualRevenue = nightsPerYear * effectiveNightlyRate;
 
-  // Wild Things commission (20% + GST = 22%)
-  const wildThingsCommissionAmount = grossAnnualRevenue * 0.22;
+  // Rental Management (20% of gross revenue)
+  const rentalManagementCost = grossAnnualRevenue * rentalManagementRate;
 
-  // Net revenue after Wild Things commission
-  const netAnnualRevenue = grossAnnualRevenue - wildThingsCommissionAmount;
+  // Interest calculation (only if financed)
+  let interestCost = 0;
+  if (financingType === "financed") {
+    const loanAmount = totalCabinPrice * 0.6; // 60% LVR (40% deposit)
+    const interestRate = 0.08; // 8% interest rate
+    interestCost = loanAmount * interestRate;
+  }
 
-  // Annual expenses
-  const annualExpenses = siteFees + annualMaintenance;
+  // Total annual costs (Management + Site Fee + Cleaning/Maintenance + Energy + Interest)
+  const totalAnnualCosts = rentalManagementCost + siteFees + cleaningMaintenance + energyCosts + interestCost;
 
-  // Annual profit
-  const annualProfit = netAnnualRevenue - annualExpenses;
+  // Net Income (Annual Profit)
+  const annualProfit = grossAnnualRevenue - totalAnnualCosts;
 
   // ROI calculation based on actual money invested
   const roi = actualInvestment ? (annualProfit / actualInvestment) * 100 : 0;
@@ -140,18 +146,25 @@ export const calculateROI = (...args: any[]) => {
     effectiveOccupancyRate,
     grossAnnualRevenue,
     annualRevenue: grossAnnualRevenue,
-    wildThingsCommissionAmount,
-    netAnnualRevenue,
-    annualExpenses,
+    rentalManagementCost,
+    interestCost,
+    cleaningMaintenance,
+    energyCosts,
+    totalAnnualCosts,
+    annualExpenses: totalAnnualCosts, // For backward compatibility
     annualProfit,
+    netIncome: annualProfit, // Net Income as shown in the image
     roi,
     monthlyProfit: annualProfit / 12,
     nightsPerYear,
     siteFees,
-    annualMaintenance,
     extrasCost,
     extrasNightlyImpact,
     occupancyBoost,
+    // Legacy fields for backward compatibility
+    wildThingsCommissionAmount: rentalManagementCost,
+    netAnnualRevenue: grossAnnualRevenue - rentalManagementCost,
+    annualMaintenance: cleaningMaintenance,
   } as const;
 };
 
@@ -175,8 +188,8 @@ export const cabinFeatures = {
 };
 
 export const cabinPrices = {
-  "1BR": 110000,
-  "2BR": 135000,
+  "1BR": 190000,
+  "2BR": 380000,
 };
 
 export const cabinImages = {
@@ -211,7 +224,7 @@ export const cabins = {
   },
   "2BR": {
     name: "2 Bedroom Cabin",
-    price: 320000,
+    price: 380000,
     siteFee: 268,
     bedrooms: 2,
     image: "/2BR.jpg",
@@ -371,8 +384,8 @@ export const faqs = [
 ];
 
 export const defaultNightlyRates = {
-  "1BR": 160,
-  "2BR": 200,
+  "1BR": 220,
+  "2BR": 350,
 };
 
 export const investmentSteps = [

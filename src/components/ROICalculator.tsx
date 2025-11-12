@@ -12,8 +12,8 @@ type Inputs = {
 export const ROICalculator = ({ cabinType, onClose }: any) => {
   const [inputs, setInputs] = useState<Inputs>({
     cabinType: (cabinType as Inputs["cabinType"]) || "1BR",
-    occupancyRate: 66,
-    nightlyRate: cabinType === "1BR" ? 160 : cabinType === "2BR" ? 200 : 250,
+    occupancyRate: 70,
+    nightlyRate: cabinType === "1BR" ? 220 : cabinType === "2BR" ? 350 : 250,
     selectedExtras: [],
   });
 
