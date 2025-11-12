@@ -1447,7 +1447,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               />
 
               {/* Occupancy Type Manager */}
-              <div className="bg-white rounded-lg shadow-lg p-6">
+              {/* <div className="bg-white rounded-lg shadow-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
@@ -1469,7 +1469,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     Change Type
                   </button>
                 </div>
-              </div>
+              </div> */}
 
               {/* Calendly Integration */}
               <div className="bg-white rounded-lg shadow-lg p-6">
