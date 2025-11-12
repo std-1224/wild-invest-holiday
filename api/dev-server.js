@@ -63,7 +63,7 @@ import {
 import {
   handleGetLocations,
   handleCreateLocation,
-  handleGetSitesByLocation,
+  handleGetLocationSites,
   handleUpdateLocation,
 } from '../server/handlers/locations.js';
 import {
@@ -401,7 +401,7 @@ app.put('/api/admin/locations/:locationId', async (req, res) => {
  * Get sites for a location
  */
 app.get('/api/locations/:locationId/sites', async (req, res) => {
-  await handleGetSitesByLocation(req, res);
+  await handleGetLocationSites(req, res);
 });
 
 // ============================================================================

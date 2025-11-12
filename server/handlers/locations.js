@@ -105,6 +105,7 @@ export async function handleCreateLocation(req, res) {
       coordinates,
       totalSites,
       availableSites: totalSites,
+      cabinTypeDistribution: cabinTypeDistribution || { '1BR': 50, '2BR': 50 },
       amenities,
       images,
     });
@@ -234,6 +235,52 @@ export async function handleUpdateLocation(req, res) {
     return res.status(500).json({
       success: false,
       message: 'Failed to update location',
+      error: error.message,
+    });
+  }
+}
+
+/**
+ * Get sites for a specific location
+ */
+export async function handleGetLocationSites(req, res) {
+  try {
+    await connectDB();
+
+    const { locationId } = req.params;
+
+    if (!locationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Location ID is required',
+      });
+    }
+
+    // Get all sites for this location
+    const sites = await Site.find({ locationId })
+      .sort({ cabinType: 1, siteNumber: 1 });
+
+    // Get statistics
+    const stats = {
+      total: sites.length,
+      available: sites.filter(s => s.status === 'available').length,
+      reserved: sites.filter(s => s.status === 'reserved').length,
+      sold: sites.filter(s => s.status === 'sold').length,
+      unavailable: sites.filter(s => s.status === 'unavailable').length,
+      '1BR': sites.filter(s => s.cabinType === '1BR').length,
+      '2BR': sites.filter(s => s.cabinType === '2BR').length,
+    };
+
+    return res.status(200).json({
+      success: true,
+      sites,
+      stats,
+    });
+  } catch (error) {
+    console.error('Error fetching location sites:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch location sites',
       error: error.message,
     });
   }

@@ -59,7 +59,7 @@ import {
 import {
   handleGetLocations,
   handleCreateLocation,
-  handleGetSitesByLocation,
+  handleGetLocationSites,
   handleUpdateLocation,
 } from '../server/handlers/locations.js';
 import {
@@ -239,7 +239,7 @@ export default async function handler(
       const parts = path.split('/');
       const locationId = parts[parts.length - 2];
       (req as any).params = { locationId };
-      return await handleGetSitesByLocation(req, res);
+      return await handleGetLocationSites(req, res);
     } else if (path.includes('/locations')) {
       return await handleGetLocations(req, res);
     }

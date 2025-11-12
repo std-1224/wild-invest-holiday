@@ -1055,20 +1055,36 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
                         }
                       </p>
                     )}
-                    <div className="flex gap-4 text-sm">
-                      <span className="text-gray-600">
-                        <span className="font-semibold">Total Sites:</span> {location.totalSites}
-                      </span>
-                      <span className="text-gray-600">
-                        <span className="font-semibold">Available:</span> {location.availableSites}
-                      </span>
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        location.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {location.status.toUpperCase()}
-                      </span>
+                    <div className="space-y-2">
+                      <div className="flex gap-4 text-sm">
+                        <span className="text-gray-600">
+                          <span className="font-semibold">Total Sites:</span> {location.totalSites}
+                        </span>
+                        <span className="text-gray-600">
+                          <span className="font-semibold">Available:</span> {location.availableSites}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          location.status === 'active'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {location.status.toUpperCase()}
+                        </span>
+                      </div>
+                      {location.cabinTypeDistribution && (
+                        <div className="flex gap-4 text-sm">
+                          <span className="text-gray-600">
+                            <span className="font-semibold">1BR Cabins:</span>{' '}
+                            {location.cabinTypeDistribution['1BR']}%
+                            ({Math.floor(location.totalSites * location.cabinTypeDistribution['1BR'] / 100)} sites)
+                          </span>
+                          <span className="text-gray-600">
+                            <span className="font-semibold">2BR Cabins:</span>{' '}
+                            {location.cabinTypeDistribution['2BR']}%
+                            ({Math.floor(location.totalSites * location.cabinTypeDistribution['2BR'] / 100)} sites)
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

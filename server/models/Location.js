@@ -47,6 +47,10 @@ const locationSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+    cabinTypeDistribution: {
+      '1BR': { type: Number, default: 50, min: 0, max: 100 },
+      '2BR': { type: Number, default: 50, min: 0, max: 100 },
+    },
     status: {
       type: String,
       enum: ['active', 'coming_soon', 'inactive'],
