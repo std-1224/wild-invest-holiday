@@ -13,6 +13,7 @@ export const TikTokCarousel = () => {
   const [showScrollHint, setShowScrollHint] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
+  const iframeRefs = useRef<(HTMLIFrameElement | null)[]>([]);
 
   // Real TikTok video URLs from @wildthingsparks
   const videos: TikTokVideo[] = [
@@ -54,22 +55,6 @@ export const TikTokCarousel = () => {
     },
   ];
 
-  // Load TikTok embed script
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://www.tiktok.com/embed.js";
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      // Cleanup script on unmount
-      const scripts = document.querySelectorAll(
-        'script[src="https://www.tiktok.com/embed.js"]'
-      );
-      scripts.forEach((s) => s.remove());
-    };
-  }, []);
-
   useEffect(() => {
     const timer = setTimeout(() => setShowScrollHint(false), 3000);
     return () => clearTimeout(timer);
@@ -97,6 +82,12 @@ export const TikTokCarousel = () => {
     }
   };
 
+  // Get TikTok embed URL for iframe - using player embed which supports autoplay
+  const getEmbedUrl = (video: TikTokVideo) => {
+    // Use TikTok's player embed URL which allows better control
+    return `https://www.tiktok.com/player/v1/${video.id}?music_info=1&description=1`;
+  };
+
   return (
     <div className="relative py-16 px-4">
       <h2 className="text-[2.5rem] font-black italic text-[#ffcf00] text-center mb-8 font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
@@ -117,30 +108,21 @@ export const TikTokCarousel = () => {
               key={video.id}
               className="relative w-full h-[700px] snap-start flex items-center justify-center bg-black"
             >
-              {/* Embedded TikTok Video */}
-              <blockquote
-                className="tiktok-embed"
-                cite={video.videoUrl}
-                data-video-id={video.id}
-                style={
-                  {
-                    maxWidth: "605px",
-                    minWidth: "325px",
-                    margin: "0 auto",
-                  }
-                }
-              >
-                <section>
-                  <a
-                    target="_blank"
-                    title={video.username}
-                    href={`https://www.tiktok.com/${video.username}?refer=embed`}
-                    rel="noopener noreferrer"
-                  >
-                    {video.username}
-                  </a>
-                </section>
-              </blockquote>
+              {/* Embedded TikTok Video using iframe */}
+              <iframe
+                ref={(el) => {
+                  iframeRefs.current[index] = el;
+                }}
+                src={getEmbedUrl(video)}
+                className="w-full h-full overflow-hidden"
+                style={{
+                  border: "none",
+                  maxWidth: "605px",
+                }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                allowFullScreen
+                title={`TikTok video ${video.id}`}
+              />
 
               {/* Scroll Hint */}
               {index === 0 && showScrollHint && (
@@ -164,9 +146,6 @@ export const TikTokCarousel = () => {
         <style>{`
         .overflow-y-scroll::-webkit-scrollbar {
           display: none;
-        }
-        .tiktok-embed {
-          margin: 0 !important;
         }
       `}</style>
       </div>
