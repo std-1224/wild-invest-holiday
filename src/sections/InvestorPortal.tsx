@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import {
   cabins,
   getExtrasForCabin,
@@ -24,6 +25,11 @@ import { XeroInvoices } from "../components/XeroInvoices";
 import { XeroConnect } from "../components/XeroConnect";
 import { SiteLocationDisplay } from "../components/SiteLocationDisplay";
 import apiClient from "../api/client";
+import { OverviewPage } from "../pages/OverviewPage";
+import { BookingRevenuePage } from "../pages/BookingRevenuePage";
+import { OwnerBookingPage } from "../pages/OwnerBookingPage";
+import { PaymentsPage } from "../pages/PaymentsPage";
+import { AccountSettingsPage } from "../pages/AccountSettingsPage";
 
 type CabinType = "1BR" | "2BR";
 
@@ -82,6 +88,10 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   setSelectedCabinForInvestment,
   userInvestments: propUserInvestments,
 }) => {
+  // React Router hooks for navigation
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // State for real cabins from database
   const [realCabins, setRealCabins] = useState<Investment[]>([]);
   const [loadingCabins, setLoadingCabins] = useState(true);
@@ -496,7 +506,18 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
     0
   );
   const [investmentAttitude, setInvestmentAttitude] = useState("retain"); // 'retain' or 'payout'
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'bookings' | 'payments' | 'owner-booking' | 'settings'
+
+  // Determine active tab from URL path
+  const getActiveTabFromPath = () => {
+    const path = location.pathname;
+    if (path.includes('/bookings')) return 'bookings';
+    if (path.includes('/owner-booking')) return 'owner-booking';
+    if (path.includes('/payments')) return 'payments';
+    if (path.includes('/settings')) return 'settings';
+    return 'overview';
+  };
+
+  const activeTab = getActiveTabFromPath();
   const [xeroRefreshKey, setXeroRefreshKey] = useState(0); // Key to force XeroConnect refresh
 
   // Initialize user profile from current user
@@ -717,7 +738,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
             {/* Tabs */}
             <div className="flex justify-center gap-4 mb-4 flex-wrap">
               <button
-                onClick={() => setActiveTab("overview")}
+                onClick={() => navigate("/investor-portal")}
                 className={`px-6 py-2 rounded-lg font-bold transition-all text-[#0e181f] ${
                   activeTab === "overview" ? "bg-[#ffcf00]" : "bg-[#f5f5f5]"
                 }`}
@@ -725,7 +746,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 Overview
               </button>
               <button
-                onClick={() => setActiveTab("bookings")}
+                onClick={() => navigate("/investor-portal/bookings")}
                 className={`px-6 py-2 rounded-lg font-bold transition-all text-[#0e181f] ${
                   activeTab === "bookings" ? "bg-[#ffcf00]" : "bg-[#f5f5f5]"
                 }`}
@@ -733,7 +754,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 Bookings & Revenue
               </button>
               <button
-                onClick={() => setActiveTab("owner-booking")}
+                onClick={() => navigate("/investor-portal/owner-booking")}
                 className={`px-6 py-2 rounded-lg font-bold transition-all text-[#0e181f] ${
                   activeTab === "owner-booking"
                     ? "bg-[#ffcf00]"
@@ -743,7 +764,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 Owner Booking
               </button>
               <button
-                onClick={() => setActiveTab("payments")}
+                onClick={() => navigate("/investor-portal/payments")}
                 className={`px-6 py-2 rounded-lg font-bold transition-all text-[#0e181f] ${
                   activeTab === "payments" ? "bg-[#ffcf00]" : "bg-[#f5f5f5]"
                 }`}
@@ -751,7 +772,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 Payments
               </button>
               <button
-                onClick={() => setActiveTab("settings")}
+                onClick={() => navigate("/investor-portal/settings")}
                 className={`px-6 py-2 rounded-lg font-bold transition-all text-[#0e181f] ${
                   activeTab === "settings" ? "bg-[#ffcf00]" : "bg-[#f5f5f5]"
                 }`}
@@ -772,7 +793,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
 
           {/* Overview Tab Content */}
           {activeTab === "overview" && (
-            <>
+            <OverviewPage>
               {/* Account Summary */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                 <div className="bg-white rounded-lg shadow-lg p-6 text-center flex flex-col justify-between min-h-[160px]">
@@ -824,7 +845,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                   </div>
                   <button
                     onClick={() => {
-                      setActiveTab("payments");
+                      navigate("/investor-portal/payments");
                       setTimeout(() => {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }, 100);
@@ -886,7 +907,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     <div className="flex gap-3">
                       <button
                         onClick={() => {
-                          setActiveTab("payments");
+                          navigate("/investor-portal/payments");
                           setTimeout(() => {
                             window.scrollTo({ top: 0, behavior: "smooth" });
                           }, 100);
@@ -1589,22 +1610,25 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                   ))}
                 </div>
               </div>
-            </>
+            </OverviewPage>
           )}
 
           {/* Bookings & Revenue Tab Content */}
           {activeTab === "bookings" && (
-            <div className="space-y-8">
-              <BookingHistory
-                bookings={mockBookings}
-                cabinType={userInvestments[0]?.cabinType || "2BR"}
-              />
-            </div>
+            <BookingRevenuePage>
+              <div className="space-y-8">
+                <BookingHistory
+                  bookings={mockBookings}
+                  cabinType={userInvestments[0]?.cabinType || "2BR"}
+                />
+              </div>
+            </BookingRevenuePage>
           )}
 
           {/* Owner Booking Tab Content */}
           {activeTab === "owner-booking" && (
-            <div className="space-y-8">
+            <OwnerBookingPage>
+              <div className="space-y-8">
               <OwnerBookingCalendar
                 cabinId={typeof userInvestments[0]?.id === 'number' ? userInvestments[0].id : 1}
                 cabinType={userInvestments[0]?.cabinType || "2BR"}
@@ -1676,11 +1700,13 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 />
               </div>
             </div>
+            </OwnerBookingPage>
           )}
 
           {/* Payments Tab Content */}
           {activeTab === "payments" && (
-            <div className="space-y-8">
+            <PaymentsPage>
+              <div className="space-y-8">
               {/* Payout History */}
               <PayoutHistory
                 payouts={payoutHistory}
@@ -1712,11 +1738,13 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               {/* MarketingBoostManager now fetches its own data from API */}
               <MarketingBoostManager />
             </div>
+            </PaymentsPage>
           )}
 
           {/* Account Settings Tab Content */}
           {activeTab === "settings" && (
-            <div className="space-y-8">
+            <AccountSettingsPage>
+              <div className="space-y-8">
               {/* Personal Information */}
               <div className="bg-white rounded-lg shadow-lg p-6">
                 <h3 className="text-2xl font-black mb-6 italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
@@ -1971,6 +1999,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 </button>
               </div>
             </div>
+            </AccountSettingsPage>
           )}
         </div>
 

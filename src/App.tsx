@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { Navbar } from "./components/Navbar";
 import { InvestmentModal } from "./components/Modals/InvestmentModal";
 import { HomePage } from "./sections/HomePage";
@@ -13,12 +14,8 @@ import { ReservationModal } from "./components/Modals/ReservationModal";
 import { ChatWidget } from "./components/ChatWidget";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
-interface AppContentProps {
-  currentPage: string;
-  setCurrentPage: (page: string) => void;
-}
-
-function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
+function AppContent() {
+  const navigate = useNavigate();
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
 
@@ -34,18 +31,6 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
 
   // Use the auth context
   const { isLoggedIn, setIsLoggedIn, showLoginModal, showAdminLoginModal, logout } = useAuth();
-
-  // Protect investor portal and admin portal - redirect to home if not logged in
-  useEffect(() => {
-    if (currentPage === "investor-portal" && !isLoggedIn) {
-      setCurrentPage("home");
-      showLoginModal(); // Show login modal to prompt user to login
-    }
-    if (currentPage === "admin-portal" && !isLoggedIn) {
-      setCurrentPage("home");
-      showAdminLoginModal(); // Show admin login modal to prompt admin to login
-    }
-  }, [currentPage, isLoggedIn, showLoginModal, showAdminLoginModal]);
 
   const handleCabinInvest = (cabin: any) => {
     setSelectedCabinForInvestment(cabin.id);
@@ -82,57 +67,83 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
         onAdminLoginClick={showAdminLoginModal}
         isLoggedIn={isLoggedIn}
         onLogout={logout}
-        onNavigate={setCurrentPage}
-        setCurrentPage={setCurrentPage}
-        currentPage={currentPage}
+        onNavigate={(page) => navigate(`/${page === 'home' ? '' : page}`)}
+        setCurrentPage={(page) => navigate(`/${page === 'home' ? '' : page}`)}
+        currentPage={window.location.pathname.split('/')[1] || 'home'}
       />
 
       <div style={{ marginTop: "124px" }}>
-        {currentPage === "home" && (
-          <HomePage
-            cabins={cabins}
-            onInvest={handleCabinInvest}
-            onInvestClick={() => setCurrentPage("invest")}
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <HomePage
+                cabins={cabins}
+                onInvest={handleCabinInvest}
+                onInvestClick={() => navigate("/invest")}
+              />
+            }
           />
-        )}
 
-        {currentPage === "invest" && (
-          <InvestPage
-            onInvest={handleCabinInvest}
-            setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+          <Route
+            path="/invest"
+            element={
+              <InvestPage
+                onInvest={handleCabinInvest}
+                setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+              />
+            }
           />
-        )}
 
-        {currentPage === "holiday-homes" && (
-          <HolidayHomesPage
-            setSelectedCabinForInvestment={setSelectedCabinForInvestment}
-            onInvest={handleCabinInvest}
+          <Route
+            path="/holiday-homes"
+            element={
+              <HolidayHomesPage
+                setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+                onInvest={handleCabinInvest}
+              />
+            }
           />
-        )}
 
-        {currentPage === "locations" && <LocationsPage />}
+          <Route path="/locations" element={<LocationsPage />} />
 
-        {currentPage === "investor-portal" && (
-          <InvestorPortal
-            setIsLoggedIn={setIsLoggedIn}
-            onInvestClick={() => setCurrentPage("invest")}
-            setShowInvestmentModal={setShowInvestmentModal}
-            setSelectedCabinForInvestment={setSelectedCabinForInvestment}
-            userInvestments={userInvestments}
-            setUserInvestments={setUserInvestments}
+          <Route
+            path="/investor-portal/*"
+            element={
+              isLoggedIn ? (
+                <InvestorPortal
+                  setIsLoggedIn={setIsLoggedIn}
+                  onInvestClick={() => navigate("/invest")}
+                  setShowInvestmentModal={setShowInvestmentModal}
+                  setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+                  userInvestments={userInvestments}
+                  setUserInvestments={setUserInvestments}
+                />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
-        )}
 
-        {currentPage === "admin-portal" && (
-          <AdminPortal
-            setIsLoggedIn={setIsLoggedIn}
-            onNavigate={setCurrentPage}
+          <Route
+            path="/admin-portal"
+            element={
+              isLoggedIn ? (
+                <AdminPortal
+                  setIsLoggedIn={setIsLoggedIn}
+                  onNavigate={(page) => navigate(`/${page === 'home' ? '' : page}`)}
+                />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
-        )}
 
-        {currentPage === "xero-callback" && (
-          <XeroCallback setCurrentPage={setCurrentPage} />
-        )}
+          <Route
+            path="/xero/callback"
+            element={<XeroCallback setCurrentPage={(page) => navigate(`/${page === 'home' ? '' : page}`)} />}
+          />
+        </Routes>
 
         {/* Investment Modal */}
         <InvestmentModal
@@ -144,7 +155,7 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
           userInvestments={userInvestments}
           setUserInvestments={setUserInvestments}
           setIsLoggedIn={setIsLoggedIn}
-          setCurrentPage={setCurrentPage}
+          setCurrentPage={(page: string) => navigate(`/${page === 'home' ? '' : page}`)}
         />
         <ReservationModal
           setShowReservationModal={setShowReservationModal}
@@ -179,25 +190,14 @@ function AppContent({ currentPage, setCurrentPage }: AppContentProps) {
 }
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState("home");
-
-  // Check if this is a Xero callback
-  useEffect(() => {
-    const path = window.location.pathname;
-    const search = window.location.search;
-
-    // Check for Xero callback with success or error parameters
-    if (path === '/xero/callback' && (search.includes('success=') || search.includes('error='))) {
-      setCurrentPage('xero-callback');
-    }
-  }, []);
-
   return (
-    <AuthProvider
-      onNavigateToPortal={() => setCurrentPage("investor-portal")}
-      onNavigateToAdminPortal={() => setCurrentPage("admin-portal")}
-    >
-      <AppContent currentPage={currentPage} setCurrentPage={setCurrentPage} />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider
+        onNavigateToPortal={() => {}}
+        onNavigateToAdminPortal={() => {}}
+      >
+        <AppContent />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

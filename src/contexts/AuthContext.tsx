@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthLoginModal } from "../components/Modals/AuthLoginModal";
 import { AuthAdminLoginModal } from "../components/Modals/AuthAdminLoginModal";
 import { AuthRegisterModal } from "../components/Modals/AuthRegisterModal";
@@ -42,6 +43,7 @@ export const AuthProvider = ({
   onNavigateToPortal,
   onNavigateToAdminPortal,
 }: AuthProviderProps) => {
+  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(apiClient.isAuthenticated());
   const [currentUser, setCurrentUser] = useState(apiClient.getUser());
 
@@ -80,14 +82,14 @@ export const AuthProvider = ({
     setIsLoggedIn(true);
     setCurrentUser(apiClient.getUser());
     closeAllModals();
-    onNavigateToPortal?.();
+    navigate("/investor-portal");
   };
 
   const adminLogin = () => {
     setIsLoggedIn(true);
     setCurrentUser(apiClient.getUser());
     closeAllModals();
-    onNavigateToAdminPortal?.();
+    navigate("/admin-portal");
   };
 
   const logout = () => {
@@ -102,7 +104,7 @@ export const AuthProvider = ({
     setIsLoggedIn(true);
     setCurrentUser(apiClient.getUser());
     closeAllModals();
-    onNavigateToPortal?.();
+    navigate("/investor-portal");
   };
 
   const handleResetCodeSent = (email: string) => {
