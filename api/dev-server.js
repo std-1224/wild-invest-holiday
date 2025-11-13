@@ -70,7 +70,15 @@ import {
   handleGetOwnerCabins,
   handleGetMyCabins,
   handleSearchOwners,
+  handleCreateCabinPurchase,
 } from '../server/handlers/cabins.js';
+import {
+  handleGetSites,
+  handleGetAvailableSites,
+  handleCreateSite,
+  handleUpdateSite,
+  handleBulkCreateSites,
+} from '../server/handlers/sites.js';
 
 const app = express();
 const PORT = 3001;
@@ -405,6 +413,50 @@ app.get('/api/locations/:locationId/sites', async (req, res) => {
 });
 
 // ============================================================================
+// SITE API ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/sites/:locationId
+ * Get all sites for a specific location
+ */
+app.get('/api/sites/:locationId', async (req, res) => {
+  await handleGetSites(req, res);
+});
+
+/**
+ * GET /api/sites/:locationId/available
+ * Get available sites for a specific location and cabin type
+ */
+app.get('/api/sites/:locationId/available', async (req, res) => {
+  await handleGetAvailableSites(req, res);
+});
+
+/**
+ * POST /api/admin/sites
+ * Create a new site (Admin only)
+ */
+app.post('/api/admin/sites', async (req, res) => {
+  await handleCreateSite(req, res);
+});
+
+/**
+ * PUT /api/admin/sites/:siteId
+ * Update a site (Admin only)
+ */
+app.put('/api/admin/sites/:siteId', async (req, res) => {
+  await handleUpdateSite(req, res);
+});
+
+/**
+ * POST /api/admin/sites/bulk-create
+ * Create multiple sites at once (Admin only)
+ */
+app.post('/api/admin/sites/bulk-create', async (req, res) => {
+  await handleBulkCreateSites(req, res);
+});
+
+// ============================================================================
 // CABIN & OWNER API ENDPOINTS
 // ============================================================================
 
@@ -430,6 +482,13 @@ app.get('/api/admin/owners/:ownerId/cabins', async (req, res) => {
  */
 app.get('/api/cabins/my-cabins', async (req, res) => {
   await handleGetMyCabins(req, res);
+});
+
+/**
+ * Create a cabin purchase
+ */
+app.post('/api/cabins/purchase', async (req, res) => {
+  await handleCreateCabinPurchase(req, res);
 });
 
 // ============================================================================

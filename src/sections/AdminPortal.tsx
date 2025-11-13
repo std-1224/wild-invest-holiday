@@ -79,11 +79,23 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
     description: "",
     address: "",
     totalSites: 0,
+    siteMapUrl: "",
     cabinTypeDistribution: {
       "1BR": 50,
       "2BR": 50,
     },
   });
+  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [locationSites, setLocationSites] = useState<any[]>([]);
+  const [showSiteForm, setShowSiteForm] = useState(false);
+  const [siteForm, setSiteForm] = useState({
+    siteNumber: "",
+    cabinType: "1BR",
+    price: 0,
+    siteLeaseFee: 7000,
+  });
+  const [uploadingSiteMap, setUploadingSiteMap] = useState(false);
+  const [siteMapFile, setSiteMapFile] = useState<File | null>(null);
 
   // Check Xero connection status
   const checkXeroStatus = async () => {
@@ -393,6 +405,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
           description: "",
           address: "",
           totalSites: 0,
+          siteMapUrl: "",
           cabinTypeDistribution: {
             "1BR": 50,
             "2BR": 50,
@@ -410,12 +423,168 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
     }
   };
 
+  // Site management functions
+  const loadLocationSites = async (locationId: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await apiClient.getSites(locationId);
+      if (response.success) {
+        setLocationSites(response.sites || []);
+      } else {
+        setError((response as any).error || "Failed to load sites");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load sites");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSiteMapUpload = async (locationId: string) => {
+    if (!siteMapFile) {
+      setError("Please select a site map file");
+      return;
+    }
+
+    setUploadingSiteMap(true);
+    setError("");
+    try {
+      // Upload site map to S3
+      const uploadResponse = await apiClient.uploadAgreementFile(siteMapFile);
+
+      if (!uploadResponse.success) {
+        throw new Error((uploadResponse as any).error || "Failed to upload site map");
+      }
+
+      // Update location with site map URL
+      const updateResponse = await apiClient.updateLocation(locationId, {
+        siteMapUrl: uploadResponse.url,
+      });
+
+      if (updateResponse.success) {
+        setSuccess("Site map uploaded successfully!");
+        setSiteMapFile(null);
+        loadLocations();
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        throw new Error((updateResponse as any).error || "Failed to update location");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to upload site map");
+    } finally {
+      setUploadingSiteMap(false);
+    }
+  };
+
+  const handleCreateSite = async () => {
+    if (!selectedLocation) {
+      setError("Please select a location first");
+      return;
+    }
+
+    if (!siteForm.siteNumber || !siteForm.price) {
+      setError("Please fill in site number and price");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const response = await apiClient.createSite({
+        locationId: selectedLocation._id,
+        ...siteForm,
+      });
+
+      if (response.success) {
+        setSuccess("Site created successfully!");
+        setShowSiteForm(false);
+        setSiteForm({
+          siteNumber: "",
+          cabinType: "1BR",
+          price: 0,
+          siteLeaseFee: 7000,
+        });
+        loadLocationSites(selectedLocation._id);
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError((response as any).error || "Failed to create site");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to create site");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkCreateSites = async () => {
+    if (!selectedLocation) {
+      setError("Please select a location first");
+      return;
+    }
+
+    const totalSites = selectedLocation.totalSites;
+    const distribution = selectedLocation.cabinTypeDistribution;
+    const num1BR = Math.floor(totalSites * distribution['1BR'] / 100);
+    const num2BR = totalSites - num1BR;
+
+    const sites = [];
+
+    // Create 1BR sites
+    for (let i = 1; i <= num1BR; i++) {
+      sites.push({
+        locationId: selectedLocation._id,
+        siteNumber: String(i),
+        cabinType: '1BR',
+        price: 0, // Admin will need to update prices
+        siteLeaseFee: 7000,
+        status: 'available',
+      });
+    }
+
+    // Create 2BR sites
+    for (let i = num1BR + 1; i <= totalSites; i++) {
+      sites.push({
+        locationId: selectedLocation._id,
+        siteNumber: String(i),
+        cabinType: '2BR',
+        price: 0, // Admin will need to update prices
+        siteLeaseFee: 7000,
+        status: 'available',
+      });
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const response = await apiClient.bulkCreateSites(sites);
+      if (response.success) {
+        setSuccess(`${response.count} sites created successfully!`);
+        loadLocationSites(selectedLocation._id);
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError((response as any).error || "Failed to create sites");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to create sites");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load locations when switching to locations tab
   useEffect(() => {
     if (activeTab === "locations") {
       loadLocations();
     }
   }, [activeTab]);
+
+  // Load sites when location is selected
+  useEffect(() => {
+    if (selectedLocation) {
+      loadLocationSites(selectedLocation._id);
+    }
+  }, [selectedLocation]);
 
   return (
     <div className="min-h-screen pb-8 w-full max-w-full overflow-x-hidden bg-[#f5f5f5]">
@@ -1083,6 +1252,172 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
                             {location.cabinTypeDistribution['2BR']}%
                             ({Math.floor(location.totalSites * location.cabinTypeDistribution['2BR'] / 100)} sites)
                           </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Site Map Upload */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <h4 className="font-semibold text-sm text-[#0e181f] mb-2">Site Map</h4>
+                      {location.siteMapUrl ? (
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={location.siteMapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-[#86dbdf] hover:underline"
+                          >
+                            📄 View Site Map
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                setSiteMapFile(e.target.files[0]);
+                              }
+                            }}
+                            className="text-sm"
+                          />
+                          <button
+                            onClick={() => handleSiteMapUpload(location._id)}
+                            disabled={uploadingSiteMap || !siteMapFile}
+                            className="px-3 py-1 bg-[#86dbdf] text-white rounded text-sm hover:opacity-90 disabled:opacity-50"
+                          >
+                            {uploadingSiteMap ? "Uploading..." : "Upload"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Site Management */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-sm text-[#0e181f]">Sites Management</h4>
+                        <button
+                          onClick={() => {
+                            setSelectedLocation(location);
+                            setShowSiteForm(false);
+                          }}
+                          className="px-3 py-1 bg-[#ec874c] text-white rounded text-sm hover:opacity-90"
+                        >
+                          {selectedLocation?._id === location._id ? "Hide Sites" : "Manage Sites"}
+                        </button>
+                      </div>
+
+                      {selectedLocation?._id === location._id && (
+                        <div className="mt-4 space-y-4">
+                          {/* Bulk Create Sites Button */}
+                          {locationSites.length === 0 && (
+                            <button
+                              onClick={handleBulkCreateSites}
+                              disabled={loading}
+                              className="w-full px-4 py-2 bg-[#ffcf00] text-[#0e181f] rounded font-bold hover:opacity-90 disabled:opacity-50"
+                            >
+                              {loading ? "Creating..." : `Auto-Create ${location.totalSites} Sites`}
+                            </button>
+                          )}
+
+                          {/* Add Single Site Button */}
+                          <button
+                            onClick={() => setShowSiteForm(!showSiteForm)}
+                            className="w-full px-4 py-2 bg-[#86dbdf] text-white rounded font-bold hover:opacity-90"
+                          >
+                            {showSiteForm ? "Cancel" : "+ Add Single Site"}
+                          </button>
+
+                          {/* Site Form */}
+                          {showSiteForm && (
+                            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Site Number *</label>
+                                  <input
+                                    type="text"
+                                    value={siteForm.siteNumber}
+                                    onChange={(e) => setSiteForm({ ...siteForm, siteNumber: e.target.value })}
+                                    className="w-full px-2 py-1 border rounded text-sm"
+                                    placeholder="e.g., 1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Cabin Type *</label>
+                                  <select
+                                    value={siteForm.cabinType}
+                                    onChange={(e) => setSiteForm({ ...siteForm, cabinType: e.target.value })}
+                                    className="w-full px-2 py-1 border rounded text-sm"
+                                  >
+                                    <option value="1BR">1BR</option>
+                                    <option value="2BR">2BR</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Cabin Price ($) *</label>
+                                  <input
+                                    type="number"
+                                    value={siteForm.price}
+                                    onChange={(e) => setSiteForm({ ...siteForm, price: parseFloat(e.target.value) || 0 })}
+                                    className="w-full px-2 py-1 border rounded text-sm"
+                                    placeholder="e.g., 350000"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Site Lease Fee ($) *</label>
+                                  <input
+                                    type="number"
+                                    value={siteForm.siteLeaseFee}
+                                    onChange={(e) => setSiteForm({ ...siteForm, siteLeaseFee: parseFloat(e.target.value) || 7000 })}
+                                    className="w-full px-2 py-1 border rounded text-sm"
+                                    placeholder="e.g., 7000"
+                                  />
+                                </div>
+                              </div>
+                              <button
+                                onClick={handleCreateSite}
+                                disabled={loading}
+                                className="w-full px-4 py-2 bg-[#ec874c] text-white rounded font-bold hover:opacity-90 disabled:opacity-50"
+                              >
+                                {loading ? "Creating..." : "Create Site"}
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Sites List */}
+                          {locationSites.length > 0 && (
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <h5 className="font-semibold text-sm mb-2">Sites ({locationSites.length})</h5>
+                              <div className="max-h-60 overflow-y-auto space-y-2">
+                                {locationSites.map((site) => (
+                                  <div
+                                    key={site._id}
+                                    className="bg-white p-2 rounded border text-xs flex justify-between items-center"
+                                  >
+                                    <div>
+                                      <span className="font-semibold">Site #{site.siteNumber}</span>
+                                      <span className="mx-2">|</span>
+                                      <span>{site.cabinType}</span>
+                                      <span className="mx-2">|</span>
+                                      <span>${site.price?.toLocaleString()}</span>
+                                      <span className="mx-2">|</span>
+                                      <span>Lease: ${site.siteLeaseFee?.toLocaleString()}/yr</span>
+                                    </div>
+                                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                      site.status === 'available'
+                                        ? 'bg-green-100 text-green-800'
+                                        : site.status === 'sold'
+                                        ? 'bg-red-100 text-red-800'
+                                        : 'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                      {site.status.toUpperCase()}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

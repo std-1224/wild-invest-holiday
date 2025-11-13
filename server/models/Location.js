@@ -66,6 +66,11 @@ const locationSchema = new mongoose.Schema(
       url: { type: String, trim: true },
       caption: { type: String, trim: true, default: '' },
     }],
+    siteMapUrl: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {},

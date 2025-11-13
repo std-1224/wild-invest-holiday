@@ -734,6 +734,64 @@ class WildThingsAPI {
     return this.request(`/api/locations/${locationId}/sites`);
   }
 
+  // Site methods
+  /**
+   * Get all sites for a specific location
+   * @param {string} locationId - Location ID
+   * @returns {Promise<Object>} Response with list of sites
+   */
+  async getSites(locationId) {
+    return this.request(`/api/sites/${locationId}`);
+  }
+
+  /**
+   * Get available sites for a specific location and cabin type
+   * @param {string} locationId - Location ID
+   * @param {string} cabinType - Cabin type (1BR or 2BR)
+   * @returns {Promise<Object>} Response with list of available sites
+   */
+  async getAvailableSites(locationId, cabinType) {
+    const params = cabinType ? `?cabinType=${cabinType}` : '';
+    return this.request(`/api/sites/${locationId}/available${params}`);
+  }
+
+  /**
+   * Create a new site (admin only)
+   * @param {Object} siteData - Site data
+   * @returns {Promise<Object>} Response with created site
+   */
+  async createSite(siteData) {
+    return this.request('/api/admin/sites', {
+      method: 'POST',
+      body: JSON.stringify(siteData),
+    });
+  }
+
+  /**
+   * Update a site (admin only)
+   * @param {string} siteId - Site ID
+   * @param {Object} updateData - Data to update
+   * @returns {Promise<Object>} Response with updated site
+   */
+  async updateSite(siteId, updateData) {
+    return this.request(`/api/admin/sites/${siteId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  }
+
+  /**
+   * Create multiple sites at once (admin only)
+   * @param {Array} sites - Array of site objects
+   * @returns {Promise<Object>} Response with created sites
+   */
+  async bulkCreateSites(sites) {
+    return this.request('/api/admin/sites/bulk-create', {
+      method: 'POST',
+      body: JSON.stringify({ sites }),
+    });
+  }
+
   // Cabin methods
   /**
    * Search owners by name or email (admin only)
@@ -759,6 +817,24 @@ class WildThingsAPI {
    */
   async getMyCabins() {
     return this.request('/api/cabins/my-cabins');
+  }
+
+  /**
+   * Create a cabin purchase
+   * @param {Object} purchaseData - Purchase details
+   * @param {string} purchaseData.locationId - Location ID
+   * @param {string} purchaseData.siteId - Site ID
+   * @param {string} purchaseData.cabinType - Cabin type (1BR or 2BR)
+   * @param {number} purchaseData.purchasePrice - Purchase price
+   * @param {Array<string>} purchaseData.purchasedExtras - Array of extra IDs
+   * @param {Object} purchaseData.financingDetails - Financing details (optional)
+   * @returns {Promise<Object>} Response with created cabin
+   */
+  async createCabinPurchase(purchaseData) {
+    return this.request('/api/cabins/purchase', {
+      method: 'POST',
+      body: JSON.stringify(purchaseData),
+    });
   }
 
   // Health check

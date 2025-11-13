@@ -151,6 +151,10 @@ export class WildThingsAPI {
   searchOwners(query: string): Promise<{ success: boolean; owners: any[]; count: number }>;
   getLocations(): Promise<{ success: boolean; locations: any[]; count: number }>;
   createLocation(locationData: any): Promise<{ success: boolean; message: string; location: any }>;
+  getSites(locationId: string): Promise<{ success: boolean; sites: any[]; count: number }>;
+  updateLocation(locationId: string, updates: any): Promise<{ success: boolean; message: string; location: any }>;
+  createSite(siteData: any): Promise<{ success: boolean; message: string; site: any }>;
+  bulkCreateSites(sites: any[]): Promise<{ success: boolean; message: string; sites: any[]; count: number }>;
 }
 
 declare const apiClient: WildThingsAPI;

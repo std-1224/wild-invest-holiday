@@ -6,6 +6,7 @@ import {
   getExtrasForCabin,
 } from "../../config/mockCalculate";
 import apiClient from "../../api/client";
+import { SiteSelector } from "../SiteSelector";
 
 type CabinType = "1BR" | "2BR";
 
@@ -98,6 +99,40 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
   };
 
   const [selectedExtras, setSelectedExtras] = useState(initializeExtras());
+
+  // Site selection state
+  const [currentStep, setCurrentStep] = useState<"site" | "details">("site");
+  const [selectedSite, setSelectedSite] = useState<any>(null);
+  const [locationId, setLocationId] = useState<string>("");
+
+  // Load location ID when modal opens
+  useEffect(() => {
+    const loadLocationId = async () => {
+      try {
+        const response = await apiClient.getLocations();
+        if (response.success && response.locations.length > 0) {
+          // For now, use the first location (Mansfield)
+          // In the future, this could be based on investmentData.location
+          const mansfield = response.locations.find((loc: any) =>
+            loc.name.toLowerCase().includes('mansfield')
+          );
+          if (mansfield) {
+            setLocationId(mansfield._id);
+          } else {
+            setLocationId(response.locations[0]._id);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load location:", error);
+      }
+    };
+
+    if (showInvestmentModal) {
+      loadLocationId();
+      setCurrentStep("site");
+      setSelectedSite(null);
+    }
+  }, [showInvestmentModal]);
 
   // Update extras when modal opens with floatingInvestmentData
   useEffect(() => {
@@ -213,61 +248,146 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
   const handleInvestmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate site selection
+    if (!selectedSite) {
+      alert("Please select a site location before proceeding.");
+      setCurrentStep("site");
+      return;
+    }
+
     console.log("Processing investment:", investmentData);
     console.log("Holding Deposit:", holdingDeposit);
     console.log("Balance Due:", balanceDue);
     console.log("Total Deposit:", calculateTotalDeposit());
     console.log("Cabin Type:", selectedCabinForInvestment);
+    console.log("Selected Site:", selectedSite);
 
-    // If not logged in, create account first
-    if (!isLoggedIn) {
-      console.log("Creating new investment account...");
-      // Simulate account creation and login
-      setIsLoggedIn(true);
-    } else {
-      console.log(
-        "User already logged in, processing investment for existing account"
-      );
-    }
+    try {
+      // If not logged in, create account first
+      if (!isLoggedIn) {
+        console.log("Creating new investment account...");
 
-    setShowInvestmentModal(false);
-
-    // Add to user investments
-    const newInvestment = {
-      id: userInvestments.length + 1,
-      cabinType: selectedCabinForInvestment,
-      location: investmentData.location,
-      purchaseDate: new Date().toISOString().split("T")[0],
-      purchasePrice: selectedCabin?.price || 0,
-      currentValue: selectedCabin?.price || 0,
-      totalIncome: 0,
-      monthlyIncome: 0,
-      status: "Pending Build",
-      nextPayment: "Build Complete (30%)",
-    };
-    setUserInvestments([...userInvestments, newInvestment]);
-
-    // Apply referral credits if referral code was used (only for first investment)
-    if (investmentData.referralCode && referralCodeValid) {
-      try {
-        const user = apiClient.getUser();
-        if (user?.id) {
-          const investmentId = `INV-${Date.now()}`;
-          const result = await apiClient.applyReferralCredits(
-            user.id,
-            investmentId
-          );
-          if (result.success && result.creditsApplied) {
-            console.log("✅ Referral credits applied successfully!");
-            alert(
-              "🎉 Congratulations! You and your referrer have each received $1,000 credit!"
-            );
-          }
+        // Validate passwords match
+        if (investmentData.password !== investmentData.confirmPassword) {
+          alert("Passwords do not match!");
+          return;
         }
-      } catch (error) {
-        console.error("Error applying referral credits:", error);
-        // Don't block the investment flow if referral credits fail
+
+        // Register new user
+        const registerResponse = await apiClient.register({
+          name: `${investmentData.firstName} ${investmentData.lastName}`,
+          email: investmentData.email,
+          password: investmentData.password,
+          phone: investmentData.phone,
+          referralCode: investmentData.referralCode || undefined,
+        });
+
+        if (!registerResponse.success) {
+          alert(`Registration failed: ${registerResponse.message || "Unknown error"}`);
+          return;
+        }
+
+        console.log("Account created successfully!");
+        setIsLoggedIn(true);
+      } else {
+        console.log(
+          "User already logged in, processing investment for existing account"
+        );
       }
+
+      // Get current user
+      const currentUser = apiClient.getUser();
+      if (!currentUser?.id) {
+        alert("User authentication failed. Please try again.");
+        return;
+      }
+
+      // Create cabin purchase record
+      console.log("Creating cabin purchase record...");
+
+      // Calculate selected extras
+      const purchasedExtras = Object.keys(selectedExtras).filter(
+        (extraId) => selectedExtras[extraId]
+      );
+
+      // Create cabin purchase via API
+      const purchaseResponse = await apiClient.createCabinPurchase({
+        locationId: locationId,
+        siteId: selectedSite._id,
+        cabinType: selectedCabinForInvestment,
+        purchasePrice: selectedCabin?.price || 0,
+        purchasedExtras: purchasedExtras,
+        financingDetails: {}, // TODO: Add financing details if needed
+      });
+
+      if (!purchaseResponse.success) {
+        alert(`Failed to create cabin purchase: ${purchaseResponse.message || "Unknown error"}`);
+        return;
+      }
+
+      console.log("✅ Cabin purchase created successfully:", purchaseResponse.cabin);
+
+      // Add to local state for immediate UI update
+      const newInvestment = {
+        id: purchaseResponse.cabin.id,
+        cabinType: selectedCabinForInvestment,
+        location: investmentData.location,
+        purchaseDate: new Date().toISOString().split("T")[0],
+        purchasePrice: selectedCabin?.price || 0,
+        currentValue: selectedCabin?.price || 0,
+        totalIncome: 0,
+        monthlyIncome: 0,
+        status: "Pending Build",
+        nextPayment: "Build Complete (30%)",
+        siteId: selectedSite._id,
+        siteNumber: selectedSite.siteNumber,
+        siteLeaseFee: selectedSite.siteLeaseFee,
+        purchasedExtras: purchasedExtras,
+      };
+
+      setUserInvestments([...userInvestments, newInvestment]);
+
+      setShowInvestmentModal(false);
+
+      // Show success message
+      alert(
+        `🎉 Congratulations! Your cabin reservation is confirmed!\n\n` +
+        `Cabin: ${selectedCabin?.name}\n` +
+        `Site: #${selectedSite.siteNumber}\n` +
+        `Location: ${investmentData.location}\n\n` +
+        `You can view your investment in the Investor Portal.`
+      );
+
+      // Navigate to investor portal
+      setCurrentPage("investor-portal");
+
+      // Apply referral credits if referral code was used (only for first investment)
+      if (investmentData.referralCode && referralCodeValid) {
+        try {
+          const user = apiClient.getUser();
+          if (user?.id) {
+            const investmentId = `INV-${Date.now()}`;
+            const result = await apiClient.applyReferralCredits(
+              user.id,
+              investmentId
+            );
+            if (result.success && result.creditsApplied) {
+              console.log("✅ Referral credits applied successfully!");
+              alert(
+                "🎉 Bonus! You and your referrer have each received $1,000 credit!"
+              );
+            }
+          }
+        } catch (error) {
+          console.error("Error applying referral credits:", error);
+          // Don't block the investment flow if referral credits fail
+        }
+      }
+    } catch (error: any) {
+      console.error("Investment submission error:", error);
+      alert(
+        `Failed to process investment: ${error.message || "Unknown error"}. Please try again.`
+      );
     }
 
     // Redirect to investor portal
@@ -321,45 +441,136 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
           </div>
         </div>
 
-        <div
-          className="mb-6 p-4 rounded-lg"
-          style={{
-            backgroundColor: `${colors.yellow}20`,
-            border: `2px solid ${colors.yellow}`,
-          }}
-        >
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="font-medium" style={{ color: colors.darkBlue }}>
-                Purchase Price
-              </p>
-              <p
-                className="text-xl font-bold"
-                style={{ color: colors.darkBlue }}
-              >
-                ${selectedCabin.price.toLocaleString()} + GST
-              </p>
+        {/* Step Indicator */}
+        <div className="mb-6 flex items-center justify-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+              currentStep === "site" ? "bg-[#ec874c] text-white" : "bg-gray-300 text-gray-600"
+            }`}>
+              1
             </div>
-            <div>
-              <p className="font-medium" style={{ color: colors.darkBlue }}>
-                Holding Deposit
-              </p>
-              <p className="text-xl font-bold" style={{ color: colors.yellow }}>
-                ${holdingDeposit}
-              </p>
+            <span className={`text-sm font-semibold ${
+              currentStep === "site" ? "text-[#ec874c]" : "text-gray-600"
+            }`}>
+              Select Site
+            </span>
+          </div>
+          <div className="w-12 h-0.5 bg-gray-300"></div>
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+              currentStep === "details" ? "bg-[#ec874c] text-white" : "bg-gray-300 text-gray-600"
+            }`}>
+              2
             </div>
-            <div>
-              <p className="font-medium" style={{ color: colors.darkBlue }}>
-                30% Due Later
-              </p>
-              <p className="text-xl font-bold" style={{ color: colors.aqua }}>
-                ${balanceDue.toLocaleString()}
-              </p>
-            </div>
+            <span className={`text-sm font-semibold ${
+              currentStep === "details" ? "text-[#ec874c]" : "text-gray-600"
+            }`}>
+              Your Details
+            </span>
           </div>
         </div>
 
-        {/* Extras Selection */}
+        {/* Site Selection Step */}
+        {currentStep === "site" && locationId && (
+          <div className="mb-6">
+            <SiteSelector
+              locationId={locationId}
+              cabinType={selectedCabinForInvestment as string}
+              onSiteSelect={(site) => {
+                setSelectedSite(site);
+              }}
+              selectedSiteId={selectedSite?._id}
+            />
+
+            {selectedSite && (
+              <div className="mt-6">
+                <div className="bg-[#f5f5f5] rounded-lg p-4 mb-4">
+                  <h4 className="font-bold text-[#0e181f] mb-2">Selected Site</h4>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-lg font-bold text-[#ec874c]">Site #{selectedSite.siteNumber}</p>
+                      <p className="text-sm text-gray-600">
+                        Annual Site Lease: ${selectedSite.siteLeaseFee?.toLocaleString()}/year
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedSite(null)}
+                      className="text-sm text-[#86dbdf] hover:underline"
+                    >
+                      Change Site
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setCurrentStep("details")}
+                  className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ec874c] text-white"
+                >
+                  Continue to Details →
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Details Step */}
+        {currentStep === "details" && (
+          <>
+            <div
+              className="mb-6 p-4 rounded-lg"
+              style={{
+                backgroundColor: `${colors.yellow}20`,
+                border: `2px solid ${colors.yellow}`,
+              }}
+            >
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-medium" style={{ color: colors.darkBlue }}>
+                    Purchase Price
+                  </p>
+                  <p
+                    className="text-xl font-bold"
+                    style={{ color: colors.darkBlue }}
+                  >
+                    ${selectedCabin.price.toLocaleString()} + GST
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium" style={{ color: colors.darkBlue }}>
+                    Site #{selectedSite?.siteNumber || "TBD"}
+                  </p>
+                  <p className="text-sm" style={{ color: colors.darkBlue }}>
+                    Lease: ${selectedSite?.siteLeaseFee?.toLocaleString() || "7,000"}/yr
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium" style={{ color: colors.darkBlue }}>
+                    Holding Deposit
+                  </p>
+                  <p className="text-xl font-bold" style={{ color: colors.yellow }}>
+                    ${holdingDeposit}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium" style={{ color: colors.darkBlue }}>
+                    30% Due Later
+                  </p>
+                  <p className="text-xl font-bold" style={{ color: colors.aqua }}>
+                    ${balanceDue.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Back to Site Selection Button */}
+            <button
+              onClick={() => setCurrentStep("site")}
+              className="mb-4 text-sm text-[#86dbdf] hover:underline font-semibold"
+            >
+              ← Back to Site Selection
+            </button>
+
+            {/* Extras Selection */}
         <div className="mb-6">
           <h3
             className="text-lg font-bold mb-4"
@@ -1270,6 +1481,8 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
             </button>
           </div>
         </form>
+          </>
+        )}
       </div>
     </div>
   );

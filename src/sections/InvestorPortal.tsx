@@ -22,6 +22,7 @@ import {
 } from "../components/Modals/PayoutRequestModal";
 import { XeroInvoices } from "../components/XeroInvoices";
 import { XeroConnect } from "../components/XeroConnect";
+import { SiteLocationDisplay } from "../components/SiteLocationDisplay";
 import apiClient from "../api/client";
 
 type CabinType = "1BR" | "2BR";
@@ -865,15 +866,18 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     <div className="flex items-center gap-3">
                       <div className="flex-1 bg-white rounded-lg p-3 border-2 border-[#ec874c]">
                         <p className="text-2xl font-bold tracking-wider text-[#ec874c]">
-                          {referralCode}
+                          {referralCode || "Loading..."}
                         </p>
                       </div>
                       <button
                         onClick={() => {
-                          navigator.clipboard.writeText(referralCode);
-                          alert("Referral code copied to clipboard!");
+                          if (referralCode) {
+                            navigator.clipboard.writeText(referralCode);
+                            alert("Referral code copied to clipboard!");
+                          }
                         }}
-                        className="px-4 py-3 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ec874c] text-white"
+                        disabled={!referralCode}
+                        className="px-4 py-3 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ec874c] text-white disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         📋 Copy
                       </button>
@@ -996,6 +1000,11 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                             <p className="text-xs text-gray-600">per night</p>
                           </div>
                         </div>
+
+                        {/* Site Location Section */}
+                        <SiteLocationDisplay
+                          investment={investment}
+                        />
 
                         {/* Documents Section */}
                         <div className="bg-gray-50 rounded-lg p-4 mb-4">

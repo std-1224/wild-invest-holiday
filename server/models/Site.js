@@ -35,6 +35,12 @@ const siteSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    siteLeaseFee: {
+      type: Number,
+      required: true,
+      default: 7000, // Default annual site lease fee
+      min: 0,
+    },
     coordinates: {
       latitude: { type: Number, default: null },
       longitude: { type: Number, default: null },
