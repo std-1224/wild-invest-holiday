@@ -77,7 +77,7 @@ cabinSchema.index({ siteId: 1 });
 cabinSchema.statics.findByOwnerId = function(ownerId) {
   return this.find({ ownerId })
     .populate('locationId', 'name slug')
-    .populate('siteId', 'siteNumber')
+    .populate('siteId', 'siteNumber siteLeaseFee')
     .sort({ purchaseDate: -1 });
 };
 

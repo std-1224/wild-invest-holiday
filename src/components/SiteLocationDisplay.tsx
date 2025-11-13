@@ -18,6 +18,18 @@ export const SiteLocationDisplay: React.FC<SiteLocationDisplayProps> = ({
   }, [investment]);
 
   const loadSiteAndLocation = async () => {
+    // If investment has siteNumber but no siteId, it's mock data - skip API calls
+    if (investment.siteNumber && !investment.siteId) {
+      setLoading(false);
+      return;
+    }
+
+    // If no siteId at all, skip API calls
+    if (!investment.siteId) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       // First, get all locations to find the one matching the investment
@@ -26,10 +38,10 @@ export const SiteLocationDisplay: React.FC<SiteLocationDisplayProps> = ({
         const location = locationsResponse.locations.find(
           (loc: any) => loc.name.toLowerCase().includes(investment.location.toLowerCase())
         );
-        
+
         if (location) {
           setLocationDetails(location);
-          
+
           // If the investment has a siteId, fetch the site details
           if (investment.siteId) {
             const sitesResponse = await apiClient.getSites(location._id);
@@ -57,10 +69,18 @@ export const SiteLocationDisplay: React.FC<SiteLocationDisplayProps> = ({
     );
   }
 
-  // If no site details available, show a placeholder
-  if (!siteDetails && !locationDetails?.siteMapUrl) {
+  // If no site details available and no mock data, show a placeholder
+  if (!siteDetails && !locationDetails?.siteMapUrl && !investment.siteNumber) {
     return null;
   }
+
+  // Create mock site details if we have siteNumber but no siteId (for admin mock data)
+  const displaySiteDetails = siteDetails || (investment.siteNumber ? {
+    siteNumber: investment.siteNumber,
+    cabinType: investment.cabinType,
+    siteLeaseFee: investment.siteLeaseFee || 7000,
+    status: "sold",
+  } : null);
 
   return (
     <div className="bg-gradient-to-r from-[#86dbdf]/10 to-[#ec874c]/10 rounded-lg p-4 mb-4 border-2 border-[#86dbdf]">
@@ -78,40 +98,40 @@ export const SiteLocationDisplay: React.FC<SiteLocationDisplayProps> = ({
         )}
       </div>
 
-      {siteDetails ? (
+      {displaySiteDetails ? (
         <div className="bg-white rounded-lg p-4 mb-3">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-600 mb-1">Site Number</p>
               <p className="text-2xl font-bold text-[#ec874c]">
-                #{siteDetails.siteNumber}
+                #{displaySiteDetails.siteNumber}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Cabin Type</p>
               <p className="text-lg font-bold text-[#0e181f]">
-                {siteDetails.cabinType}
+                {displaySiteDetails.cabinType}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Annual Site Lease</p>
               <p className="text-lg font-bold text-[#0e181f]">
-                ${siteDetails.siteLeaseFee?.toLocaleString() || "7,000"}/year
+                ${displaySiteDetails.siteLeaseFee?.toLocaleString() || "7,000"}/year
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Status</p>
               <span className="inline-block px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
-                {siteDetails.status === "sold" ? "Owned" : siteDetails.status}
+                {displaySiteDetails.status === "sold" ? "Owned" : displaySiteDetails.status}
               </span>
             </div>
           </div>
-          
-          {siteDetails.features && siteDetails.features.length > 0 && (
+
+          {displaySiteDetails.features && displaySiteDetails.features.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-200">
               <p className="text-sm text-gray-600 mb-2">Site Features</p>
               <div className="flex flex-wrap gap-2">
-                {siteDetails.features.map((feature: string, index: number) => (
+                {displaySiteDetails.features.map((feature: string, index: number) => (
                   <span
                     key={index}
                     className="px-2 py-1 bg-[#ffcf00]/20 text-[#0e181f] rounded text-xs font-semibold"

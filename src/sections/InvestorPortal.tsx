@@ -29,7 +29,7 @@ type CabinType = "1BR" | "2BR";
 
 interface Investment {
   cabinType: CabinType;
-  id: number;
+  id: number | string;
   location: string;
   purchaseDate: string;
   purchasePrice: number;
@@ -44,6 +44,10 @@ interface Investment {
   roi: number;
   bookedDates: string[];
   purchasedExtras?: string[]; // Array of extra IDs that have been purchased
+  siteNumber?: string; // Site number from database
+  siteId?: string; // Site ID from database
+  siteLeaseFee?: number; // Annual site lease fee
+  totalBookings?: number; // Total bookings count
 }
 
 interface FloatingInvestmentData {
@@ -78,6 +82,10 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   setSelectedCabinForInvestment,
   userInvestments: propUserInvestments,
 }) => {
+  // State for real cabins from database
+  const [realCabins, setRealCabins] = useState<Investment[]>([]);
+  const [loadingCabins, setLoadingCabins] = useState(true);
+
   // Merge prop investments with mock data for display purposes
   // If there are no investments from props, show mock data
   const mockInvestments: Investment[] = [
@@ -114,6 +122,9 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
         "2024-12-29",
       ],
       purchasedExtras: ["furniture", "linen"], // Already purchased extras
+      siteNumber: "A-42", // Mock site number for admin demo
+      siteLeaseFee: 7000, // Mock site lease fee
+      totalBookings: 256, // Mock total bookings
     },
     {
       id: 2,
@@ -142,6 +153,9 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
         "2024-12-31",
       ],
       purchasedExtras: ["solar"], // Already purchased extras
+      siteNumber: "B-18", // Mock site number for admin demo
+      siteLeaseFee: 7000, // Mock site lease fee
+      totalBookings: 189, // Mock total bookings
     },
   ];
 
@@ -164,12 +178,15 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
     bookedDates: inv.bookedDates || [],
   }));
 
-  // ALWAYS show mock data + new investments combined
-  // This way users see both demo cabins and their new reservations
-  const userInvestments = [...mockInvestments, ...convertedPropInvestments];
-
   // Load user profile from API (must be before referralCode)
   const currentUser = apiClient.getUser();
+
+  // Determine which cabins to show based on user role
+  // - Admin: Show all mock data for testing/demo purposes
+  // - Owner: Show only real cabins from database
+  const userInvestments = currentUser?.role === 'admin'
+    ? [...mockInvestments, ...convertedPropInvestments]
+    : realCabins;
 
   // Agreements state
   const [userAgreements, setUserAgreements] = useState<any[]>([]);
@@ -185,7 +202,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
 
   // Extras purchase state
   const [selectedExtrasForPurchase, setSelectedExtrasForPurchase] = useState<{
-    [investmentId: number]: string[];
+    [investmentId: string | number]: string[];
   }>({});
   const [purchasingExtras, setPurchasingExtras] = useState(false);
 
@@ -259,6 +276,89 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
     };
 
     loadAgreements();
+  }, [currentUser?.id]);
+
+  // Load real cabins from database on mount
+  useEffect(() => {
+    const loadCabins = async () => {
+      if (!currentUser?.id) {
+        setLoadingCabins(false);
+        return;
+      }
+
+      setLoadingCabins(true);
+      try {
+        const response = await apiClient.getMyCabins();
+        if (response.success && response.cabins) {
+          // Transform database cabins to Investment format
+          const transformedCabins: Investment[] = response.cabins.map((cabin: any) => {
+            // Extract location name from populated locationId
+            const locationName = cabin.locationId?.name || cabin.location || "Unknown Location";
+
+            // Extract site number from populated siteId
+            const siteNumber = cabin.siteId?.siteNumber || cabin.siteNumber || "N/A";
+
+            // Calculate status display
+            let statusDisplay = "Active";
+            if (cabin.status === "pending") {
+              statusDisplay = "Pending Build";
+            } else if (cabin.status === "active") {
+              statusDisplay = "Active";
+            } else if (cabin.status === "sold") {
+              statusDisplay = "Sold";
+            } else if (cabin.status === "inactive") {
+              statusDisplay = "Inactive";
+            }
+
+            // Format purchase date
+            const purchaseDate = cabin.purchaseDate
+              ? new Date(cabin.purchaseDate).toISOString().split("T")[0]
+              : new Date().toISOString().split("T")[0];
+
+            // Calculate mock revenue data (TODO: integrate with RMS for real data)
+            const mockMonthlyIncome = cabin.cabinType === "2BR" ? 7452 : 4684;
+            const mockTotalIncome = cabin.cabinType === "2BR" ? 89425 : 56210;
+            const mockOccupancyRate = 70;
+            const mockAveragePerNight = cabin.cabinType === "2BR" ? 350 : 220;
+            const mockROI = cabin.cabinType === "2BR" ? 18.33 : 13.26;
+
+            return {
+              id: cabin._id || cabin.id,
+              cabinType: cabin.cabinType as CabinType,
+              location: locationName,
+              siteNumber: siteNumber,
+              siteId: cabin.siteId?._id || cabin.siteId,
+              siteLeaseFee: cabin.siteId?.siteLeaseFee || 7000,
+              purchaseDate: purchaseDate,
+              purchasePrice: cabin.purchasePrice || 0,
+              currentValue: cabin.purchasePrice || 0, // TODO: Add appreciation logic
+              totalIncome: mockTotalIncome, // TODO: Get from RMS integration
+              monthlyIncome: mockMonthlyIncome, // TODO: Get from RMS integration
+              averagePerNight: mockAveragePerNight, // TODO: Get from RMS integration
+              status: statusDisplay,
+              nextPayment: cabin.status === "pending" ? "Build Complete (30%)" : "N/A",
+              occupancyRate: mockOccupancyRate, // TODO: Get from RMS integration
+              nightsBooked: Math.floor(mockOccupancyRate * 3.65), // TODO: Get from RMS integration
+              roi: mockROI, // TODO: Calculate from real income data
+              bookedDates: [], // TODO: Get from RMS integration
+              purchasedExtras: cabin.purchasedExtras || [],
+            };
+          });
+
+          setRealCabins(transformedCabins);
+          console.log(`✅ Loaded ${transformedCabins.length} real cabins from database`);
+        }
+      } catch (error) {
+        console.error('Error loading cabins:', error);
+        // Keep empty array on error
+        setRealCabins([]);
+      } finally {
+        setLoadingCabins(false);
+      }
+    };
+    // if(currentUser?.role === "owner") {
+      loadCabins();
+    // }
   }, [currentUser?.id]);
 
   // Listen for Xero connection changes
@@ -904,6 +1004,37 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 <h3 className="text-3xl sm:text-4xl font-black mb-6 sm:mb-8 text-center italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
                   CABINS OWNED
                 </h3>
+
+                {/* Loading indicator */}
+                {loadingCabins && (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#86dbdf]"></div>
+                    <p className="mt-4 text-gray-600">Loading your cabins...</p>
+                  </div>
+                )}
+
+                {/* Empty state for owners with no cabins */}
+                {!loadingCabins && currentUser?.role === 'owner' && userInvestments.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="mb-4">
+                      <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">No Cabins Yet</h3>
+                    <p className="text-gray-600 mb-6">You haven't purchased any cabins yet. Start your investment journey today!</p>
+                    <button
+                      onClick={() => {
+                        // Navigate to holiday homes section
+                        window.location.href = '#holiday-homes';
+                      }}
+                      className="px-6 py-3 bg-[#ec874c] text-white font-bold rounded-lg hover:opacity-90 transition-all"
+                    >
+                      Browse Available Cabins
+                    </button>
+                  </div>
+                )}
+
                 <div className="space-y-6 sm:space-y-8">
                   {userInvestments.map((investment) => (
                     <div
@@ -1475,7 +1606,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
           {activeTab === "owner-booking" && (
             <div className="space-y-8">
               <OwnerBookingCalendar
-                cabinId={userInvestments[0]?.id || 1}
+                cabinId={typeof userInvestments[0]?.id === 'number' ? userInvestments[0].id : 1}
                 cabinType={userInvestments[0]?.cabinType || "2BR"}
                 bookedDates={mockBookedDates}
                 ownerDaysUsed={ownerDaysUsed}
@@ -2251,7 +2382,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
       {/* Modals */}
       {showOwnerBookingModal && (
         <OwnerBookingModal
-          cabinId={userInvestments[0]?.id || 1}
+          cabinId={typeof userInvestments[0]?.id === 'number' ? userInvestments[0].id : 1}
           cabinType={userInvestments[0]?.cabinType || "2BR"}
           cabinName={`${userInvestments[0]?.cabinType || "2BR"} Cabin - ${
             userInvestments[0]?.location || "Mansfield"

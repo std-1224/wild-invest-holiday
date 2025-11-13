@@ -5,7 +5,7 @@ import apiClient from "../../api/client";
 interface Investment {
   cabinType: string;
   location: string;
-  id: number;
+  id: number | string;
 }
 
 interface PaymentMethod {
