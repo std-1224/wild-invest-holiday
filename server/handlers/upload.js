@@ -17,9 +17,9 @@ const s3ClientConfig = {
 };
 
 // Add session token if using temporary credentials (IAM role or STS)
-if (process.env.AWS_SESSION_TOKEN) {
-  s3ClientConfig.credentials.sessionToken = process.env.AWS_SESSION_TOKEN;
-}
+// if (process.env.AWS_SESSION_TOKEN) {
+//   s3ClientConfig.credentials.sessionToken = process.env.AWS_SESSION_TOKEN;
+// }
 
 const s3Client = new S3Client(s3ClientConfig);
 
