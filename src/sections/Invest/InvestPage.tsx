@@ -9,6 +9,7 @@ import {
 import { InvestTimeline } from "../../components/InvestTimeline";
 import { InvestFaqs } from "../../components/InvestFaqs";
 import { CalendlyButton } from "../../components/CalendlyButton";
+import { HoldingDepositModal } from "../../components/Modals/HoldingDepositModal";
 
 type CabinType = "1BR" | "2BR";
 
@@ -31,6 +32,9 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
     nightlyRate: 220,
   });
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
+  const [showHoldingDepositModal, setShowHoldingDepositModal] = useState(false);
+  const [selectedCabinForDeposit, setSelectedCabinForDeposit] = useState<any>(null);
+  const [expandedExtras, setExpandedExtras] = useState<Record<string, boolean>>({});
 
   const handleCabinTypeChange = (newCabinType: CabinType) => {
     setRoiInputs({
@@ -181,10 +185,13 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                       <button
                         onClick={() => {
                           setSelectedCabinForInvestment(key);
-                          onInvest({
+                          setSelectedCabinForDeposit({
                             id: key,
                             ...cabins[roiInputs.cabinType],
+                            cabinType: roiInputs.cabinType,
+                            totalAmount: roiResults.totalCabinPrice,
                           });
+                          setShowHoldingDepositModal(true);
                         }}
                         className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 mb-2 bg-[#ffcf00] text-[#0e181f]"
                       >
@@ -295,85 +302,126 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                   Optional Extras
                 </h3>
                 <div className="space-y-2">
-                  {getExtrasForCabin(roiInputs.cabinType).map((extra) => (
-                    <label
-                      key={extra.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
-                        selectedExtras.includes(extra.id)
-                          ? "bg-[#ffcf00]/[0.2] border-2 border-[#ffcf00]"
-                          : "bg-[#f5f5f5] border-2 border-transparent"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedExtras.includes(extra.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedExtras([...selectedExtras, extra.id]);
-                          } else {
-                            setSelectedExtras(
-                              selectedExtras.filter((id) => id !== extra.id)
-                            );
-                          }
-                        }}
-                        className="w-5 h-5"
-                      />
-                      <div className="flex-1">
-                        {(() => {
-                          const base = calculateROI(
-                            roiInputs.cabinType,
-                            roiInputs.occupancyRate,
-                            roiInputs.nightlyRate,
-                            []
-                          );
-                          const withExtra = calculateROI(
-                            roiInputs.cabinType,
-                            roiInputs.occupancyRate,
-                            roiInputs.nightlyRate,
-                            [extra.id]
-                          );
-                          const roiImpact =
-                            (withExtra.roi || 0) - (base.roi || 0);
-                          return (
-                            <>
+                  {getExtrasForCabin(roiInputs.cabinType)
+                    .filter((extra) => {
+                      // Calculate ROI impact for filtering
+                      const base = calculateROI(
+                        roiInputs.cabinType,
+                        roiInputs.occupancyRate,
+                        roiInputs.nightlyRate,
+                        []
+                      );
+                      const withExtra = calculateROI(
+                        roiInputs.cabinType,
+                        roiInputs.occupancyRate,
+                        roiInputs.nightlyRate,
+                        [extra.id]
+                      );
+                      const roiImpact = (withExtra.roi || 0) - (base.roi || 0);
+                      // Only show extras with positive ROI impact
+                      return roiImpact > 0;
+                    })
+                    .map((extra) => {
+                      const isExpanded = expandedExtras[extra.id] || false;
+
+                      return (
+                        <div
+                          key={extra.id}
+                          className={`rounded-lg border-2 transition-all ${
+                            selectedExtras.includes(extra.id)
+                              ? "bg-[#ffcf00]/[0.2] border-[#ffcf00]"
+                              : "bg-[#f5f5f5] border-transparent"
+                          }`}
+                        >
+                          <label className="flex items-center gap-3 p-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedExtras.includes(extra.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedExtras([...selectedExtras, extra.id]);
+                                } else {
+                                  setSelectedExtras(
+                                    selectedExtras.filter((id) => id !== extra.id)
+                                  );
+                                }
+                              }}
+                              className="w-5 h-5"
+                            />
+                            <div className="flex-1">
+                              {(() => {
+                                const base = calculateROI(
+                                  roiInputs.cabinType,
+                                  roiInputs.occupancyRate,
+                                  roiInputs.nightlyRate,
+                                  []
+                                );
+                                const withExtra = calculateROI(
+                                  roiInputs.cabinType,
+                                  roiInputs.occupancyRate,
+                                  roiInputs.nightlyRate,
+                                  [extra.id]
+                                );
+                                const roiImpact =
+                                  (withExtra.roi || 0) - (base.roi || 0);
+                                return (
+                                  <>
+                                    <div className="font-bold text-sm text-[#0e181f]">
+                                      {extra.name}
+                                    </div>
+                                    <div className="text-xs text-[#ec874c]">
+                                      {extra.impactDescription}
+                                    </div>
+                                    <div className="text-xs mt-1 text-[#059669]">
+                                      ROI Impact: +{roiImpact.toFixed(1)}%
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
                               <div className="font-bold text-sm text-[#0e181f]">
-                                {extra.name}
+                                ${extra.price.toLocaleString()}
                               </div>
-                              <div className="text-xs text-[#ec874c]">
-                                {extra.impactDescription}
+                              {(extra as any).items && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setExpandedExtras({
+                                      ...expandedExtras,
+                                      [extra.id]: !isExpanded,
+                                    });
+                                  }}
+                                  className="text-xs text-blue-600 hover:underline"
+                                >
+                                  {isExpanded ? "Hide" : "Show"} details
+                                </button>
+                              )}
+                            </div>
+                          </label>
+
+                          {/* Pack Details */}
+                          {isExpanded && (extra as any).items && (
+                            <div className="px-3 pb-3 pt-0">
+                              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                                <p className="text-xs font-semibold text-[#0e181f] mb-2">
+                                  What's included:
+                                </p>
+                                <ul className="text-xs text-gray-700 space-y-1">
+                                  {(extra as any).items.map((item: string, idx: number) => (
+                                    <li key={idx} className="flex items-start gap-2">
+                                      <span className="text-[#ffcf00] mt-0.5">✓</span>
+                                      <span>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
                               </div>
-                              <div
-                                className={`text-xs mt-1 ${
-                                  roiImpact > 0
-                                    ? "text-[#059669]"
-                                    : roiImpact < 0
-                                    ? "text-[#EF4444]"
-                                    : "text-[#6B7280]"
-                                }`}
-                              >
-                                ROI Impact: {roiImpact > 0 ? "+" : ""}
-                                {roiImpact.toFixed(1)}%
-                                {extra.id === "solar" && (
-                                  <span className="ml-1">
-                                    (Eliminates $
-                                    {(
-                                      (roiInputs.occupancyRate / 100) *
-                                      365 *
-                                      20
-                                    ).toLocaleString()}{" "}
-                                    energy costs)
-                                  </span>
-                                )}
-                              </div>
-                            </>
-                          );
-                        })()}
-                      </div>
-                      <div className="font-bold text-sm text-[#0e181f]">
-                        ${extra.price.toLocaleString()}
-                      </div>
-                    </label>
-                  ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
 
@@ -530,10 +578,13 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
               <button
                 onClick={() => {
                   setSelectedCabinForInvestment(roiInputs.cabinType);
-                  onInvest({
+                  setSelectedCabinForDeposit({
                     id: roiInputs.cabinType,
                     ...cabins[roiInputs.cabinType],
+                    cabinType: roiInputs.cabinType,
+                    totalAmount: roiResults.totalCabinPrice,
                   });
+                  setShowHoldingDepositModal(true);
                 }}
                 className="w-full py-4 rounded-lg font-bold transition-all hover:opacity-90 mb-4 bg-[#ffcf00] text-[#0e181f] text-lg"
               >
@@ -549,6 +600,25 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
         </div>
       </div>
       <InvestFaqs />
+
+      {/* Holding Deposit Modal */}
+      {selectedCabinForDeposit && (
+        <HoldingDepositModal
+          isOpen={showHoldingDepositModal}
+          onClose={() => {
+            setShowHoldingDepositModal(false);
+            setSelectedCabinForDeposit(null);
+          }}
+          onSuccess={() => {
+            setShowHoldingDepositModal(false);
+            // Redirect to investor portal after successful payment
+            onInvest(selectedCabinForDeposit);
+          }}
+          cabinType={selectedCabinForDeposit.cabinType}
+          location={selectedCabinForDeposit.location || "Wild Things Cabin Park"}
+          totalAmount={selectedCabinForDeposit.totalAmount}
+        />
+      )}
     </div>
   );
 };

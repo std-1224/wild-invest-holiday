@@ -68,7 +68,10 @@ export interface ReferralStatsResponse {
 
 export class WildThingsAPI {
   constructor();
-  
+
+  // Core request method
+  request(endpoint: string, options?: any): Promise<any>;
+
   // Authentication methods
   registerUser(userData: RegisterData): Promise<AuthResponse>;
   loginUser(credentials: LoginCredentials): Promise<AuthResponse>;

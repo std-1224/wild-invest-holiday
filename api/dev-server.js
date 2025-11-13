@@ -79,6 +79,9 @@ import {
   handleUpdateSite,
   handleBulkCreateSites,
 } from '../server/handlers/sites.js';
+import {
+  handleHoldingDeposit,
+} from '../server/handlers/holding-deposit.js';
 
 const app = express();
 const PORT = 3001;
@@ -331,6 +334,16 @@ app.post('/api/marketing-boost/resume', handleResumeBoost);
 
 app.get('/api/payments/history', handleGetPaymentHistory);
 app.get('/api/payments/boost-payments', handleGetBoostPayments);
+
+// ============================================================================
+// HOLDING DEPOSIT API ENDPOINT
+// ============================================================================
+
+/**
+ * POST /api/holding-deposit
+ * Process $100 holding deposit payment
+ */
+app.post('/api/holding-deposit', handleHoldingDeposit);
 
 // ============================================================================
 // AGREEMENT API ENDPOINTS

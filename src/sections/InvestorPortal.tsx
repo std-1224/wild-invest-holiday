@@ -899,16 +899,16 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 </div>
               </div>
 
-              {/* Cabins Owned */}
-              <div className="bg-white rounded-lg shadow-lg p-8 mb-12">
-                <h3 className="text-4xl font-black mb-8 text-center italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+              {/* Cabins Owned - Full Width */}
+              <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-12 w-full">
+                <h3 className="text-3xl sm:text-4xl font-black mb-6 sm:mb-8 text-center italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
                   CABINS OWNED
                 </h3>
-                <div className="space-y-8">
+                <div className="space-y-6 sm:space-y-8">
                   {userInvestments.map((investment) => (
                     <div
                       key={investment.id}
-                      className="bg-gradient-to-r from-gray-50 to-white rounded-xl shadow-lg overflow-hidden border-2 border-[#86dbdf]"
+                      className="bg-gradient-to-r from-gray-50 to-white rounded-xl shadow-lg overflow-hidden border-2 border-[#86dbdf] w-full"
                     >
                       {/* Cabin Header with Photo */}
                       <div className="relative">
@@ -942,31 +942,32 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                       </div>
 
                       {/* Investment Details */}
-                      <div className="p-6">
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                      <div className="p-4 sm:p-6">
+                        {/* Financial Metrics */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6">
                           <div className="text-center">
-                            <p className="text-sm font-medium mb-1 text-[#0e181f]">
+                            <p className="text-xs sm:text-sm font-medium mb-1 text-[#0e181f]">
                               Purchase Price
                             </p>
-                            <p className="text-xl font-bold text-[#0e181f]">
+                            <p className="text-lg sm:text-xl font-bold text-[#0e181f]">
                               ${investment.purchasePrice.toLocaleString()}
                             </p>
                             <p className="text-xs text-gray-600">+ GST</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-medium mb-1 text-[#0e181f]">
+                            <p className="text-xs sm:text-sm font-medium mb-1 text-[#0e181f]">
                               Current Value
                             </p>
-                            <p className="text-xl font-bold text-[#ffcf00]">
+                            <p className="text-lg sm:text-xl font-bold text-[#ffcf00]">
                               ${investment.currentValue.toLocaleString()}
                             </p>
                             <p className="text-xs text-gray-600">+ GST</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-medium mb-1 text-[#0e181f]">
+                            <p className="text-xs sm:text-sm font-medium mb-1 text-[#0e181f]">
                               ROI
                             </p>
-                            <p className="text-xl font-bold text-[#ec874c]">
+                            <p className="text-lg sm:text-xl font-bold text-[#ec874c]">
                               {investment.roi
                                 ? investment.roi.toFixed(2)
                                 : "0.00"}
@@ -977,19 +978,19 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                             </p>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-medium mb-1 text-[#0e181f]">
+                            <p className="text-xs sm:text-sm font-medium mb-1 text-[#0e181f]">
                               Total Income
                             </p>
-                            <p className="text-xl font-bold text-[#86dbdf]">
+                            <p className="text-lg sm:text-xl font-bold text-[#86dbdf]">
                               ${investment.totalIncome.toLocaleString()}
                             </p>
                             <p className="text-xs text-gray-600">lifetime</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-medium mb-1 text-[#0e181f]">
+                            <p className="text-xs sm:text-sm font-medium mb-1 text-[#0e181f]">
                               Avg Per Night
                             </p>
-                            <p className="text-xl font-bold text-[#ffcf00]">
+                            <p className="text-lg sm:text-xl font-bold text-[#ffcf00]">
                               $
                               {investment.averagePerNight
                                 ? investment.averagePerNight.toLocaleString()
@@ -998,6 +999,52 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                                   ).toLocaleString()}
                             </p>
                             <p className="text-xs text-gray-600">per night</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs sm:text-sm font-medium mb-1 text-[#0e181f]">
+                              Occupancy Rate
+                            </p>
+                            <p className="text-lg sm:text-xl font-bold text-[#ec874c]">
+                              {investment.occupancyRate || 75}%
+                            </p>
+                            <p className="text-xs text-gray-600">current</p>
+                          </div>
+                        </div>
+
+                        {/* Booking & Revenue Statistics */}
+                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 mb-6 border border-[#86dbdf]">
+                          <h5 className="text-sm font-bold mb-3 text-[#0e181f] flex items-center gap-2">
+                            📊 Booking & Revenue Statistics
+                          </h5>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="bg-white rounded-lg p-3 text-center">
+                              <p className="text-xs text-gray-600 mb-1">Total Bookings</p>
+                              <p className="text-xl font-bold text-[#0e181f]">
+                                {investment.totalBookings || Math.floor((investment.occupancyRate || 75) * 3.65)}
+                              </p>
+                              <p className="text-xs text-gray-500">this year</p>
+                            </div>
+                            <div className="bg-white rounded-lg p-3 text-center">
+                              <p className="text-xs text-gray-600 mb-1">Nights Booked</p>
+                              <p className="text-xl font-bold text-[#86dbdf]">
+                                {investment.nightsBooked || Math.floor((investment.occupancyRate || 75) * 3.65)}
+                              </p>
+                              <p className="text-xs text-gray-500">this year</p>
+                            </div>
+                            <div className="bg-white rounded-lg p-3 text-center">
+                              <p className="text-xs text-gray-600 mb-1">Monthly Revenue</p>
+                              <p className="text-xl font-bold text-[#ffcf00]">
+                                ${investment.monthlyIncome?.toLocaleString() || "0"}
+                              </p>
+                              <p className="text-xs text-gray-500">average</p>
+                            </div>
+                            <div className="bg-white rounded-lg p-3 text-center">
+                              <p className="text-xs text-gray-600 mb-1">Annual Revenue</p>
+                              <p className="text-xl font-bold text-[#ec874c]">
+                                ${((investment.monthlyIncome || 0) * 12).toLocaleString()}
+                              </p>
+                              <p className="text-xs text-gray-500">projected</p>
+                            </div>
                           </div>
                         </div>
 
@@ -1082,31 +1129,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                           <h4 className="text-lg font-bold mb-4 text-[#0e181f]">
                             💰 Billing & Invoices
                           </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {/* <button className="flex flex-col items-center text-center p-4 bg-white rounded-lg border-2 border-[#f5f5f5] hover:shadow-lg transition-all hover:border-aqua-400">
-                              <span className="text-3xl mb-2">🏢</span>
-                              <p className="font-bold text-sm mb-1 text-[#0e181f]">
-                                Management
-                              </p>
-                              <p className="text-xs text-gray-600 mb-2">
-                                Monthly invoices
-                              </p>
-                              <span className="text-blue-600 text-xs font-medium">
-                                View →
-                              </span>
-                            </button>
-                            <button className="flex flex-col items-center text-center p-4 bg-white rounded-lg border-2 border-[#f5f5f5] hover:shadow-lg transition-all hover:border-aqua-400">
-                              <span className="text-3xl mb-2">🏡</span>
-                              <p className="font-bold text-sm mb-1 text-[#0e181f]">
-                                Land Lease
-                              </p>
-                              <p className="text-xs text-gray-600 mb-2">
-                                Site fees
-                              </p>
-                              <span className="text-blue-600 text-xs font-medium">
-                                View →
-                              </span>
-                            </button> */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             <button className="flex flex-col items-center text-center p-4 bg-white rounded-lg border-2 border-[#f5f5f5] hover:shadow-lg transition-all hover:border-aqua-400">
                               <span className="text-3xl mb-2">🔧</span>
                               <p className="font-bold text-sm mb-1 text-[#0e181f]">
@@ -1126,6 +1149,30 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                               </p>
                               <p className="text-xs text-gray-600 mb-2">
                                 Service invoices
+                              </p>
+                              <span className="text-blue-600 text-xs font-medium">
+                                View →
+                              </span>
+                            </button>
+                            <button className="flex flex-col items-center text-center p-4 bg-white rounded-lg border-2 border-[#f5f5f5] hover:shadow-lg transition-all hover:border-aqua-400">
+                              <span className="text-3xl mb-2">⚡</span>
+                              <p className="font-bold text-sm mb-1 text-[#0e181f]">
+                                Energy Bills
+                              </p>
+                              <p className="text-xs text-gray-600 mb-2">
+                                Utility invoices
+                              </p>
+                              <span className="text-blue-600 text-xs font-medium">
+                                View →
+                              </span>
+                            </button>
+                            <button className="flex flex-col items-center text-center p-4 bg-white rounded-lg border-2 border-[#f5f5f5] hover:shadow-lg transition-all hover:border-aqua-400">
+                              <span className="text-3xl mb-2">🏡</span>
+                              <p className="font-bold text-sm mb-1 text-[#0e181f]">
+                                Site Fee Bills
+                              </p>
+                              <p className="text-xs text-gray-600 mb-2">
+                                Land lease fees
                               </p>
                               <span className="text-blue-600 text-xs font-medium">
                                 View →

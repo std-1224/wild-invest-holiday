@@ -75,6 +75,9 @@ import {
   handleGetMyCabins,
   handleSearchOwners,
 } from '../server/handlers/cabins.js';
+import {
+  handleHoldingDeposit,
+} from '../server/handlers/holding-deposit.js';
 
 // Initialize Stripe
 const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
@@ -217,6 +220,10 @@ export default async function handler(
       return await handleGetPaymentHistory(req, res);
     } else if (path.includes('/payments/boost-payments')) {
       return await handleGetBoostPayments(req, res);
+    }
+    // Holding Deposit route
+    else if (path.includes('/holding-deposit') && req.method === 'POST') {
+      return await handleHoldingDeposit(req, res);
     }
     // Agreement routes - Order matters! Check specific routes before generic patterns
     else if (path.includes('/agreements/owners')) {

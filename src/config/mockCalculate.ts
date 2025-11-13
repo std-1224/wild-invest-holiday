@@ -97,6 +97,14 @@ export const calculateROI = (...args: any[]) => {
       }, 0)
     : 0;
 
+  // Calculate annual cost savings from extras (e.g., Off-Grid Pack)
+  const extrasCostSavings = Array.isArray(selectedExtras)
+    ? selectedExtras.reduce((total: number, extraId: string) => {
+        const extra: any = availableExtras.find((e: any) => e.id === extraId);
+        return total + (extra ? extra.annualCostSavings || 0 : 0);
+      }, 0)
+    : 0;
+
   // Calculate occupancy boost from marketing package
   const occupancyBoost = Array.isArray(selectedExtras)
     ? selectedExtras.reduce((total: number, extraId: string) => {
@@ -129,7 +137,7 @@ export const calculateROI = (...args: any[]) => {
     95
   ); // Cap at 95%
   const nightsPerYear = 365 * (effectiveOccupancyRate / 100);
-  const grossAnnualRevenue = nightsPerYear * effectiveNightlyRate;
+  const grossAnnualRevenue = nightsPerYear * effectiveNightlyRate + extrasCostSavings; // Add cost savings as revenue
 
   // Rental Management (20% of gross revenue)
   const rentalManagementCost = grossAnnualRevenue * rentalManagementRate;
@@ -273,6 +281,14 @@ export const getExtrasForCabin = (cabinType: any) => {
       nightlyImpact: 25,
       impactDescription: "+$25/night - Premium appeal increases rates",
       annualCostSavings: 0,
+      items: [
+        "Premium sofa and armchairs",
+        "Dining table and chairs (seats 4-6)",
+        "Bedroom furniture set (bed frame, nightstands, dresser)",
+        "Coffee table and side tables",
+        "Outdoor dining set",
+        "Quality mattresses and bed bases",
+      ],
     },
     {
       id: "linen",
@@ -281,6 +297,14 @@ export const getExtrasForCabin = (cabinType: any) => {
       nightlyImpact: 5,
       impactDescription: "+$5/night - Luxury comfort attracts guests",
       annualCostSavings: 0,
+      items: [
+        "Premium bed linen sets (sheets, pillowcases, duvet covers)",
+        "Luxury towel sets (bath, hand, face towels)",
+        "Pillows and cushions",
+        "Blankets and throws",
+        "Kitchen towels and cloths",
+        "Bathrobes (for premium cabins)",
+      ],
     },
     {
       id: "solar",
@@ -288,8 +312,16 @@ export const getExtrasForCabin = (cabinType: any) => {
       price: 20000,
       nightlyImpact: 0,
       impactDescription:
-        "No impact on nightly rate - Eliminates $20/night energy costs",
-      annualCostSavings: 0,
+        "Eliminates $5,110 annual energy costs - Significant ROI boost",
+      annualCostSavings: 5110, // $14/day average energy cost
+      items: [
+        "5kW solar panel system",
+        "10kWh battery storage system",
+        "Hybrid inverter with grid backup",
+        "Smart energy monitoring system",
+        "Professional installation and commissioning",
+        "25-year panel warranty, 10-year battery warranty",
+      ],
     },
     {
       id: "decking",
@@ -298,6 +330,14 @@ export const getExtrasForCabin = (cabinType: any) => {
       nightlyImpact: 12,
       impactDescription: "+$12/night - Enhanced outdoor space increases appeal",
       annualCostSavings: 0,
+      items: [
+        "Composite decking material (low maintenance)",
+        "Stainless steel railings and balustrades",
+        "Built-in seating or planter boxes",
+        "LED deck lighting",
+        "Professional installation",
+        "15-year warranty on materials",
+      ],
     },
     {
       id: "outdoor",
@@ -306,6 +346,14 @@ export const getExtrasForCabin = (cabinType: any) => {
       nightlyImpact: 8,
       impactDescription: "+$8/night - Outdoor luxury adds value",
       annualCostSavings: 0,
+      items: [
+        "Weather-resistant outdoor lounge set",
+        "Outdoor dining table and chairs",
+        "Sun loungers or deck chairs",
+        "Outdoor cushions and covers",
+        "Shade umbrella or gazebo",
+        "Fire pit or outdoor heater",
+      ],
     },
     {
       id: "entertainment",
@@ -314,6 +362,14 @@ export const getExtrasForCabin = (cabinType: any) => {
       nightlyImpact: 10,
       impactDescription: "+$10/night - Premium entertainment increases rates",
       annualCostSavings: 0,
+      items: [
+        "55\" 4K Smart TV",
+        "Soundbar with subwoofer",
+        "Streaming device (Apple TV or similar)",
+        "Bluetooth speaker system",
+        "Board games and books collection",
+        "Professional wall mounting and setup",
+      ],
     },
   ];
 
@@ -326,6 +382,14 @@ export const getExtrasForCabin = (cabinType: any) => {
       nightlyImpact: 50,
       impactDescription: "+$50/night - Premium wellness amenity",
       annualCostSavings: 0,
+      items: [
+        "Premium 2-person infrared sauna",
+        "Outdoor hot tub/spa (seats 4)",
+        "Timber privacy screening",
+        "Spa chemicals and maintenance kit",
+        "Professional installation and plumbing",
+        "5-year warranty on equipment",
+      ],
     });
   }
 
