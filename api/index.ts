@@ -74,6 +74,7 @@ import {
   handleGetOwnerCabins,
   handleGetMyCabins,
   handleSearchOwners,
+  handleCreateCabinPurchase,
 } from '../server/handlers/cabins.js';
 import {
   handleHoldingDeposit,
@@ -289,6 +290,8 @@ export default async function handler(
       return await handleGetOwnerCabins(req, res);
     } else if (path.includes('/cabins/my-cabins')) {
       return await handleGetMyCabins(req, res);
+    } else if (path.includes('/cabins/purchase')) {
+      return await handleCreateCabinPurchase(req, res);
     } else {
       return res.status(404).json({
         success: false,
