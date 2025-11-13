@@ -64,6 +64,13 @@ import {
   handleUpdateLocation,
 } from '../server/handlers/locations.js';
 import {
+  handleGetSites,
+  handleGetAvailableSites,
+  handleCreateSite,
+  handleUpdateSite,
+  handleBulkCreateSites,
+} from '../server/handlers/sites.js';
+import {
   handleGetOwnerCabins,
   handleGetMyCabins,
   handleSearchOwners,
@@ -245,6 +252,25 @@ export default async function handler(
       return await handleGetLocationSites(req, res);
     } else if (path.includes('/locations')) {
       return await handleGetLocations(req, res);
+    }
+    // Site routes
+    else if (path.includes('/admin/sites/bulk-create') && req.method === 'POST') {
+      return await handleBulkCreateSites(req, res);
+    } else if (path.includes('/admin/sites') && req.method === 'POST') {
+      return await handleCreateSite(req, res);
+    } else if (path.match(/\/sites\/[a-f0-9]{24}$/) && req.method === 'PUT') {
+      const siteId = path.split('/').pop();
+      (req as any).params = { siteId };
+      return await handleUpdateSite(req, res);
+    } else if (path.match(/\/sites\/[a-f0-9]{24}\/available$/)) {
+      const parts = path.split('/');
+      const locationId = parts[parts.length - 2];
+      (req as any).params = { locationId };
+      return await handleGetAvailableSites(req, res);
+    } else if (path.match(/\/sites\/[a-f0-9]{24}$/)) {
+      const locationId = path.split('/').pop();
+      (req as any).params = { locationId };
+      return await handleGetSites(req, res);
     }
     // Cabin and Owner routes
     else if (path.includes('/admin/owners/search')) {
