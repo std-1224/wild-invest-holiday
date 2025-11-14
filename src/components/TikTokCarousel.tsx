@@ -11,9 +11,11 @@ interface TikTokVideo {
 export const TikTokCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showScrollHint, setShowScrollHint] = useState(true);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
   const iframeRefs = useRef<(HTMLIFrameElement | null)[]>([]);
+  const autoScrollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Real TikTok video URLs from @wildthingsparks
   const videos: TikTokVideo[] = [
@@ -55,10 +57,37 @@ export const TikTokCarousel = () => {
     },
   ];
 
+  // Hide scroll hint after 3 seconds
   useEffect(() => {
     const timer = setTimeout(() => setShowScrollHint(false), 3000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Auto-scroll functionality
+  useEffect(() => {
+    if (!isAutoScrolling || !containerRef.current) return;
+
+    const scrollToNext = () => {
+      if (!containerRef.current) return;
+
+      const nextIndex = (currentIndex + 1) % videos.length;
+      const itemHeight = containerRef.current.clientHeight;
+
+      containerRef.current.scrollTo({
+        top: nextIndex * itemHeight,
+        behavior: 'smooth'
+      });
+    };
+
+    // Auto-scroll every 5 seconds (adjust timing as needed)
+    autoScrollTimerRef.current = setTimeout(scrollToNext, 5000);
+
+    return () => {
+      if (autoScrollTimerRef.current) {
+        clearTimeout(autoScrollTimerRef.current);
+      }
+    };
+  }, [currentIndex, isAutoScrolling, videos.length]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const container = e.target as HTMLDivElement;
@@ -74,12 +103,31 @@ export const TikTokCarousel = () => {
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     touchStartY.current = e.touches[0].clientY;
+    // Pause auto-scrolling when user starts interacting
+    setIsAutoScrolling(false);
   };
 
   const handleTouchMove = (_e: React.TouchEvent<HTMLDivElement>) => {
     if (touchStartY.current) {
       setShowScrollHint(false);
     }
+  };
+
+  const handleTouchEnd = () => {
+    // Resume auto-scrolling after 10 seconds of no interaction
+    setTimeout(() => {
+      setIsAutoScrolling(true);
+    }, 20000);
+  };
+
+  const handleMouseEnter = () => {
+    // Pause auto-scrolling when mouse hovers over carousel
+    setIsAutoScrolling(false);
+  };
+
+  const handleMouseLeave = () => {
+    // Resume auto-scrolling when mouse leaves carousel
+    setIsAutoScrolling(true);
   };
 
   // Get TikTok embed URL for iframe - using player embed which supports autoplay
@@ -101,6 +149,9 @@ export const TikTokCarousel = () => {
           onScroll={handleScroll}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {videos.map((video, index) => (
