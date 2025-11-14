@@ -11,6 +11,16 @@ interface PaymentMethod {
   isDefault: boolean;
 }
 
+interface Site {
+  _id: string;
+  siteNumber: string;
+  cabinType: string;
+  price: number;
+  siteLeaseFee: number;
+  status: string;
+  locationId: string;
+}
+
 interface HoldingDepositModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -19,16 +29,45 @@ interface HoldingDepositModalProps {
   location: string;
   totalAmount: number;
   selectedExtras?: string[];
+  locationId?: string;
+  selectedSite?: Site | null;
+  siteMapUrl?: string;
 }
 
 const HoldingDepositForm: React.FC<
   Omit<HoldingDepositModalProps, "isOpen">
-> = ({ onClose, onSuccess, cabinType, location, totalAmount, selectedExtras = [] }) => {
+> = ({ onClose, onSuccess, cabinType, location, totalAmount, selectedExtras = [], selectedSite, siteMapUrl }) => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [locationData, setLocationData] = useState<any>(null);
+
+  // Load location data - same approach as InvestmentModal
+  useEffect(() => {
+    const loadLocationData = async () => {
+      try {
+        const response = await apiClient.getLocations();
+        if (response.success && response.locations.length > 0) {
+          // For now, use the first location (Mansfield)
+          // In the future, this could be based on selectedSite.locationId
+          const mansfield = response.locations.find((loc: any) =>
+            loc.name.toLowerCase().includes('mansfield')
+          );
+          if (mansfield) {
+            setLocationData(mansfield);
+          } else {
+            setLocationData(response.locations[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load location:", error);
+      }
+    };
+
+    loadLocationData();
+  }, [selectedSite]);
 
   // Load saved payment methods
   useEffect(() => {
@@ -145,7 +184,6 @@ const HoldingDepositForm: React.FC<
   const extrasDetails = selectedExtras.length > 0
     ? getExtrasForCabin(cabinType).filter(extra => selectedExtras.includes(extra.id))
     : [];
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -157,6 +195,39 @@ const HoldingDepositForm: React.FC<
           {totalAmount.toLocaleString()}.
         </p>
       </div>
+
+      {/* Selected Site Display */}
+      {selectedSite && (
+        <div className="bg-[#86dbdf]/10 border border-[#86dbdf] rounded-lg p-4 mb-4">
+          <p className="text-sm font-bold text-[#0e181f] mb-3">
+            Selected Site:
+          </p>
+          <div className="flex justify-between items-center mb-3">
+            <div>
+              <p className="text-lg font-bold text-[#ec874c]">
+                Site #{selectedSite.siteNumber}
+              </p>
+              <p className="text-xs text-gray-600">
+                {selectedSite.cabinType} • ${selectedSite.siteLeaseFee?.toLocaleString()}/year lease
+              </p>
+            </div>
+          </div>
+          {(locationData?.siteMapUrl || siteMapUrl) ? (
+            <a
+              href={locationData?.siteMapUrl || siteMapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-[#86dbdf] text-[#0e181f] hover:opacity-90"
+            >
+              📄 Open Site Map
+            </a>
+          ) : (
+            <p className="text-xs text-gray-500 italic">
+              Site map not available. Contact admin to upload site map.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Selected Extras Display */}
       {selectedExtras.length > 0 && (
@@ -259,6 +330,8 @@ export const HoldingDepositModal: React.FC<HoldingDepositModalProps> = ({
   location,
   totalAmount,
   selectedExtras = [],
+  selectedSite,
+  siteMapUrl,
 }) => {
   if (!isOpen) return null;
 
@@ -280,6 +353,8 @@ export const HoldingDepositModal: React.FC<HoldingDepositModalProps> = ({
           location={location}
           totalAmount={totalAmount}
           selectedExtras={selectedExtras}
+          selectedSite={selectedSite}
+          siteMapUrl={siteMapUrl}
         />
       </div>
     </div>

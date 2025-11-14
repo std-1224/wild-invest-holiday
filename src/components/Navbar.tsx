@@ -333,20 +333,13 @@ export const Navbar = ({
 
       {/* Investor Login Tab - Top Right (Fixed Position) */}
       {!isLoggedIn && (
-        <div className="fixed top-0 right-5 flex gap-2 z-[1000]">
+        <div className="fixed top-0 right-5 z-[1000]">
           <button
             onClick={onLoginClick}
             className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
             style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
           >
             Investor Login
-          </button>
-          <button
-            onClick={onAdminLoginClick}
-            className="px-4 py-2 bg-[#ec874c] text-white border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
-            style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
-          >
-            Admin Login
           </button>
         </div>
       )}

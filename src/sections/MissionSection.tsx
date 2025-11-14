@@ -8,35 +8,6 @@ export const MissionSection = () => (
       <p className="text-xl leading-relaxed text-white mb-8">
         We create affordable holiday destinations for families to disconnect from the world and reconnect with each other.
       </p>
-      <div className="flex justify-center gap-8 flex-wrap">
-        <div className="text-center">
-          <div className="text-[2rem] mb-2">🌲</div>
-          <h3 className="text-[#86dbdf] mb-2">
-            Nature First
-          </h3>
-          <p className="text-sm text-[#ccc]">
-            Preserving natural beauty
-          </p>
-        </div>
-        <div className="text-center">
-          <div className="text-[2rem] mb-2">👨‍👩‍👧‍👦</div>
-          <h3 className="text-[#86dbdf] mb-2">
-            Family Focus
-          </h3>
-          <p className="text-sm text-[#ccc]">
-            Creating lasting memories
-          </p>
-        </div>
-        <div className="text-center">
-          <div className="text-[2rem] mb-2">💰</div>
-          <h3 className="text-[#86dbdf] mb-2">
-            Smart Investment
-          </h3>
-          <p className="text-sm text-[#ccc]">
-            Sustainable returns
-          </p>
-        </div>
-      </div>
     </div>
   </div>
 );

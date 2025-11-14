@@ -158,6 +158,9 @@ export class WildThingsAPI {
   updateLocation(locationId: string, updates: any): Promise<{ success: boolean; message: string; location: any }>;
   createSite(siteData: any): Promise<{ success: boolean; message: string; site: any }>;
   bulkCreateSites(sites: any[]): Promise<{ success: boolean; message: string; sites: any[]; count: number }>;
+  createCabinPurchase(purchaseData: any): Promise<{ success: boolean; message: string; cabin: any }>;
+  getAvailableSites(locationId: string, cabinType?: string): Promise<{ success: boolean; sites: any[]; count: number }>;
+  register(userData: any): Promise<AuthResponse>;
 }
 
 declare const apiClient: WildThingsAPI;

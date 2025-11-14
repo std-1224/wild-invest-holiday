@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Calculator } from "lucide-react";
 import {
   cabins,
@@ -10,6 +10,8 @@ import { InvestTimeline } from "../../components/InvestTimeline";
 import { InvestFaqs } from "../../components/InvestFaqs";
 import { CalendlyButton } from "../../components/CalendlyButton";
 import { HoldingDepositModal } from "../../components/Modals/HoldingDepositModal";
+import { SiteSelector } from "../../components/SiteSelector";
+import apiClient from "../../api/client";
 
 type CabinType = "1BR" | "2BR";
 
@@ -35,6 +37,30 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
   const [showHoldingDepositModal, setShowHoldingDepositModal] = useState(false);
   const [selectedCabinForDeposit, setSelectedCabinForDeposit] = useState<any>(null);
   const [expandedExtras, setExpandedExtras] = useState<Record<string, boolean>>({});
+  const [showSiteSelector, setShowSiteSelector] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<any>(null);
+  const [locations, setLocations] = useState<any[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+
+  // Load locations on mount
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        const response = await apiClient.getLocations();
+        if (response.success && response.locations) {
+          setLocations(response.locations);
+          // Auto-select first active location
+          const activeLocation = response.locations.find((loc: any) => loc.status === 'active');
+          if (activeLocation) {
+            setSelectedLocation(activeLocation);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load locations:', error);
+      }
+    };
+    loadLocations();
+  }, []);
 
   const handleCabinTypeChange = (newCabinType: CabinType) => {
     setRoiInputs({
@@ -569,7 +595,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                     totalAmount: roiResults.totalInvestment,
                     selectedExtras: selectedExtras,
                   });
-                  setShowHoldingDepositModal(true);
+                  setShowSiteSelector(true);
                 }}
                 className="w-full py-4 rounded-lg font-bold transition-all hover:opacity-90 mb-4 bg-[#ffcf00] text-[#0e181f] text-lg"
               >
@@ -586,13 +612,74 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
       </div>
       <InvestFaqs />
 
+      {/* Site Selection Modal */}
+      {showSiteSelector && selectedCabinForDeposit && selectedLocation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
+              🗺️ Select Your Site Location
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Choose your preferred site number at {selectedLocation.name}. Each site has a specific location within the park.
+            </p>
+
+            <SiteSelector
+              locationId={selectedLocation._id}
+              cabinType={selectedCabinForDeposit.cabinType}
+              onSiteSelect={(site) => {
+                setSelectedSite(site);
+              }}
+              selectedSiteId={selectedSite?._id}
+            />
+
+            {selectedSite && (
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowSiteSelector(false);
+                    setSelectedSite(null);
+                  }}
+                  className="flex-1 px-4 py-3 rounded-lg font-bold transition-all bg-gray-200 text-gray-800 hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSiteSelector(false);
+                    setShowHoldingDepositModal(true);
+                  }}
+                  className="flex-1 px-4 py-3 rounded-lg font-bold transition-all bg-[#ec874c] text-white hover:opacity-90"
+                >
+                  Continue to Payment →
+                </button>
+              </div>
+            )}
+
+            {!selectedSite && (
+              <div className="mt-6">
+                <button
+                  onClick={() => {
+                    setShowSiteSelector(false);
+                    setSelectedCabinForDeposit(null);
+                  }}
+                  className="w-full px-4 py-3 rounded-lg font-bold transition-all bg-gray-200 text-gray-800 hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Holding Deposit Modal */}
-      {selectedCabinForDeposit && (
+      {selectedCabinForDeposit && showHoldingDepositModal && (
         <HoldingDepositModal
           isOpen={showHoldingDepositModal}
           onClose={() => {
             setShowHoldingDepositModal(false);
             setSelectedCabinForDeposit(null);
+            setSelectedSite(null);
           }}
           onSuccess={() => {
             setShowHoldingDepositModal(false);
@@ -600,9 +687,11 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
             onInvest(selectedCabinForDeposit);
           }}
           cabinType={selectedCabinForDeposit.cabinType}
-          location={selectedCabinForDeposit.location || "Wild Things Cabin Park"}
+          location={selectedLocation?.name || "Wild Things Cabin Park"}
           totalAmount={selectedCabinForDeposit.totalAmount}
           selectedExtras={selectedCabinForDeposit.selectedExtras || []}
+          selectedSite={selectedSite}
+          siteMapUrl={selectedLocation?.siteMapUrl || null}
         />
       )}
     </div>

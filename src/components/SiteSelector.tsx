@@ -8,6 +8,7 @@ interface Site {
   price: number;
   siteLeaseFee: number;
   status: string;
+  locationId: string;
 }
 
 interface Location {

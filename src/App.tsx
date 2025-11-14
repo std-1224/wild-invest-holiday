@@ -183,6 +183,19 @@ function AppContent() {
       >
         <div className="max-w-7xl mx-auto text-center">
           <p>&copy; 2024 Wild Things Pty Ltd. All rights reserved.</p>
+
+          {/* Admin Login Button */}
+          {!isLoggedIn && (
+            <div className="mt-6">
+              <button
+                onClick={showAdminLoginModal}
+                className="px-6 py-3 bg-[#ec874c] text-white border-none rounded-lg cursor-pointer font-bold text-sm shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00]"
+                style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
+              >
+                Admin Login
+              </button>
+            </div>
+          )}
         </div>
       </footer>
     </div>
