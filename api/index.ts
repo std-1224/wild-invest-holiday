@@ -79,6 +79,9 @@ import {
 import {
   handleHoldingDeposit,
 } from '../server/handlers/holding-deposit.js';
+import {
+  handleHoldingDepositGuest,
+} from '../server/handlers/holding-deposit-guest.js';
 
 // Initialize Stripe
 const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
@@ -222,7 +225,10 @@ export default async function handler(
     } else if (path.includes('/payments/boost-payments')) {
       return await handleGetBoostPayments(req, res);
     }
-    // Holding Deposit route
+    // Holding Deposit routes
+    else if (path.includes('/holding-deposit-guest') && req.method === 'POST') {
+      return await handleHoldingDepositGuest(req, res);
+    }
     else if (path.includes('/holding-deposit') && req.method === 'POST') {
       return await handleHoldingDeposit(req, res);
     }

@@ -82,6 +82,9 @@ import {
 import {
   handleHoldingDeposit,
 } from '../server/handlers/holding-deposit.js';
+import {
+  handleHoldingDepositGuest,
+} from '../server/handlers/holding-deposit-guest.js';
 
 const app = express();
 const PORT = 3001;
@@ -336,14 +339,20 @@ app.get('/api/payments/history', handleGetPaymentHistory);
 app.get('/api/payments/boost-payments', handleGetBoostPayments);
 
 // ============================================================================
-// HOLDING DEPOSIT API ENDPOINT
+// HOLDING DEPOSIT API ENDPOINTS
 // ============================================================================
 
 /**
  * POST /api/holding-deposit
- * Process $100 holding deposit payment
+ * Process $100 holding deposit payment (for logged-in users)
  */
 app.post('/api/holding-deposit', handleHoldingDeposit);
+
+/**
+ * POST /api/holding-deposit-guest
+ * Process $100 holding deposit payment + create account (for guest users)
+ */
+app.post('/api/holding-deposit-guest', handleHoldingDepositGuest);
 
 // ============================================================================
 // AGREEMENT API ENDPOINTS

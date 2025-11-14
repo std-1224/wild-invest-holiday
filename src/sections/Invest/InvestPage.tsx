@@ -12,6 +12,7 @@ import { CalendlyButton } from "../../components/CalendlyButton";
 import { HoldingDepositModal } from "../../components/Modals/HoldingDepositModal";
 import { SiteSelector } from "../../components/SiteSelector";
 import apiClient from "../../api/client";
+import { useAuth } from "../../contexts/AuthContext";
 
 type CabinType = "1BR" | "2BR";
 
@@ -24,6 +25,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
   onInvest,
   setSelectedCabinForInvestment,
 }) => {
+  const { login } = useAuth(); // Get login function from auth context
   const [roiInputs, setRoiInputs] = useState<{
     cabinType: CabinType;
     occupancyRate: number;
@@ -686,6 +688,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
             // Redirect to investor portal after successful payment
             onInvest(selectedCabinForDeposit);
           }}
+          onLogin={login}
           cabinType={selectedCabinForDeposit.cabinType}
           location={selectedLocation?.name || "Wild Things Cabin Park"}
           totalAmount={selectedCabinForDeposit.totalAmount}
