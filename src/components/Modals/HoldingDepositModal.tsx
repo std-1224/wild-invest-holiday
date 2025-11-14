@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { CreditCard } from "lucide-react";
 import apiClient from "../../api/client";
+import { getExtrasForCabin } from "../../config/mockCalculate";
 
 interface PaymentMethod {
   id: string;
@@ -17,11 +18,12 @@ interface HoldingDepositModalProps {
   cabinType: string;
   location: string;
   totalAmount: number;
+  selectedExtras?: string[];
 }
 
 const HoldingDepositForm: React.FC<
   Omit<HoldingDepositModalProps, "isOpen">
-> = ({ onClose, onSuccess, cabinType, location, totalAmount }) => {
+> = ({ onClose, onSuccess, cabinType, location, totalAmount, selectedExtras = [] }) => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -139,6 +141,11 @@ const HoldingDepositForm: React.FC<
     );
   }
 
+  // Get extras details for display
+  const extrasDetails = selectedExtras.length > 0
+    ? getExtrasForCabin(cabinType).filter(extra => selectedExtras.includes(extra.id))
+    : [];
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -150,6 +157,31 @@ const HoldingDepositForm: React.FC<
           {totalAmount.toLocaleString()}.
         </p>
       </div>
+
+      {/* Selected Extras Display */}
+      {selectedExtras.length > 0 && (
+        <div className="bg-[#ffcf00]/10 border border-[#ffcf00] rounded-lg p-4 mb-4">
+          <p className="text-sm font-bold text-[#0e181f] mb-2">
+            Selected Extras:
+          </p>
+          <div className="space-y-1">
+            {extrasDetails.map((extra) => (
+              <div key={extra.id} className="flex justify-between text-sm">
+                <span className="text-gray-700">{extra.name}</span>
+                <span className="font-bold text-[#0e181f]">
+                  ${extra.price.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-[#ffcf00] mt-2 pt-2 flex justify-between text-sm font-bold">
+            <span className="text-[#0e181f]">Total Extras:</span>
+            <span className="text-[#0e181f]">
+              ${extrasDetails.reduce((sum, extra) => sum + extra.price, 0).toLocaleString()}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Saved Payment Methods */}
       <div>
@@ -226,6 +258,7 @@ export const HoldingDepositModal: React.FC<HoldingDepositModalProps> = ({
   cabinType,
   location,
   totalAmount,
+  selectedExtras = [],
 }) => {
   if (!isOpen) return null;
 
@@ -246,6 +279,7 @@ export const HoldingDepositModal: React.FC<HoldingDepositModalProps> = ({
           cabinType={cabinType}
           location={location}
           totalAmount={totalAmount}
+          selectedExtras={selectedExtras}
         />
       </div>
     </div>

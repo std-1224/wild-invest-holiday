@@ -187,9 +187,10 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                           setSelectedCabinForInvestment(key);
                           setSelectedCabinForDeposit({
                             id: key,
-                            ...cabins[roiInputs.cabinType],
-                            cabinType: roiInputs.cabinType,
-                            totalAmount: roiResults.totalCabinPrice,
+                            ...cabins[key as CabinType],
+                            cabinType: key as CabinType,
+                            totalAmount: cabins[key as CabinType].price,
+                            selectedExtras: [],
                           });
                           setShowHoldingDepositModal(true);
                         }}
@@ -302,26 +303,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                   Optional Extras
                 </h3>
                 <div className="space-y-2">
-                  {getExtrasForCabin(roiInputs.cabinType)
-                    .filter((extra) => {
-                      // Calculate ROI impact for filtering
-                      const base = calculateROI(
-                        roiInputs.cabinType,
-                        roiInputs.occupancyRate,
-                        roiInputs.nightlyRate,
-                        []
-                      );
-                      const withExtra = calculateROI(
-                        roiInputs.cabinType,
-                        roiInputs.occupancyRate,
-                        roiInputs.nightlyRate,
-                        [extra.id]
-                      );
-                      const roiImpact = (withExtra.roi || 0) - (base.roi || 0);
-                      // Only show extras with positive ROI impact
-                      return roiImpact > 0;
-                    })
-                    .map((extra) => {
+                  {getExtrasForCabin(roiInputs.cabinType).map((extra) => {
                       const isExpanded = expandedExtras[extra.id] || false;
 
                       return (
@@ -372,9 +354,11 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                                     <div className="text-xs text-[#ec874c]">
                                       {extra.impactDescription}
                                     </div>
-                                    <div className="text-xs mt-1 text-[#059669]">
-                                      ROI Impact: +{roiImpact.toFixed(1)}%
-                                    </div>
+                                    {roiImpact > 0 && (
+                                      <div className="text-xs mt-1 text-[#059669]">
+                                        ROI Impact: +{roiImpact.toFixed(1)}%
+                                      </div>
+                                    )}
                                   </>
                                 );
                               })()}
@@ -582,7 +566,8 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                     id: roiInputs.cabinType,
                     ...cabins[roiInputs.cabinType],
                     cabinType: roiInputs.cabinType,
-                    totalAmount: roiResults.totalCabinPrice,
+                    totalAmount: roiResults.totalInvestment,
+                    selectedExtras: selectedExtras,
                   });
                   setShowHoldingDepositModal(true);
                 }}
@@ -617,6 +602,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
           cabinType={selectedCabinForDeposit.cabinType}
           location={selectedCabinForDeposit.location || "Wild Things Cabin Park"}
           totalAmount={selectedCabinForDeposit.totalAmount}
+          selectedExtras={selectedCabinForDeposit.selectedExtras || []}
         />
       )}
     </div>
