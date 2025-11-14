@@ -354,7 +354,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                                     <div className="text-xs text-[#ec874c]">
                                       {extra.impactDescription}
                                     </div>
-                                    {roiImpact > 0 && (
+                                    {roiImpact > 0.01 && (
                                       <div className="text-xs mt-1 text-[#059669]">
                                         ROI Impact: +{roiImpact.toFixed(1)}%
                                       </div>
