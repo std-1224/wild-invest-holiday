@@ -544,9 +544,9 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                     <span>Energy Costs:</span>
                     <span className="font-bold">
                       -$
-                      {(roiResults as any).totalEnergyCosts?.toLocaleString?.(
-                        "en-AU"
-                      ) ?? "0"}
+                      {roiResults.energyCosts.toLocaleString("en-AU", {
+                        maximumFractionDigits: 0,
+                      })}
                     </span>
                   </div>
                   {(roiResults as any).annualCostSavings > 0 && (

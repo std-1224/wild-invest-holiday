@@ -128,7 +128,12 @@ export const calculateROI = (...args: any[]) => {
   // Wild Things specific costs based on cabin type
   const siteFees = 7000; // Annual site rental - $7,000 for both 1BR and 2BR
   const cleaningMaintenance = 12775; // Fixed cleaning & maintenance cost (not shown separately but included)
-  const energyCosts = 0; // Energy costs (shown as $0 in the image)
+
+  // Energy costs: $5,110/year if solar NOT selected, $0 if solar IS selected
+  const hasSolar = Array.isArray(selectedExtras) && selectedExtras.includes('solar');
+  console.log("Has solar?", selectedExtras, hasSolar);
+  const energyCosts = hasSolar ? 0 : 5110; // $14/day average energy cost
+
   const rentalManagementRate = cabinType === "1BR" ? 0.2 : 0; // 20% of gross revenue
 
   // Revenue calculations with occupancy boost
@@ -182,6 +187,8 @@ export const calculateROI = (...args: any[]) => {
     siteFees,
     extrasCost,
     extrasNightlyImpact,
+    extrasCostSavings, // Solar + Battery annual cost savings
+    annualCostSavings: extrasCostSavings, // Alias for frontend compatibility
     occupancyBoost,
     // Legacy fields for backward compatibility
     wildThingsCommissionAmount: rentalManagementCost,
