@@ -1689,7 +1689,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                   a meeting with our team.
                 </p>
                 <CalendlyButton
-                  url="https://calendly.com/wild-things/owner-consultation"
+                  url="https://calendly.com/jameswildthings"
                   text="Schedule Owner Consultation"
                   variant="primary"
                   size="lg"

@@ -67,7 +67,7 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
           <div className="text-center mt-8">
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <CalendlyButton
-                url="https://calendly.com/james-s-wildthings"
+                url="https://calendly.com/jameswildthings"
                 text="Book an Inspection"
                 variant="orange"
                 size="lg"
