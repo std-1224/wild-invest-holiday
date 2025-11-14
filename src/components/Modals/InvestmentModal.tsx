@@ -570,127 +570,122 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
               ← Back to Site Selection
             </button>
 
-            {/* Extras Selection */}
-        <div className="mb-6">
-          <h3
-            className="text-lg font-bold mb-4"
-            style={{ color: colors.darkBlue }}
-          >
-            Optional Investment Extras
-          </h3>
-          <div className="space-y-3">
-            {extras.map((extra) => (
-              <div key={extra.id}>
-                <label
-                  className="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all hover:shadow-md border-2"
-                  style={{
-                    backgroundColor: selectedExtras[extra.id]
-                      ? `${colors.yellow}20`
-                      : "white",
-                    borderColor: selectedExtras[extra.id]
-                      ? colors.yellow
-                      : colors.aqua,
-                  }}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <input
-                      type="checkbox"
-                      checked={selectedExtras[extra.id] || false}
-                      onChange={() => toggleExtra(extra.id)}
-                      className="w-5 h-5"
-                      style={{ accentColor: colors.yellow }}
-                    />
-                    <div>
+            {/* Extras Selection - Only show selected extras */}
+        {Object.keys(selectedExtras).filter(key => selectedExtras[key]).length > 0 && (
+          <div className="mb-6">
+            <h3
+              className="text-lg font-bold mb-4"
+              style={{ color: colors.darkBlue }}
+            >
+              Selected Investment Extras
+            </h3>
+            <div className="space-y-3">
+              {extras
+                .filter(extra => selectedExtras[extra.id]) // Only show selected extras
+                .map((extra) => (
+                <div key={extra.id}>
+                  <div
+                    className="flex items-center justify-between p-4 rounded-lg border-2"
+                    style={{
+                      backgroundColor: `${colors.yellow}20`,
+                      borderColor: colors.yellow,
+                    }}
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-5 h-5 flex items-center justify-center rounded" style={{ backgroundColor: colors.yellow }}>
+                        <span className="text-white text-sm font-bold">✓</span>
+                      </div>
+                      <div>
+                        <p
+                          className="font-bold"
+                          style={{ color: colors.darkBlue }}
+                        >
+                          {extra.name}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {extra.impactDescription}
+                        </p>
+                        {(() => {
+                          const extraROI = calculateExtraROI(
+                            extra.id,
+                            selectedCabinForInvestment as CabinType
+                          );
+                          return (
+                            <div
+                              className="text-xs mt-1"
+                              style={{
+                                color:
+                                  extraROI.roiImpact > 0
+                                    ? "#059669"
+                                    : extraROI.roiImpact < 0
+                                    ? "#EF4444"
+                                    : "#6B7280",
+                              }}
+                            >
+                              ROI Impact: {extraROI.roiImpact > 0 ? "+" : ""}
+                              {extraROI.roiImpact.toFixed(1)}%
+                              {extra.id === "solar" && (
+                                <span className="ml-1">
+                                  (Eliminates $
+                                  {((66 / 100) * 365 * 20).toLocaleString()}{" "}
+                                  energy costs)
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    <div className="text-right">
                       <p
-                        className="font-bold"
-                        style={{ color: colors.darkBlue }}
+                        className="font-bold text-lg"
+                        style={{ color: colors.yellow }}
                       >
-                        {extra.name}
+                        ${extra.price.toLocaleString()}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        {extra.impactDescription}
+                      <p className="text-xs text-gray-500">
+                        {extra.id === "insurance" || extra.id === "maintenance"
+                          ? "per year"
+                          : ""}
                       </p>
-                      {(() => {
-                        const extraROI = calculateExtraROI(
-                          extra.id,
-                          selectedCabinForInvestment as CabinType
-                        );
-                        return (
-                          <div
-                            className="text-xs mt-1"
-                            style={{
-                              color:
-                                extraROI.roiImpact > 0
-                                  ? "#059669"
-                                  : extraROI.roiImpact < 0
-                                  ? "#EF4444"
-                                  : "#6B7280",
-                            }}
-                          >
-                            ROI Impact: {extraROI.roiImpact > 0 ? "+" : ""}
-                            {extraROI.roiImpact.toFixed(1)}%
-                            {extra.id === "solar" && (
-                              <span className="ml-1">
-                                (Eliminates $
-                                {((66 / 100) * 365 * 20).toLocaleString()}{" "}
-                                energy costs)
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p
-                      className="font-bold text-lg"
-                      style={{ color: colors.yellow }}
-                    >
-                      ${extra.price.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {extra.id === "insurance" || extra.id === "maintenance"
-                        ? "per year"
-                        : ""}
-                    </p>
-                  </div>
-                </label>
 
-                {/* Furniture Package Details - Unfurl when selected */}
-                {extra.id === "furniture" &&
-                  selectedExtras[extra.id] &&
-                  (extra as any).items && (
-                    <div
-                      className="ml-12 mt-2 p-4 rounded-lg border-l-4"
-                      style={{
-                        backgroundColor: `${colors.yellow}10`,
-                        borderColor: colors.yellow,
-                      }}
-                    >
-                      <p
-                        className="text-sm font-bold mb-2"
-                        style={{ color: colors.darkBlue }}
+                  {/* Furniture Package Details - Unfurl when selected */}
+                  {extra.id === "furniture" &&
+                    (extra as any).items && (
+                      <div
+                        className="ml-12 mt-2 p-4 rounded-lg border-l-4"
+                        style={{
+                          backgroundColor: `${colors.yellow}10`,
+                          borderColor: colors.yellow,
+                        }}
                       >
-                        📦 Package Includes:
-                      </p>
-                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                        {(extra as any).items.map(
-                          (item: string, idx: number) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span style={{ color: colors.aqua }}>✓</span>
-                              <span style={{ color: colors.darkBlue }}>
-                                {item}
-                              </span>
-                            </li>
-                          )
-                        )}
-                      </ul>
-                    </div>
-                  )}
-              </div>
-            ))}
+                        <p
+                          className="text-sm font-bold mb-2"
+                          style={{ color: colors.darkBlue }}
+                        >
+                          📦 Package Includes:
+                        </p>
+                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          {(extra as any).items.map(
+                            (item: string, idx: number) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span style={{ color: colors.aqua }}>✓</span>
+                                <span style={{ color: colors.darkBlue }}>
+                                  {item}
+                                </span>
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <form onSubmit={handleInvestmentSubmit}>
           {/* Show profile summary if logged in, otherwise show editable fields */}

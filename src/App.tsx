@@ -24,10 +24,13 @@ function AppContent() {
   >(null);
 
   const [userInvestments, setUserInvestments] = useState<any[]>([]);
-  const [floatingInvestmentData] = useState<{
+  const [floatingInvestmentData, setFloatingInvestmentData] = useState<{
     selectedExtras?: string[];
     paymentMethod?: string;
-  }>({});
+  }>({
+    selectedExtras: [],
+    paymentMethod: "external",
+  });
 
   // Use the auth context
   const { isLoggedIn, setIsLoggedIn, showLoginModal, showAdminLoginModal, logout } = useAuth();
@@ -91,6 +94,8 @@ function AppContent() {
               <InvestPage
                 onInvest={handleCabinInvest}
                 setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+                setFloatingInvestmentData={setFloatingInvestmentData}
+                setShowInvestmentModal={setShowInvestmentModal}
               />
             }
           />

@@ -19,11 +19,15 @@ type CabinType = "1BR" | "2BR";
 interface HolidayHomesProps {
   onInvest: (cabin: any) => void;
   setSelectedCabinForInvestment: (value: string) => void;
+  setFloatingInvestmentData?: (data: any) => void;
+  setShowInvestmentModal?: (show: boolean) => void;
 }
 
 export const InvestPage: React.FC<HolidayHomesProps> = ({
   onInvest,
   setSelectedCabinForInvestment,
+  setFloatingInvestmentData,
+  setShowInvestmentModal,
 }) => {
   const { login } = useAuth(); // Get login function from auth context
   const [roiInputs, setRoiInputs] = useState<{
@@ -98,7 +102,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
           <div className="text-center mt-8">
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <CalendlyButton
-                url="https://calendly.com/james-s-wildthings"
+                url="https://calendly.com/jameswildthings"
                 text="Book an Inspection"
                 variant="orange"
                 size="lg"
@@ -597,6 +601,15 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                     totalAmount: roiResults.totalInvestment,
                     selectedExtras: selectedExtras,
                   });
+
+                  // Also set floatingInvestmentData for InvestmentModal
+                  if (setFloatingInvestmentData) {
+                    setFloatingInvestmentData({
+                      selectedExtras: selectedExtras,
+                      paymentMethod: "external",
+                    });
+                  }
+
                   setShowSiteSelector(true);
                 }}
                 className="w-full py-4 rounded-lg font-bold transition-all hover:opacity-90 mb-4 bg-[#ffcf00] text-[#0e181f] text-lg"

@@ -1044,15 +1044,12 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     </div>
                     <h3 className="text-2xl font-bold text-gray-900 mb-2">No Cabins Yet</h3>
                     <p className="text-gray-600 mb-6">You haven't purchased any cabins yet. Start your investment journey today!</p>
-                    <button
-                      onClick={() => {
-                        // Navigate to holiday homes section
-                        window.location.href = '#holiday-homes';
-                      }}
+                    <a
+                      href="/invest"
                       className="px-6 py-3 bg-[#ec874c] text-white font-bold rounded-lg hover:opacity-90 transition-all"
                     >
                       Browse Available Cabins
-                    </button>
+                    </a>
                   </div>
                 )}
 
