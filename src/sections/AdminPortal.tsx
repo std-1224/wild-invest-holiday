@@ -190,7 +190,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
       if (xeroConnected) {
         validateXeroConnection();
       }
-    }, 2000); // Wait 2 seconds after mount
+    }, 500); // Wait 0.5 seconds after mount
 
     // Validate every 5 minutes to trigger token refresh
     const intervalId = setInterval(() => {
