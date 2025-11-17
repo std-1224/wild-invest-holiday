@@ -131,7 +131,6 @@ export const calculateROI = (...args: any[]) => {
 
   // Energy costs: $5,110/year if solar NOT selected, $0 if solar IS selected
   const hasSolar = Array.isArray(selectedExtras) && selectedExtras.includes('solar');
-  console.log("Has solar?", selectedExtras, hasSolar);
   const energyCosts = hasSolar ? 0 : 5110; // $14/day average energy cost
 
   const rentalManagementRate = cabinType === "1BR" ? 0.2 : 0; // 20% of gross revenue

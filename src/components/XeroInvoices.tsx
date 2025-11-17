@@ -193,36 +193,6 @@ export const XeroInvoices: React.FC<XeroInvoicesProps> = ({
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-bold mb-4 text-[#0e181f]">📄 Xero Invoices</h3>
-        <div className={`flex items-center gap-3 p-4 rounded-lg ${needsSetup ? 'bg-yellow-50' : 'bg-red-50'}`}>
-          <AlertCircle className={`w-6 h-6 ${needsSetup ? 'text-yellow-600' : 'text-red-600'}`} />
-          <div>
-            <p className={`font-semibold ${needsSetup ? 'text-yellow-900' : 'text-red-900'}`}>
-              {needsSetup ? 'Account Setup Required' : 'Error loading invoices'}
-            </p>
-            <p className={`text-sm ${needsSetup ? 'text-yellow-700' : 'text-red-700'}`}>{error}</p>
-            {needsSetup && (
-              <p className="text-sm text-yellow-700 mt-2">
-                💡 Your account needs to be linked to a Xero contact. Please contact our support team to complete the setup.
-              </p>
-            )}
-          </div>
-        </div>
-        {!needsSetup && (
-          <button
-            onClick={fetchInvoices}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        )}
-      </div>
-    );
-  }
-
   console.log("invoices", invoices);
 
   return (

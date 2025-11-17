@@ -82,6 +82,15 @@ import {
 import {
   handleHoldingDepositGuest,
 } from '../server/handlers/holding-deposit-guest.js';
+import {
+  handleCalendlyWebhook,
+  handleGetBookings,
+  handleGetUpcomingBookings,
+  handleTrackBooking,
+  handleCancelBooking,
+  handleSyncBookings,
+  handleVerifyBooking,
+} from '../server/handlers/calendly.js';
 
 // Initialize Stripe
 const stripeKey = process.env.VITE_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || '';
@@ -298,6 +307,28 @@ export default async function handler(
       return await handleGetMyCabins(req, res);
     } else if (path.includes('/cabins/purchase')) {
       return await handleCreateCabinPurchase(req, res);
+    }
+    // Calendly routes
+    else if (path.includes('/calendly/webhook')) {
+      return await handleCalendlyWebhook(req, res);
+    } else if (path.includes('/calendly/bookings/upcoming')) {
+      return await handleGetUpcomingBookings(req, res);
+    } else if (path.includes('/calendly/bookings/track')) {
+      return await handleTrackBooking(req, res);
+    } else if (path.includes('/calendly/bookings/sync')) {
+      return await handleSyncBookings(req, res);
+    } else if (path.match(/\/calendly\/bookings\/[a-f0-9]{24}\/verify$/)) {
+      const parts = path.split('/');
+      const bookingId = parts[parts.length - 2];
+      (req as any).params = { bookingId };
+      return await handleVerifyBooking(req, res);
+    } else if (path.match(/\/calendly\/bookings\/[a-f0-9]{24}$/)) {
+      const parts = path.split('/');
+      const bookingId = parts[parts.length - 1];
+      (req as any).params = { bookingId };
+      return await handleCancelBooking(req, res);
+    } else if (path.includes('/calendly/bookings')) {
+      return await handleGetBookings(req, res);
     } else {
       return res.status(404).json({
         success: false,

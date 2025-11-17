@@ -85,6 +85,15 @@ import {
 import {
   handleHoldingDepositGuest,
 } from '../server/handlers/holding-deposit-guest.js';
+import {
+  handleCalendlyWebhook,
+  handleGetBookings,
+  handleGetUpcomingBookings,
+  handleTrackBooking,
+  handleCancelBooking,
+  handleSyncBookings,
+  handleVerifyBooking,
+} from '../server/handlers/calendly.js';
 
 const app = express();
 const PORT = 3001;
@@ -511,6 +520,68 @@ app.get('/api/cabins/my-cabins', async (req, res) => {
  */
 app.post('/api/cabins/purchase', async (req, res) => {
   await handleCreateCabinPurchase(req, res);
+});
+
+// ============================================================================
+// CALENDLY API ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /api/calendly/webhook
+ * Calendly webhook endpoint for receiving booking events
+ * Configure this URL in Calendly webhook settings:
+ * https://your-domain.com/api/calendly/webhook
+ */
+app.post('/api/calendly/webhook', async (req, res) => {
+  await handleCalendlyWebhook(req, res);
+});
+
+/**
+ * GET /api/calendly/bookings
+ * Get all Calendly bookings for authenticated user
+ */
+app.get('/api/calendly/bookings', async (req, res) => {
+  await handleGetBookings(req, res);
+});
+
+/**
+ * GET /api/calendly/bookings/upcoming
+ * Get upcoming Calendly bookings for authenticated user
+ */
+app.get('/api/calendly/bookings/upcoming', async (req, res) => {
+  await handleGetUpcomingBookings(req, res);
+});
+
+/**
+ * POST /api/calendly/bookings/track
+ * Track when user initiates a Calendly booking
+ */
+app.post('/api/calendly/bookings/track', async (req, res) => {
+  await handleTrackBooking(req, res);
+});
+
+/**
+ * DELETE /api/calendly/bookings/:bookingId
+ * Cancel a Calendly booking
+ */
+app.delete('/api/calendly/bookings/:bookingId', async (req, res) => {
+  await handleCancelBooking(req, res);
+});
+
+/**
+ * POST /api/calendly/bookings/sync
+ * Sync bookings from Calendly API to database
+ */
+app.post('/api/calendly/bookings/sync', async (req, res) => {
+  await handleSyncBookings(req, res);
+});
+
+/**
+ * GET /api/calendly/bookings/:bookingId/verify
+ * Verify a single booking against Calendly API
+ */
+app.get('/api/calendly/bookings/:bookingId/verify', async (req, res) => {
+  await handleVerifyBooking(req, res);
 });
 
 // ============================================================================

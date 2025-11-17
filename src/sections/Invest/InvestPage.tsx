@@ -106,6 +106,8 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                 text="Book an Inspection"
                 variant="orange"
                 size="lg"
+                eventType="inspection"
+                source="invest_page"
               />
               <button
                 onClick={() => document.getElementById("chat-widget")?.click()}

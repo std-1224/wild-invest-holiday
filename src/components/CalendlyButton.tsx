@@ -1,4 +1,6 @@
 import { Calendar } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import apiClient from "../api/client";
 
 interface CalendlyButtonProps {
   url: string;
@@ -6,6 +8,9 @@ interface CalendlyButtonProps {
   variant?: "primary" | "secondary" | "outline" | "orange";
   size?: "sm" | "md" | "lg";
   className?: string;
+  eventType?: "inspection" | "owner_consultation" | "general_inquiry";
+  source?: "invest_page" | "investor_portal" | "holiday_homes" | "direct";
+  onBookingComplete?: () => void;
 }
 
 export const CalendlyButton = ({
@@ -14,14 +19,69 @@ export const CalendlyButton = ({
   variant = "primary",
   size = "md",
   className = "",
+  eventType = "general_inquiry",
+  source = "direct",
+  onBookingComplete,
 }: CalendlyButtonProps) => {
-  const openCalendly = () => {
+  const { currentUser } = useAuth();
+
+  const openCalendly = async () => {
+    // Track booking initiation
+    try {
+      await apiClient.request("/api/calendly/bookings/track", {
+        method: "POST",
+        body: JSON.stringify({
+          eventType,
+          source,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to track Calendly booking:", error);
+    }
+
+    // Prepare prefill data for logged-in users
+    const prefill: any = {};
+    if (currentUser) {
+      prefill.name = currentUser.name || "";
+      prefill.email = currentUser.email || "";
+    }
+
     // Check if Calendly widget is loaded
     if (typeof window !== "undefined" && (window as any).Calendly) {
-      (window as any).Calendly.initPopupWidget({ url });
+      (window as any).Calendly.initPopupWidget({
+        url,
+        prefill,
+        utm: {
+          utmSource: source,
+          utmMedium: "website",
+          utmCampaign: "wild_things_bookings",
+        },
+      });
+
+      // Listen for Calendly events
+      const handleCalendlyEvent = (e: MessageEvent) => {
+        if (e.data.event === "calendly.event_scheduled") {
+          console.log("✅ Calendly booking completed!");
+          if (onBookingComplete) {
+            onBookingComplete();
+          }
+        }
+      };
+
+      window.addEventListener("message", handleCalendlyEvent);
+
+      // Cleanup listener after 5 minutes
+      setTimeout(() => {
+        window.removeEventListener("message", handleCalendlyEvent);
+      }, 300000);
     } else {
       // Fallback to opening in new tab
-      window.open(url, "_blank");
+      const urlWithParams = new URL(url);
+      if (currentUser) {
+        urlWithParams.searchParams.set("name", currentUser.name || "");
+        urlWithParams.searchParams.set("email", currentUser.email || "");
+      }
+      window.open(urlWithParams.toString(), "_blank");
     }
   };
 

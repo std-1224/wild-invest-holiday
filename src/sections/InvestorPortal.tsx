@@ -16,6 +16,7 @@ import { AddPaymentMethodModal } from "../components/AddPaymentMethodModal";
 import { BookingHistory } from "../components/BookingHistory";
 import { MarketingBoostManager } from "../components/MarketingBoostManager";
 import { CalendlyButton } from "../components/CalendlyButton";
+import { CalendlyBookings } from "../components/CalendlyBookings";
 import { PayoutHistory, Payout } from "../components/PayoutHistory";
 import {
   PayoutRequestModal,
@@ -1680,7 +1681,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               </div> */}
 
               {/* Calendly Integration */}
-              <div className="bg-white rounded-lg shadow-lg p-6">
+              {/* <div className="bg-white rounded-lg shadow-lg p-6">
                 <h3 className="text-2xl font-black mb-4 italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
                   SCHEDULE A MEETING
                 </h3>
@@ -1694,8 +1695,18 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                   variant="primary"
                   size="lg"
                   className="w-full"
+                  eventType="owner_consultation"
+                  source="investor_portal"
                 />
-              </div>
+              </div> */}
+
+              {/* My Scheduled Meetings */}
+              {/* <div className="bg-white rounded-lg shadow-lg p-6">
+                <h3 className="text-2xl font-black mb-4 italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+                  MY SCHEDULED MEETINGS
+                </h3>
+                <CalendlyBookings />
+              </div> */}
             </div>
             </OwnerBookingPage>
           )}
