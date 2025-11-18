@@ -15,8 +15,6 @@ import { SavedPaymentMethods } from "../components/SavedPaymentMethods";
 import { AddPaymentMethodModal } from "../components/AddPaymentMethodModal";
 import { BookingHistory } from "../components/BookingHistory";
 import { MarketingBoostManager } from "../components/MarketingBoostManager";
-import { CalendlyButton } from "../components/CalendlyButton";
-import { CalendlyBookings } from "../components/CalendlyBookings";
 import { PayoutHistory, Payout } from "../components/PayoutHistory";
 import {
   PayoutRequestModal,

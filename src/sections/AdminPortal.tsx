@@ -111,37 +111,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
   const [assignCabinLocations, setAssignCabinLocations] = useState<any[]>([]);
   const [assignCabinSites, setAssignCabinSites] = useState<any[]>([]);
   const [assigning, setAssigning] = useState(false);
-
-  // Check Xero connection status
-  const checkXeroStatus = async () => {
-    try {
-      const response = await apiClient.getXeroStatus();
-      if (response.success && response.connected) {
-        setXeroConnected(true);
-
-        // Check if token needs refresh
-        if (response.needsRefresh) {
-          setXeroError('Xero token has expired or is invalid. Please reconnect your Xero account.');
-        } else {
-          setXeroError("");
-        }
-      } else {
-        setXeroConnected(false);
-        setXeroError("");
-      }
-    } catch (error: any) {
-      console.error("Error checking Xero status:", error);
-      setXeroConnected(false);
-      if (error.message && (
-        error.message.includes('Failed to refresh Xero token') ||
-        error.message.includes('refresh') ||
-        error.message.includes('token')
-      )) {
-        setXeroError('Xero token has expired or is invalid. Please reconnect your Xero account.');
-      }
-    }
-  };
-
+  const [xeroRefreshKey, setXeroRefreshKey] = useState(0); // Key to force XeroConnect refresh
   // Validate Xero connection by making an actual API call
   // This triggers the automatic token refresh in the backend
   const validateXeroConnection = async () => {
@@ -182,19 +152,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
   // Load all owners on mount
   useEffect(() => {
     loadOwners();
-    checkXeroStatus();
-
-    // Listen for Xero connection changes
     const handleXeroConnectionChange = () => {
-      checkXeroStatus();
+      console.log('Xero connection changed, refreshing XeroConnect component');
+      setXeroRefreshKey(prev => prev + 1);
     };
 
     window.addEventListener('xeroConnectionChanged', handleXeroConnectionChange);
-    window.addEventListener('focus', handleXeroConnectionChange);
 
     return () => {
       window.removeEventListener('xeroConnectionChanged', handleXeroConnectionChange);
-      window.removeEventListener('focus', handleXeroConnectionChange);
     };
   }, []);
 
@@ -723,65 +689,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
 
         {/* Xero Connect Section */}
         <div className="mb-8">
-          {/* Show Xero error if exists */}
-          {xeroError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <div className="flex items-start gap-3">
-                <svg
-                  className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-red-900 mb-1">
-                    Xero Connection Issue
-                  </p>
-                  <p className="text-sm text-red-700">
-                    {xeroError}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Show connection status */}
-          {!xeroConnected && !xeroError && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-              <div className="flex items-start gap-3">
-                <svg
-                  className="w-6 h-6 text-yellow-600 mt-0.5 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-yellow-900 mb-1">
-                    Xero Not Connected
-                  </p>
-                  <p className="text-sm text-yellow-700">
-                    Please connect your Xero account to manage invoices and payments.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <XeroConnect hasError={!!xeroError} />
+          <XeroConnect key={xeroRefreshKey} />
         </div>
 
         {/* Tabs */}
