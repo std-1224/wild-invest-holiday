@@ -97,6 +97,21 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
   const [uploadingSiteMap, setUploadingSiteMap] = useState(false);
   const [siteMapFile, setSiteMapFile] = useState<File | null>(null);
 
+  // Assign Cabin state
+  const [showAssignCabinForm, setShowAssignCabinForm] = useState(false);
+  const [assignCabinForm, setAssignCabinForm] = useState({
+    locationId: "",
+    siteId: "",
+    cabinType: "1BR",
+    purchasePrice: 0,
+    purchaseDate: new Date().toISOString().split("T")[0],
+    status: "active",
+    purchasedExtras: [] as string[],
+  });
+  const [assignCabinLocations, setAssignCabinLocations] = useState<any[]>([]);
+  const [assignCabinSites, setAssignCabinSites] = useState<any[]>([]);
+  const [assigning, setAssigning] = useState(false);
+
   // Check Xero connection status
   const checkXeroStatus = async () => {
     try {
@@ -572,6 +587,101 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
     }
   };
 
+  // Assign Cabin functions
+  const loadAssignCabinLocations = async () => {
+    try {
+      const response = await apiClient.getLocations();
+      if (response.success) {
+        setAssignCabinLocations(response.locations || []);
+      }
+    } catch (err: any) {
+      console.error("Failed to load locations:", err);
+    }
+  };
+
+  const loadAssignCabinSites = async (locationId: string, cabinType: string) => {
+    try {
+      const response = await apiClient.getAvailableSites(locationId, cabinType);
+      if (response.success) {
+        setAssignCabinSites(response.sites || []);
+      }
+    } catch (err: any) {
+      console.error("Failed to load sites:", err);
+      setAssignCabinSites([]);
+    }
+  };
+
+  const handleAssignCabin = async () => {
+    if (!selectedOwner) {
+      setError("Please select an owner first");
+      return;
+    }
+
+    if (!assignCabinForm.locationId || !assignCabinForm.siteId || !assignCabinForm.purchasePrice) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    setAssigning(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await apiClient.adminAssignCabin({
+        ownerId: selectedOwner.id,
+        locationId: assignCabinForm.locationId,
+        siteId: assignCabinForm.siteId,
+        cabinType: assignCabinForm.cabinType,
+        purchasePrice: assignCabinForm.purchasePrice,
+        purchaseDate: assignCabinForm.purchaseDate,
+        status: assignCabinForm.status,
+        purchasedExtras: assignCabinForm.purchasedExtras,
+      });
+
+      if (response.success) {
+        setSuccess(`Cabin assigned successfully to ${selectedOwner.name}!`);
+        setShowAssignCabinForm(false);
+        setAssignCabinForm({
+          locationId: "",
+          siteId: "",
+          cabinType: "1BR",
+          purchasePrice: 0,
+          purchaseDate: new Date().toISOString().split("T")[0],
+          status: "active",
+          purchasedExtras: [],
+        });
+
+        // Reload owner's cabins
+        loadOwnerCabins(selectedOwner.id);
+
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        throw new Error((response as any).message || "Failed to assign cabin");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to assign cabin");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  // Load locations when assign cabin form is shown
+  useEffect(() => {
+    if (showAssignCabinForm && assignCabinLocations.length === 0) {
+      loadAssignCabinLocations();
+    }
+  }, [showAssignCabinForm]);
+
+  // Load sites when location or cabin type changes
+  useEffect(() => {
+    if (assignCabinForm.locationId && assignCabinForm.cabinType) {
+      loadAssignCabinSites(assignCabinForm.locationId, assignCabinForm.cabinType);
+    } else {
+      setAssignCabinSites([]);
+    }
+  }, [assignCabinForm.locationId, assignCabinForm.cabinType]);
+
   // Load locations when switching to locations tab
   useEffect(() => {
     if (activeTab === "locations") {
@@ -884,6 +994,182 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
                 </div>
               )}
             </div>
+
+            {/* Assign Cabin Section */}
+            {selectedOwner && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-[#0e181f]">
+                    Assign Cabin to Owner
+                  </h2>
+                  <button
+                    onClick={() => setShowAssignCabinForm(!showAssignCabinForm)}
+                    className="px-4 py-2 bg-[#ec874c] text-white rounded-lg font-bold hover:opacity-90 transition-opacity text-sm"
+                  >
+                    {showAssignCabinForm ? "Cancel" : "Assign Cabin"}
+                  </button>
+                </div>
+
+                {showAssignCabinForm && (
+                  <div className="space-y-4 border-t pt-4">
+                    <div className="bg-[#86dbdf]/10 border border-[#86dbdf] rounded-lg p-4 mb-4">
+                      <p className="text-sm font-semibold text-[#0e181f]">
+                        Assigning cabin to:
+                      </p>
+                      <p className="text-lg font-bold text-[#86dbdf]">
+                        {selectedOwner.name}
+                      </p>
+                      <p className="text-sm text-gray-600">{selectedOwner.email}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-2 text-[#0e181f]">
+                          Location *
+                        </label>
+                        <select
+                          value={assignCabinForm.locationId}
+                          onChange={(e) =>
+                            setAssignCabinForm({
+                              ...assignCabinForm,
+                              locationId: e.target.value,
+                              siteId: "", // Reset site when location changes
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#86dbdf]"
+                        >
+                          <option value="">Select Location</option>
+                          {assignCabinLocations.map((loc) => (
+                            <option key={loc._id} value={loc._id}>
+                              {loc.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold mb-2 text-[#0e181f]">
+                          Cabin Type *
+                        </label>
+                        <select
+                          value={assignCabinForm.cabinType}
+                          onChange={(e) =>
+                            setAssignCabinForm({
+                              ...assignCabinForm,
+                              cabinType: e.target.value,
+                              siteId: "", // Reset site when cabin type changes
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#86dbdf]"
+                        >
+                          <option value="1BR">1BR Cabin</option>
+                          <option value="2BR">2BR Cabin</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-[#0e181f]">
+                        Site Number *
+                      </label>
+                      <select
+                        value={assignCabinForm.siteId}
+                        onChange={(e) =>
+                          setAssignCabinForm({
+                            ...assignCabinForm,
+                            siteId: e.target.value,
+                          })
+                        }
+                        disabled={!assignCabinForm.locationId || assignCabinSites.length === 0}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#86dbdf] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <option value="">
+                          {assignCabinSites.length === 0
+                            ? "No available sites"
+                            : "Select Site"}
+                        </option>
+                        {assignCabinSites.map((site) => (
+                          <option key={site._id} value={site._id}>
+                            Site #{site.siteNumber} - {site.cabinType} (${site.price?.toLocaleString() || 0})
+                          </option>
+                        ))}
+                      </select>
+                      {assignCabinForm.locationId && assignCabinSites.length === 0 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          No available sites for this location and cabin type
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-2 text-[#0e181f]">
+                          Purchase Price *
+                        </label>
+                        <input
+                          type="number"
+                          value={assignCabinForm.purchasePrice}
+                          onChange={(e) =>
+                            setAssignCabinForm({
+                              ...assignCabinForm,
+                              purchasePrice: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#86dbdf]"
+                          placeholder="e.g., 450000"
+                          min="0"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold mb-2 text-[#0e181f]">
+                          Purchase Date *
+                        </label>
+                        <input
+                          type="date"
+                          value={assignCabinForm.purchaseDate}
+                          onChange={(e) =>
+                            setAssignCabinForm({
+                              ...assignCabinForm,
+                              purchaseDate: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#86dbdf]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-[#0e181f]">
+                        Status
+                      </label>
+                      <select
+                        value={assignCabinForm.status}
+                        onChange={(e) =>
+                          setAssignCabinForm({
+                            ...assignCabinForm,
+                            status: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#86dbdf]"
+                      >
+                        <option value="active">Active</option>
+                        <option value="pending">Pending</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={handleAssignCabin}
+                      disabled={assigning || !assignCabinForm.locationId || !assignCabinForm.siteId}
+                      className="w-full px-6 py-3 rounded-lg font-bold transition-all bg-[#ec874c] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {assigning ? "Assigning..." : "Assign Cabin to Owner"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Cabins List */}
             {selectedOwner && (

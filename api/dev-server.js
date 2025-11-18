@@ -71,6 +71,7 @@ import {
   handleGetMyCabins,
   handleSearchOwners,
   handleCreateCabinPurchase,
+  handleAdminAssignCabin,
 } from '../server/handlers/cabins.js';
 import {
   handleGetSites,
@@ -520,6 +521,13 @@ app.get('/api/cabins/my-cabins', async (req, res) => {
  */
 app.post('/api/cabins/purchase', async (req, res) => {
   await handleCreateCabinPurchase(req, res);
+});
+
+/**
+ * Admin: Assign cabin to existing owner
+ */
+app.post('/api/admin/cabins/assign', async (req, res) => {
+  await handleAdminAssignCabin(req, res);
 });
 
 // ============================================================================

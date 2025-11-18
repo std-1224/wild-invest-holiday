@@ -837,6 +837,26 @@ class WildThingsAPI {
     });
   }
 
+  /**
+   * Admin: Assign cabin to existing owner (admin only)
+   * @param {Object} assignmentData - Assignment details
+   * @param {string} assignmentData.ownerId - Owner's user ID
+   * @param {string} assignmentData.locationId - Location ID
+   * @param {string} assignmentData.siteId - Site ID
+   * @param {string} assignmentData.cabinType - Cabin type (1BR or 2BR)
+   * @param {number} assignmentData.purchasePrice - Purchase price
+   * @param {string} assignmentData.purchaseDate - Purchase date (ISO string)
+   * @param {string} assignmentData.status - Cabin status (active, pending, etc.)
+   * @param {Array<string>} assignmentData.purchasedExtras - Array of extra names
+   * @returns {Promise<Object>} Response with assigned cabin
+   */
+  async adminAssignCabin(assignmentData) {
+    return this.request('/api/admin/cabins/assign', {
+      method: 'POST',
+      body: JSON.stringify(assignmentData),
+    });
+  }
+
   // Health check
   async healthCheck() {
     return this.request('/health');

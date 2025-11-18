@@ -295,3 +295,162 @@ export async function handleCreateCabinPurchase(req, res) {
     });
   }
 }
+
+/**
+ * Admin: Assign cabin to existing owner
+ * This is for manually linking existing cabin ownership when deploying live
+ */
+export async function handleAdminAssignCabin(req, res) {
+  try {
+    await connectDB();
+
+    // Verify admin authentication
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+      });
+    }
+
+    const decoded = verifyToken(token);
+    const adminUser = await User.findById(decoded.id);
+
+    if (!adminUser || adminUser.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required',
+      });
+    }
+
+    const {
+      ownerId,
+      locationId,
+      siteId,
+      cabinType,
+      purchasePrice,
+      purchaseDate,
+      status,
+      purchasedExtras,
+    } = req.body;
+
+    // Validate required fields
+    if (!ownerId || !locationId || !siteId || !cabinType || !purchasePrice) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: ownerId, locationId, siteId, cabinType, purchasePrice',
+      });
+    }
+
+    // Verify owner exists
+    const owner = await User.findById(ownerId);
+    if (!owner) {
+      return res.status(404).json({
+        success: false,
+        message: 'Owner not found',
+      });
+    }
+
+    if (owner.role !== 'owner') {
+      return res.status(400).json({
+        success: false,
+        message: 'User is not an owner',
+      });
+    }
+
+    // Verify location exists
+    const location = await Location.findById(locationId);
+    if (!location) {
+      return res.status(404).json({
+        success: false,
+        message: 'Location not found',
+      });
+    }
+
+    // Verify site exists
+    const site = await Site.findById(siteId);
+    if (!site) {
+      return res.status(404).json({
+        success: false,
+        message: 'Site not found',
+      });
+    }
+
+    // Check if site is already assigned to a cabin
+    const existingCabin = await Cabin.findOne({ siteId });
+    if (existingCabin) {
+      return res.status(400).json({
+        success: false,
+        message: `Site #${site.siteNumber} is already assigned to another cabin`,
+      });
+    }
+
+    // Verify site belongs to the location
+    if (site.locationId.toString() !== locationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Site does not belong to the specified location',
+      });
+    }
+
+    // Verify cabin type matches
+    if (site.cabinType !== cabinType) {
+      return res.status(400).json({
+        success: false,
+        message: `Site #${site.siteNumber} is for ${site.cabinType} cabins, not ${cabinType}`,
+      });
+    }
+
+    // Create cabin record
+    const cabin = await Cabin.create({
+      ownerId,
+      locationId,
+      siteId,
+      cabinType,
+      purchasePrice,
+      purchaseDate: purchaseDate ? new Date(purchaseDate) : new Date(),
+      status: status || 'active', // Default to 'active' for existing owners
+      purchasedExtras: purchasedExtras || [],
+      financingDetails: {},
+    });
+
+    // Update site status to sold (since it's an existing cabin)
+    site.status = 'sold';
+    await site.save();
+
+    // Update location available sites count
+    if (location.availableSites > 0) {
+      location.availableSites -= 1;
+      await location.save();
+    }
+
+    console.log(`✅ Admin assigned cabin to owner: ${owner.name} (${owner.email})`);
+    console.log(`   Location: ${location.name}, Site: ${site.siteNumber}, Type: ${cabinType}`);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Cabin assigned to owner successfully',
+      cabin: {
+        id: cabin._id,
+        cabinType: cabin.cabinType,
+        siteNumber: site.siteNumber,
+        location: location.name,
+        purchasePrice: cabin.purchasePrice,
+        purchaseDate: cabin.purchaseDate,
+        status: cabin.status,
+        owner: {
+          id: owner._id,
+          name: owner.name,
+          email: owner.email,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('❌ Error assigning cabin to owner:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to assign cabin to owner',
+      error: error.message,
+    });
+  }
+}
