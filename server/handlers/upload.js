@@ -9,21 +9,21 @@ import crypto from 'crypto';
 
 // Initialize S3 client configuration
 const s3ClientConfig = {
-  region: process.env.AWS_REGION || 'us-east-1',
+  region: process.env.VITE_AWS_REGION || 'us-east-1',
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    accessKeyId: process.env.VITE_AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.VITE_AWS_SECRET_ACCESS_KEY || '',
   },
 };
 
 // Add session token if using temporary credentials (IAM role or STS)
-// if (process.env.AWS_SESSION_TOKEN) {
-//   s3ClientConfig.credentials.sessionToken = process.env.AWS_SESSION_TOKEN;
+// if (process.env.VITE_AWS_SESSION_TOKEN) {
+//   s3ClientConfig.credentials.sessionToken = process.env.VITE_AWS_SESSION_TOKEN;
 // }
 
 const s3Client = new S3Client(s3ClientConfig);
 
-const S3_BUCKET = process.env.AWS_S3_BUCKET || 'wildthings-staging-documents';
+const S3_BUCKET = process.env.VITE_AWS_S3_BUCKET || 'wildthings-staging-documents';
 
 /**
  * POST /api/upload/agreement
@@ -142,7 +142,7 @@ export async function handleUploadAgreement(req, res) {
     await s3Client.send(command);
 
     // Generate S3 URL
-    const s3Url = `https://${S3_BUCKET}.s3.${process.env.AWS_REGION || 'ap-southeast-2'}.amazonaws.com/${uniqueFileName}`;
+    const s3Url = `https://${S3_BUCKET}.s3.${process.env.VITE_AWS_REGION || 'ap-southeast-2'}.amazonaws.com/${uniqueFileName}`;
 
     res.status(200).json({
       success: true,
