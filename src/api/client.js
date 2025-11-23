@@ -286,23 +286,6 @@ class WildThingsAPI {
     });
   }
 
-  // Password reset methods
-  async forgotPassword(email) {
-    return this.request('/auth/forgot-password', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
-  }
-
-  async resetPassword(email, verificationCode, newPassword) {
-    return this.request('/auth/reset-password', {
-      method: 'POST',
-      body: JSON.stringify({ email, verificationCode, newPassword }),
-    });
-  }
-
-
-
   // Payout system methods
   async requestPayout(amount, bankDetails) {
     return this.request('/payouts/request', {

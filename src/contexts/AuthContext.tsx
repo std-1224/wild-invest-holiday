@@ -174,12 +174,12 @@ export const AuthProvider = ({
         onResetCodeSent={handleResetCodeSent}
       />
 
-      {/* Reset Password Modal */}
+      {/* Reset Password Modal - Not used, handled by ResetPasswordPage route */}
       <ResetPasswordModal
         isOpen={activeModal === "resetPassword"}
         onClose={closeAllModals}
         onResetComplete={handleResetComplete}
-        email={resetPasswordEmail}
+        token=""
       />
 
       {/* Verification Modal */}

@@ -32,15 +32,14 @@ export const ForgotPasswordModal = ({
         setIsSubmitted(true);
         onResetCodeSent(email);
 
-        // Auto-close after 3 seconds and switch to login
+        // Auto-close after 5 seconds - user should check their email
         setTimeout(() => {
           setIsSubmitted(false);
           setEmail("");
           onClose();
-          onSwitchToLogin();
-        }, 3000);
+        }, 5000);
       } else {
-        setError(response.error || "Failed to send reset email");
+        setError(response.message || "Failed to send reset email");
       }
     } catch (err: any) {
       setError(err.message || "Failed to send reset email. Please try again.");
@@ -74,7 +73,7 @@ export const ForgotPasswordModal = ({
         {!isSubmitted ? (
           <>
             <p className="text-center mb-6 text-[#0e181f]">
-              Enter your email address and we'll send you a code to reset your
+              Enter your email address and we'll send you a link to reset your
               password.
             </p>
 
@@ -105,7 +104,7 @@ export const ForgotPasswordModal = ({
                   disabled={loading}
                   className="flex-1 py-2 rounded-lg font-bold transition-all hover:opacity-90 bg-[#ffcf00] text-[#0e181f] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? "Sending..." : "Send Reset Code"}
+                  {loading ? "Sending..." : "Send Reset Link"}
                 </button>
                 <button
                   type="button"
@@ -138,15 +137,15 @@ export const ForgotPasswordModal = ({
           <div className="text-center">
             <div className="text-6xl mb-4">✅</div>
             <h3 className="text-xl font-bold mb-2 text-[#0e181f]">
-              Reset Code Sent!
+              Reset Link Sent!
             </h3>
             <p className="text-[#0e181f] mb-4">
-              We've sent a password reset code to:
+              We've sent a password reset link to:
             </p>
             <p className="font-bold text-[#86dbdf] mb-4">{email}</p>
             <p className="text-sm text-gray-600">
-              Please check your email and follow the instructions to reset your
-              password.
+              Please check your email and click the link to reset your password.
+              The link will expire in 10 minutes.
             </p>
           </div>
         )}

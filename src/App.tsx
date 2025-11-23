@@ -9,6 +9,7 @@ import { InvestorPortal } from "./sections/InvestorPortal";
 import { AdminPortal } from "./sections/AdminPortal";
 import { HolidayHomesPage } from "./sections/HolidayHomes";
 import { XeroCallback } from "./sections/XeroCallback";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { colors } from "./config/mockCalculate";
 import { ReservationModal } from "./components/Modals/ReservationModal";
 import { ChatWidget } from "./components/ChatWidget";
@@ -147,6 +148,11 @@ function AppContent() {
           <Route
             path="/xero/callback"
             element={<XeroCallback setCurrentPage={(page) => navigate(`/${page === 'home' ? '' : page}`)} />}
+          />
+
+          <Route
+            path="/reset-password"
+            element={<ResetPasswordPage />}
           />
         </Routes>
 
