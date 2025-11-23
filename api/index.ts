@@ -62,6 +62,7 @@ import {
   handleCreateLocation,
   handleGetLocationSites,
   handleUpdateLocation,
+  handleDeleteLocation,
 } from '../server/handlers/locations.js';
 import {
   handleGetSites,
@@ -269,6 +270,10 @@ export default async function handler(
       const locationId = path.split('/').pop();
       (req as any).params = { locationId };
       return await handleUpdateLocation(req, res);
+    } else if (path.match(/\/admin\/locations\/[a-f0-9]{24}$/) && req.method === 'DELETE') {
+      const locationId = path.split('/').pop();
+      (req as any).params = { locationId };
+      return await handleDeleteLocation(req, res);
     } else if (path.match(/\/locations\/[a-f0-9]{24}\/sites$/)) {
       const parts = path.split('/');
       const locationId = parts[parts.length - 2];

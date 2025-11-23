@@ -65,6 +65,7 @@ import {
   handleCreateLocation,
   handleGetLocationSites,
   handleUpdateLocation,
+  handleDeleteLocation,
 } from '../server/handlers/locations.js';
 import {
   handleGetOwnerCabins,
@@ -434,6 +435,14 @@ app.post('/api/admin/locations', async (req, res) => {
  */
 app.put('/api/admin/locations/:locationId', async (req, res) => {
   await handleUpdateLocation(req, res);
+});
+
+/**
+ * DELETE /api/admin/locations/:locationId
+ * Delete a location (Admin only)
+ */
+app.delete('/api/admin/locations/:locationId', async (req, res) => {
+  await handleDeleteLocation(req, res);
 });
 
 /**

@@ -286,3 +286,78 @@ export async function handleGetLocationSites(req, res) {
   }
 }
 
+/**
+ * Delete location (admin only)
+ * Soft delete by setting status to 'inactive' and also delete all associated sites
+ */
+export async function handleDeleteLocation(req, res) {
+  try {
+    await connectDB();
+
+    // Verify admin authentication
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+      });
+    }
+
+    const decoded = verifyToken(token);
+    const user = await User.findById(decoded.id);
+
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required',
+      });
+    }
+
+    const { locationId } = req.params;
+
+    // Check if location exists
+    const location = await Location.findById(locationId);
+    if (!location) {
+      return res.status(404).json({
+        success: false,
+        message: 'Location not found',
+      });
+    }
+
+    // Check if location has any sold sites
+    const soldSites = await Site.find({
+      locationId,
+      status: 'sold'
+    });
+
+    if (soldSites.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete location with ${soldSites.length} sold site(s). Please contact support.`,
+      });
+    }
+
+    // Soft delete location by setting status to 'inactive'
+    location.status = 'inactive';
+    await location.save();
+
+    // Delete all associated sites (hard delete since they're not sold)
+    const deletedSites = await Site.deleteMany({ locationId });
+
+    console.log(`✅ Location "${location.name}" soft-deleted (status: inactive)`);
+    console.log(`🗑️  Deleted ${deletedSites.deletedCount} associated sites`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Location deleted successfully',
+      deletedSitesCount: deletedSites.deletedCount,
+    });
+  } catch (error) {
+    console.error('Error deleting location:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete location',
+      error: error.message,
+    });
+  }
+}

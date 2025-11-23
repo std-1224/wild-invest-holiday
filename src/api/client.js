@@ -709,6 +709,17 @@ class WildThingsAPI {
   }
 
   /**
+   * Delete a location (admin only)
+   * @param {string} locationId - Location ID
+   * @returns {Promise<Object>} Response with deletion confirmation
+   */
+  async deleteLocation(locationId) {
+    return this.request(`/api/admin/locations/${locationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  /**
    * Get sites for a location
    * @param {string} locationId - Location ID
    * @returns {Promise<Object>} Response with list of sites

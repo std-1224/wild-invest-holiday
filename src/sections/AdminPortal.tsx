@@ -96,6 +96,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
   });
   const [uploadingSiteMap, setUploadingSiteMap] = useState(false);
   const [siteMapFile, setSiteMapFile] = useState<File | null>(null);
+  const [deletingLocationId, setDeletingLocationId] = useState<string | null>(null);
+  const [confirmDeleteLocationId, setConfirmDeleteLocationId] = useState<string | null>(null);
 
   // Assign Cabin state
   const [showAssignCabinForm, setShowAssignCabinForm] = useState(false);
@@ -495,6 +497,38 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
       setError(err.message || "Failed to create site");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteLocation = async (locationId: string) => {
+    // First click: ask for confirmation
+    if (confirmDeleteLocationId !== locationId) {
+      setConfirmDeleteLocationId(locationId);
+      setTimeout(() => setConfirmDeleteLocationId(null), 3000);
+      return;
+    }
+
+    // Second click: proceed with deletion
+    setDeletingLocationId(locationId);
+    setError("");
+    try {
+      const response = await apiClient.deleteLocation(locationId);
+      if (response.success) {
+        setSuccess(`Location deleted successfully! ${response.deletedSitesCount} sites removed.`);
+        setConfirmDeleteLocationId(null);
+        loadLocations();
+        if (selectedLocation?._id === locationId) {
+          setSelectedLocation(null);
+          setLocationSites([]);
+        }
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError((response as any).error || "Failed to delete location");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to delete location");
+    } finally {
+      setDeletingLocationId(null);
     }
   };
 
@@ -1613,6 +1647,30 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
                             </div>
                           )}
                         </div>
+                      )}
+                    </div>
+
+                    {/* Delete Location */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <button
+                        onClick={() => handleDeleteLocation(location._id)}
+                        disabled={deletingLocationId === location._id}
+                        className={`w-full px-4 py-2 rounded font-bold transition-all ${
+                          confirmDeleteLocationId === location._id
+                            ? 'bg-red-600 text-white hover:bg-red-700'
+                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                        } disabled:opacity-50`}
+                      >
+                        {deletingLocationId === location._id
+                          ? "Deleting..."
+                          : confirmDeleteLocationId === location._id
+                          ? "⚠️ Click Again to Confirm Delete"
+                          : "🗑️ Delete Location"}
+                      </button>
+                      {confirmDeleteLocationId === location._id && (
+                        <p className="text-xs text-red-600 mt-2 text-center">
+                          This will permanently delete the location and all its sites (except sold sites).
+                        </p>
                       )}
                     </div>
                   </div>

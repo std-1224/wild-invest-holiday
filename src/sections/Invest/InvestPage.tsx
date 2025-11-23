@@ -459,16 +459,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                     <div className="flex justify-between text-[#ec874c]">
                       <span>Options Impact:</span>
                       <span className="font-bold">
-                        {roiResults.effectiveNightlyRate -
-                          defaultNightlyRates[roiInputs.cabinType] >=
-                        0
-                          ? "+"
-                          : ""}
-                        $
-                        {(
-                          roiResults.effectiveNightlyRate -
-                          defaultNightlyRates[roiInputs.cabinType]
-                        ).toFixed(0)}
+                        +${roiResults.extrasNightlyImpact.toFixed(0)}
                       </span>
                     </div>
                   )}
