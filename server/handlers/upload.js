@@ -8,8 +8,11 @@ import User from '../models/User.js';
 import crypto from 'crypto';
 
 // Initialize S3 client configuration
+// Use AWS_REGION from .env.local (ap-southeast-2 for Wild Things)
+const AWS_REGION = process.env.VITE_AWS_REGION || 'ap-southeast-2';
+
 const s3ClientConfig = {
-  region: process.env.VITE_AWS_REGION || 'us-east-1',
+  region: AWS_REGION,
   credentials: {
     accessKeyId: process.env.VITE_AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.VITE_AWS_SECRET_ACCESS_KEY || '',
@@ -23,7 +26,7 @@ const s3ClientConfig = {
 
 const s3Client = new S3Client(s3ClientConfig);
 
-const S3_BUCKET = process.env.VITE_AWS_S3_BUCKET || 'wildthings-staging-documents';
+const S3_BUCKET = process.env.VITE_S3_BUCKET_NAME || 'wildthings-staging-documents';
 
 /**
  * POST /api/upload/agreement
@@ -141,8 +144,8 @@ export async function handleUploadAgreement(req, res) {
     const command = new PutObjectCommand(uploadParams);
     await s3Client.send(command);
 
-    // Generate S3 URL
-    const s3Url = `https://${S3_BUCKET}.s3.${process.env.VITE_AWS_REGION || 'ap-southeast-2'}.amazonaws.com/${uniqueFileName}`;
+    // Generate S3 URL using the same region as the S3 client
+    const s3Url = `https://${S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${uniqueFileName}`;
 
     res.status(200).json({
       success: true,
