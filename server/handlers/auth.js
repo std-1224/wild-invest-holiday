@@ -234,24 +234,12 @@ export async function handleForgotPassword(req, res) {
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      // In development, we can be more helpful
-      const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
-
-      if (isDevelopment) {
-        return res.status(400).json({
-          success: false,
-          error: 'No account found with this email address',
-          message: 'Please check your email or register for a new account',
-        });
-      }
-
-      // Production: Don't reveal if user exists (security)
-      return res.status(200).json({
-        success: true,
-        message: 'If an account exists with this email, a password reset link has been sent',
+      return res.status(400).json({
+        success: false,
+        error: 'No account found with this email address',
+        message: 'Please check your email or register for a new account',
       });
     }
-
 
     // Generate reset token
     const resetToken = user.generateResetToken();
@@ -262,62 +250,76 @@ export async function handleForgotPassword(req, res) {
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     // Send email if Resend is configured
-    if (resend) {
-      try {
-        const emailResult = await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-          to: user.email,
-          subject: 'Password Reset Request - Wild Things',
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #0e181f;">Password Reset Request</h2>
-              <p>Hi ${user.name},</p>
-              <p>You requested to reset your password. Click the button below to reset it:</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${resetUrl}"
-                   style="background-color: #ffcf00; color: #0e181f; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-                  Reset Password
-                </a>
-              </div>
-              <p>Or copy and paste this link into your browser:</p>
-              <p style="color: #86dbdf; word-break: break-all;">${resetUrl}</p>
-              <p style="color: #666; font-size: 14px;">This link will expire in 10 minutes.</p>
-              <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
-              <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-              <p style="color: #999; font-size: 12px;">Wild Things - Your Investment Partner</p>
-            </div>
-          `,
-        });
-
-        // Check if Resend returned an error
-        if (emailResult?.error) {
-          console.error('❌ Resend API Error:', emailResult.error.message);
-          if (emailResult.error.statusCode === 403) {
-            console.error('⚠️  Resend is in test mode. Verify a domain at: https://resend.com/domains');
-          }
-        } else {
-          console.log('✅ Password reset email sent to:', user.email);
-        }
-      } catch (emailError) {
-        console.error('❌ Email sending error:', emailError.message);
-        // Continue anyway - token is saved, user can contact support
-      }
-    } else {
-      // Development mode - log token to console
-      console.log('⚠️  RESEND_API_KEY not configured - running in development mode');
-      console.log('🔑 Password reset token:', resetToken);
-      console.log('🔗 Reset URL:', resetUrl);
+    if (!resend) {
+      console.error('❌ RESEND_API_KEY not configured');
+      return res.status(500).json({
+        success: false,
+        error: 'Email service not configured. Please contact support.',
+      });
     }
+
+    // Send email via Resend
+    const emailResult = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+      to: user.email,
+      subject: 'Password Reset Request - Wild Things',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0e181f;">Password Reset Request</h2>
+          <p>Hi ${user.name},</p>
+          <p>You requested to reset your password. Click the button below to reset it:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}"
+               style="background-color: #ffcf00; color: #0e181f; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Reset Password
+            </a>
+          </div>
+          <p>Or copy and paste this link into your browser:</p>
+          <p style="color: #86dbdf; word-break: break-all;">${resetUrl}</p>
+          <p style="color: #666; font-size: 14px;">This link will expire in 10 minutes.</p>
+          <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+          <p style="color: #999; font-size: 12px;">Wild Things - Your Investment Partner</p>
+        </div>
+      `,
+    });
+
+    // Check if Resend returned an error
+    if (emailResult?.error) {
+      console.error('❌ Resend API Error:', JSON.stringify(emailResult.error, null, 2));
+
+      // Return specific error messages
+      if (emailResult.error.statusCode === 403) {
+        return res.status(500).json({
+          success: false,
+          error: 'Email domain not verified. Please verify your domain in Resend dashboard.',
+          details: emailResult.error.message,
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send password reset email',
+        details: emailResult.error.message,
+      });
+    }
+
+    console.log('✅ Password reset email sent to:', user.email);
+    console.log('📧 Email ID:', emailResult.id);
 
     res.status(200).json({
       success: true,
-      message: 'If an account exists with this email, a password reset link has been sent',
+      message: 'Password reset email has been sent. Please check your inbox.',
     });
   } catch (error) {
     console.error('❌ Forgot password error:', error);
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
+
     res.status(500).json({
       success: false,
       error: 'Failed to process password reset request',
+      details: error.message,
     });
   }
 }
