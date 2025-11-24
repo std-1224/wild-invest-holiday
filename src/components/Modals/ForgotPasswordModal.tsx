@@ -31,13 +31,8 @@ export const ForgotPasswordModal = ({
       if (response.success) {
         setIsSubmitted(true);
         onResetCodeSent(email);
-
-        // Auto-close after 5 seconds - user should check their email
-        setTimeout(() => {
-          setIsSubmitted(false);
-          setEmail("");
-          onClose();
-        }, 5000);
+        // Keep modal open to show success alert
+        // User can close manually by clicking X or outside
       } else {
         setError(response.message || "Failed to send reset email");
       }
@@ -144,10 +139,35 @@ export const ForgotPasswordModal = ({
                 We've sent a password reset link to:
               </p>
               <p className="font-bold text-[#86dbdf] text-lg mb-2">{email}</p>
-              <p className="text-sm text-gray-600">
-                Please check your email and click the link to reset your password.
-                The link will expire in 10 minutes.
+              <p className="text-sm text-gray-600 mb-3">
+                Please check your email and click the link to reset your
+                password. The link will expire in 10 minutes.
               </p>
+            </div>
+
+            <div className="text-center">
+              <div className="text-6xl mb-4 animate-bounce">✅</div>
+              <h3 className="text-xl font-bold mb-2 text-[#0e181f]">
+                Reset Link Sent!
+              </h3>
+              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
+                <p className="text-[#0e181f] mb-2">
+                  We've sent a password reset link to:
+                </p>
+                <p className="font-bold text-[#86dbdf] text-lg mb-2">{email}</p>
+                <p className="text-sm text-gray-600 mb-3">
+                  Please check your email and click the link to reset your
+                  password. The link will expire in 10 minutes.
+                </p>
+              </div>
+
+              {/* Close button */}
+              <button
+                onClick={onClose}
+                className="w-full bg-[#86dbdf] text-white py-3 rounded-lg font-bold hover:bg-[#0e181f] transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         )}
@@ -155,4 +175,3 @@ export const ForgotPasswordModal = ({
     </div>
   );
 };
-
