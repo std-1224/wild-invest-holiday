@@ -111,8 +111,6 @@ export const AuthProvider = ({
 
   const handleResetCodeSent = (email: string) => {
     setResetPasswordEmail(email);
-    // Optionally show reset password modal
-    setActiveModal("resetPassword");
   };
 
   const handleResetComplete = () => {
