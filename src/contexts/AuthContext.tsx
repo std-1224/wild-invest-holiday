@@ -78,6 +78,8 @@ export const AuthProvider = ({
   const showForgotPasswordModal = () => setActiveModal("forgotPassword");
   const closeAllModals = () => setActiveModal(null);
 
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
   const login = () => {
     setIsLoggedIn(true);
     setCurrentUser(apiClient.getUser());
@@ -109,7 +111,6 @@ export const AuthProvider = ({
 
   const handleResetCodeSent = (email: string) => {
     setResetPasswordEmail(email);
-    closeAllModals();
     // Optionally show reset password modal
     setActiveModal("resetPassword");
   };
@@ -177,6 +178,8 @@ export const AuthProvider = ({
         onClose={closeAllModals}
         onSwitchToLogin={() => setActiveModal("login")}
         onResetCodeSent={handleResetCodeSent}
+        isSubmitted={isSubmitted}
+        setIsSubmitted={setIsSubmitted}
       />
 
       {/* Reset Password Modal - Not used, handled by ResetPasswordPage route */}

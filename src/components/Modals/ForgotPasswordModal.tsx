@@ -6,6 +6,8 @@ interface ForgotPasswordModalProps {
   onClose: () => void;
   onSwitchToLogin: () => void;
   onResetCodeSent: (email: string) => void;
+  isSubmitted: boolean;
+  setIsSubmitted: (value: boolean) => void;
 }
 
 export const ForgotPasswordModal = ({
@@ -13,9 +15,10 @@ export const ForgotPasswordModal = ({
   onClose,
   onSwitchToLogin,
   onResetCodeSent,
+  isSubmitted,
+  setIsSubmitted,
 }: ForgotPasswordModalProps) => {
   const [email, setEmail] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
