@@ -5,12 +5,14 @@ interface AuthAdminLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLogin: () => void;
+  onForgotPassword: () => void;
 }
 
 export const AuthAdminLoginModal = ({
   isOpen,
   onClose,
   onLogin,
+  onForgotPassword,
 }: AuthAdminLoginModalProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +31,7 @@ export const AuthAdminLoginModal = ({
       if (response.success) {
         // Check if user is admin
         const user = response.user;
-        if (user.role !== 'admin') {
+        if (!user || user.role !== 'admin') {
           setError("Access denied. Admin credentials required.");
           // Logout the user
           api.logout();
@@ -91,7 +93,7 @@ export const AuthAdminLoginModal = ({
             />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4">
             <label className="block text-sm font-medium mb-2 text-[#0e181f]">
               Password
             </label>
@@ -103,6 +105,17 @@ export const AuthAdminLoginModal = ({
               required
               autoComplete="current-password"
             />
+          </div>
+
+          {/* Forgot Password Link */}
+          <div className="mb-6 text-right">
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-sm text-[#86dbdf] hover:text-[#0e181f] font-semibold"
+            >
+              Forgot password?
+            </button>
           </div>
 
           <button

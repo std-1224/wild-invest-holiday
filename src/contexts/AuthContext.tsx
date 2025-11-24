@@ -156,6 +156,7 @@ export const AuthProvider = ({
         isOpen={activeModal === "adminLogin"}
         onClose={closeAllModals}
         onLogin={adminLogin}
+        onForgotPassword={() => setActiveModal("forgotPassword")}
       />
 
       {/* Register Modal */}

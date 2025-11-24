@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ResetPasswordModal } from "../components/Modals/ResetPasswordModal";
+import { useAuth } from "../contexts/AuthContext";
 
 export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { showLoginModal } = useAuth();
   const [token, setToken] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     // Get token from URL query parameter
     const tokenParam = searchParams.get("token");
-    
+
     if (tokenParam) {
       setToken(tokenParam);
       setIsModalOpen(true);
@@ -22,9 +24,13 @@ export const ResetPasswordPage = () => {
   }, [searchParams, navigate]);
 
   const handleResetComplete = () => {
-    // Close modal and redirect to home (login modal will be shown by AuthContext)
+    // Close modal, redirect to home, and open login modal
     setIsModalOpen(false);
     navigate("/");
+    // Open login modal after a short delay to ensure navigation completes
+    setTimeout(() => {
+      showLoginModal();
+    }, 100);
   };
 
   const handleClose = () => {

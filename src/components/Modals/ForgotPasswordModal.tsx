@@ -135,18 +135,20 @@ export const ForgotPasswordModal = ({
           </>
         ) : (
           <div className="text-center">
-            <div className="text-6xl mb-4">✅</div>
+            <div className="text-6xl mb-4 animate-bounce">✅</div>
             <h3 className="text-xl font-bold mb-2 text-[#0e181f]">
               Reset Link Sent!
             </h3>
-            <p className="text-[#0e181f] mb-4">
-              We've sent a password reset link to:
-            </p>
-            <p className="font-bold text-[#86dbdf] mb-4">{email}</p>
-            <p className="text-sm text-gray-600">
-              Please check your email and click the link to reset your password.
-              The link will expire in 10 minutes.
-            </p>
+            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
+              <p className="text-[#0e181f] mb-2">
+                We've sent a password reset link to:
+              </p>
+              <p className="font-bold text-[#86dbdf] text-lg mb-2">{email}</p>
+              <p className="text-sm text-gray-600">
+                Please check your email and click the link to reset your password.
+                The link will expire in 10 minutes.
+              </p>
+            </div>
           </div>
         )}
       </div>

@@ -164,12 +164,20 @@ export const ResetPasswordModal = ({
           </>
         ) : (
           <div className="text-center">
-            <div className="text-6xl mb-4">✅</div>
+            <div className="text-6xl mb-4 animate-bounce">✅</div>
             <h3 className="text-xl font-bold mb-2 text-[#0e181f]">
               Password Reset Successful!
             </h3>
-            <p className="text-[#0e181f]">
-              Your password has been reset. Redirecting to login...
+            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
+              <p className="text-[#0e181f] mb-2">
+                Your password has been successfully reset.
+              </p>
+              <p className="text-sm text-gray-600">
+                You can now log in with your new password.
+              </p>
+            </div>
+            <p className="text-xs text-gray-500">
+              Opening login window in 2 seconds...
             </p>
           </div>
         )}
