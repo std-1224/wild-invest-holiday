@@ -9,8 +9,19 @@ import ReferralTransaction from '../models/ReferralTransaction.js';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 
-// Initialize Resend (only if API key is provided)
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+// Initialize Resend - lazy initialization to ensure env vars are loaded
+let resend = null;
+
+/**
+ * Get or initialize Resend client
+ * This ensures environment variables are loaded before initialization
+ */
+function getResendClient() {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 /**
  * Helper function to calculate user balance from ReferralTransaction records
@@ -249,18 +260,23 @@ export async function handleForgotPassword(req, res) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
+    // Get or initialize Resend client
+    const resendClient = getResendClient();
+
     // Send email if Resend is configured
-    if (!resend) {
-      console.error('❌ RESEND_API_KEY not configured');
+    if (!resendClient) {
       return res.status(500).json({
         success: false,
         error: 'Email service not configured. Please contact support.',
       });
     }
 
+    // Prepare email data
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@wildthings.com.au';
+
     // Send email via Resend
-    const emailResult = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+    const emailResult = await resendClient.emails.send({
+      from: fromEmail,
       to: user.email,
       subject: 'Password Reset Request - Wild Things',
       html: `
