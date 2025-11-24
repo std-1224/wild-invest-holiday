@@ -16,11 +16,11 @@ export const AuthRegisterModal = ({
   onSwitchToLogin,
 }: AuthRegisterModalProps) => {
   const [formData, setFormData] = useState({
-    firstName: "Anh",
-    lastName: "Phuc",
-    email: "adev.towork@gmail.com",
-    password: "ghost1238",
-    confirmPassword: "ghost1238",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
     referralCode: "",
   });
 
