@@ -1,48 +1,3 @@
-export const getAvailableExtrasForCabin = (cabinType: any) => {
-  const extras = [
-    {
-      id: "offgrid",
-      name: "Off Grid Pack",
-      price: 20000,
-      nightlyImpact: 0,
-      energySavings: 2400,
-    }, // $200/month energy savings
-    {
-      id: "furniture",
-      name: "Premium Furniture Package",
-      price: 10000,
-      nightlyImpact: 30,
-    },
-    { id: "linen", name: "Linen Pack", price: 1000, nightlyImpact: 5 },
-    {
-      id: "artwork",
-      name: "Artwork Package",
-      price: 2000,
-      nightlyImpact: 8,
-    },
-    { id: "decking", name: "Decking", price: 10000, nightlyImpact: 12 },
-    {
-      id: "marketingBoost",
-      name: "Marketing Boost Package",
-      price: 5000,
-      nightlyImpact: 0,
-      occupancyBoost: 10,
-    }, // 10% occupancy boost
-  ];
-
-  // Add Sauna/Spa only for 1BR cabins
-  if (cabinType === "1BR") {
-    extras.push({
-      id: "sauna",
-      name: "Sauna/Spa",
-      price: 25000,
-      nightlyImpact: 50,
-    });
-  }
-
-  return extras;
-};
-
 // ROI Calculation Functions (Root Level) - Wild Things Methodology
 export const calculateROI = (...args: any[]) => {
   // Accept either a single object or positional args for compatibility
@@ -77,7 +32,8 @@ export const calculateROI = (...args: any[]) => {
     "1BR": 190000,
     "2BR": 380000,
   };
-  const availableExtras = getAvailableExtrasForCabin(cabinType);
+  // Use getExtrasForCabin instead of getAvailableExtrasForCabin to match UI
+  const availableExtras = getExtrasForCabin(cabinType);
 
   // Base cabin price
   const basePrice = cabinPrices[cabinType] || 0;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   calculateROI,
-  getAvailableExtrasForCabin,
+  getExtrasForCabin,
 } from "../../config/mockCalculate";
 
 // ROI Calculator Pane Component (For Invest Page)
@@ -24,7 +24,7 @@ export const ROICalculatorPane = ({ onInvest }: any) => {
     depositAmount: 0,
   });
 
-  const availableExtras = getAvailableExtrasForCabin(inputs.cabinType);
+  const availableExtras = getExtrasForCabin(inputs.cabinType);
 
   const roi = calculateROI({
     cabinType: inputs.cabinType,
