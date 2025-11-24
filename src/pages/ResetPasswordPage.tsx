@@ -6,14 +6,14 @@ import { useAuth } from "../contexts/AuthContext";
 export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { showLoginModal } = useAuth();
+  const { setIsLoggedIn } = useAuth();
   const [token, setToken] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     // Get token from URL query parameter
     const tokenParam = searchParams.get("token");
-
+    
     if (tokenParam) {
       setToken(tokenParam);
       setIsModalOpen(true);
@@ -24,13 +24,11 @@ export const ResetPasswordPage = () => {
   }, [searchParams, navigate]);
 
   const handleResetComplete = () => {
-    // Close modal, redirect to home, and open login modal
+    // After password reset, user is automatically logged in
+    // The token is already saved in localStorage by api.resetPassword()
+    setIsLoggedIn(true);
     setIsModalOpen(false);
-    navigate("/");
-    // Open login modal after a short delay to ensure navigation completes
-    setTimeout(() => {
-      showLoginModal();
-    }, 100);
+    navigate("/investor-portal");
   };
 
   const handleClose = () => {

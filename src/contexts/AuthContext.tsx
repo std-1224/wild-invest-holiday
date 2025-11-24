@@ -111,12 +111,16 @@ export const AuthProvider = ({
     setResetPasswordEmail(email);
     closeAllModals();
     // Optionally show reset password modal
-    // setActiveModal("resetPassword");
+    setActiveModal("resetPassword");
   };
 
   const handleResetComplete = () => {
+    // After password reset, user is automatically logged in
+    // The token is already saved in localStorage by api.resetPassword()
+    setIsLoggedIn(true);
+    setCurrentUser(apiClient.getUser());
     closeAllModals();
-    setActiveModal("login");
+    navigate("/investor-portal");
   };
 
   const handleVerificationComplete = () => {

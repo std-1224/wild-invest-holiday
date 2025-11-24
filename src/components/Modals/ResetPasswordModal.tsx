@@ -47,7 +47,7 @@ export const ResetPasswordModal = ({
       if (response.success) {
         setIsSubmitted(true);
 
-        // Auto-close after 2 seconds and redirect to login
+        // Auto-close after 2 seconds and automatically log in user
         setTimeout(() => {
           setIsSubmitted(false);
           setFormData({ newPassword: "", confirmPassword: "" });
@@ -176,9 +176,6 @@ export const ResetPasswordModal = ({
                 You can now log in with your new password.
               </p>
             </div>
-            <p className="text-xs text-gray-500">
-              Opening login window in 2 seconds...
-            </p>
           </div>
         )}
       </div>
