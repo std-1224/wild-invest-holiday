@@ -67,9 +67,7 @@ const GuestCheckoutForm: React.FC<{
   totalAmount: number;
   selectedExtras: string[];
   selectedSite: Site | null | undefined;
-  locationData: any;
-  siteMapUrl?: string;
-}> = ({ onSuccess, onClose, onLogin, cabinType, location, totalAmount, selectedExtras, selectedSite, locationData, siteMapUrl }) => {
+}> = ({ onSuccess, onClose, onLogin, cabinType, location, totalAmount, selectedExtras, selectedSite }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -185,6 +183,46 @@ const GuestCheckoutForm: React.FC<{
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Order Summary */}
+      <div className="bg-gradient-to-r from-[#86dbdf]/20 to-[#ffcf00]/20 border-2 border-[#86dbdf] rounded-lg p-4 mb-4">
+        <h3 className="font-bold text-[#0e181f] mb-3 flex items-center gap-2">
+          📋 Your Selection Summary
+        </h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-700">Cabin Type:</span>
+            <span className="font-bold text-[#0e181f]">{cabinType}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-700">Location:</span>
+            <span className="font-bold text-[#0e181f]">{location}</span>
+          </div>
+          {selectedSite && (
+            <div className="flex justify-between">
+              <span className="text-gray-700">Site Number:</span>
+              <span className="font-bold text-[#ec874c]">#{selectedSite.siteNumber}</span>
+            </div>
+          )}
+          {selectedExtras.length > 0 && (
+            <div className="pt-2 border-t border-[#86dbdf]">
+              <p className="text-gray-700 mb-1">Extras:</p>
+              {extrasDetails.map((extra) => (
+                <div key={extra.id} className="flex justify-between pl-2">
+                  <span className="text-gray-600 text-xs">• {extra.name}</span>
+                  <span className="font-bold text-[#0e181f] text-xs">
+                    ${extra.price.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex justify-between pt-2 border-t-2 border-[#0e181f] font-bold">
+            <span className="text-[#0e181f]">Total Investment:</span>
+            <span className="text-[#0e181f]">${totalAmount.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
         <p className="text-sm text-blue-900">
           <strong>Holding Deposit:</strong> $100 USD
@@ -194,54 +232,6 @@ const GuestCheckoutForm: React.FC<{
           {totalAmount.toLocaleString()}.
         </p>
       </div>
-
-      {/* Selected Site Display */}
-      {selectedSite && (
-        <div className="bg-[#86dbdf]/10 border border-[#86dbdf] rounded-lg p-4 mb-4">
-          <p className="text-sm font-bold text-[#0e181f] mb-3">
-            Selected Site:
-          </p>
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <p className="text-lg font-bold text-[#ec874c]">
-                Site #{selectedSite.siteNumber}
-              </p>
-              <p className="text-xs text-gray-600">
-                {selectedSite.cabinType} • ${selectedSite.siteLeaseFee?.toLocaleString()}/year lease
-              </p>
-            </div>
-          </div>
-          {(locationData?.siteMapUrl || siteMapUrl) && (
-            <a
-              href={locationData?.siteMapUrl || siteMapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-[#86dbdf] text-[#0e181f] hover:opacity-90"
-            >
-              📄 Open Site Map
-            </a>
-          )}
-        </div>
-      )}
-
-      {/* Selected Extras Display */}
-      {selectedExtras.length > 0 && (
-        <div className="bg-[#ffcf00]/10 border border-[#ffcf00] rounded-lg p-4 mb-4">
-          <p className="text-sm font-bold text-[#0e181f] mb-2">
-            Selected Extras:
-          </p>
-          <div className="space-y-1">
-            {extrasDetails.map((extra) => (
-              <div key={extra.id} className="flex justify-between text-sm">
-                <span className="text-gray-700">{extra.name}</span>
-                <span className="font-bold text-[#0e181f]">
-                  ${extra.price.toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Account Creation Section */}
       <div className="bg-[#86dbdf]/10 border border-[#86dbdf] rounded-lg p-4">
@@ -372,13 +362,12 @@ const GuestCheckoutForm: React.FC<{
 
 const HoldingDepositForm: React.FC<
   Omit<HoldingDepositModalProps, "isOpen">
-> = ({ onClose, onSuccess, onLogin, cabinType, location, totalAmount, selectedExtras = [], selectedSite, siteMapUrl }) => {
+> = ({ onClose, onSuccess, onLogin, cabinType, location, totalAmount, selectedExtras = [], selectedSite }) => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [locationData, setLocationData] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Check authentication and load data
@@ -387,23 +376,6 @@ const HoldingDepositForm: React.FC<
       // Check if user is logged in
       const authenticated = apiClient.isAuthenticated();
       setIsLoggedIn(authenticated);
-
-      // Load location data
-      try {
-        const response = await apiClient.getLocations();
-        if (response.success && response.locations.length > 0) {
-          const mansfield = response.locations.find((loc: any) =>
-            loc.name.toLowerCase().includes('mansfield')
-          );
-          if (mansfield) {
-            setLocationData(mansfield);
-          } else {
-            setLocationData(response.locations[0]);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load location:", error);
-      }
 
       // Load saved payment methods only if logged in
       if (authenticated) {
@@ -510,8 +482,6 @@ const HoldingDepositForm: React.FC<
           totalAmount={totalAmount}
           selectedExtras={selectedExtras}
           selectedSite={selectedSite}
-          locationData={locationData}
-          siteMapUrl={siteMapUrl}
         />
       </Elements>
     );
@@ -542,6 +512,46 @@ const HoldingDepositForm: React.FC<
     : [];
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Order Summary */}
+      <div className="bg-gradient-to-r from-[#86dbdf]/20 to-[#ffcf00]/20 border-2 border-[#86dbdf] rounded-lg p-4 mb-4">
+        <h3 className="font-bold text-[#0e181f] mb-3 flex items-center gap-2">
+          📋 Your Selection Summary
+        </h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-700">Cabin Type:</span>
+            <span className="font-bold text-[#0e181f]">{cabinType}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-700">Location:</span>
+            <span className="font-bold text-[#0e181f]">{location}</span>
+          </div>
+          {selectedSite && (
+            <div className="flex justify-between">
+              <span className="text-gray-700">Site Number:</span>
+              <span className="font-bold text-[#ec874c]">#{selectedSite.siteNumber}</span>
+            </div>
+          )}
+          {selectedExtras.length > 0 && (
+            <div className="pt-2 border-t border-[#86dbdf]">
+              <p className="text-gray-700 mb-1">Extras:</p>
+              {extrasDetails.map((extra) => (
+                <div key={extra.id} className="flex justify-between pl-2">
+                  <span className="text-gray-600 text-xs">• {extra.name}</span>
+                  <span className="font-bold text-[#0e181f] text-xs">
+                    ${extra.price.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex justify-between pt-2 border-t-2 border-[#0e181f] font-bold">
+            <span className="text-[#0e181f]">Total Investment:</span>
+            <span className="text-[#0e181f]">${totalAmount.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
         <p className="text-sm text-blue-900">
           <strong>Holding Deposit:</strong> $100 USD
@@ -551,64 +561,6 @@ const HoldingDepositForm: React.FC<
           {totalAmount.toLocaleString()}.
         </p>
       </div>
-
-      {/* Selected Site Display */}
-      {selectedSite && (
-        <div className="bg-[#86dbdf]/10 border border-[#86dbdf] rounded-lg p-4 mb-4">
-          <p className="text-sm font-bold text-[#0e181f] mb-3">
-            Selected Site:
-          </p>
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <p className="text-lg font-bold text-[#ec874c]">
-                Site #{selectedSite.siteNumber}
-              </p>
-              <p className="text-xs text-gray-600">
-                {selectedSite.cabinType} • ${selectedSite.siteLeaseFee?.toLocaleString()}/year lease
-              </p>
-            </div>
-          </div>
-          {(locationData?.siteMapUrl || siteMapUrl) ? (
-            <a
-              href={locationData?.siteMapUrl || siteMapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-[#86dbdf] text-[#0e181f] hover:opacity-90"
-            >
-              📄 Open Site Map
-            </a>
-          ) : (
-            <p className="text-xs text-gray-500 italic">
-              Site map not available. Contact admin to upload site map.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Selected Extras Display */}
-      {selectedExtras.length > 0 && (
-        <div className="bg-[#ffcf00]/10 border border-[#ffcf00] rounded-lg p-4 mb-4">
-          <p className="text-sm font-bold text-[#0e181f] mb-2">
-            Selected Extras:
-          </p>
-          <div className="space-y-1">
-            {extrasDetails.map((extra) => (
-              <div key={extra.id} className="flex justify-between text-sm">
-                <span className="text-gray-700">{extra.name}</span>
-                <span className="font-bold text-[#0e181f]">
-                  ${extra.price.toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-[#ffcf00] mt-2 pt-2 flex justify-between text-sm font-bold">
-            <span className="text-[#0e181f]">Total Extras:</span>
-            <span className="text-[#0e181f]">
-              ${extrasDetails.reduce((sum, extra) => sum + extra.price, 0).toLocaleString()}
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* Saved Payment Methods */}
       <div>
@@ -694,12 +646,12 @@ export const HoldingDepositModal: React.FC<HoldingDepositModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full my-8 p-6">
-        <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
-          🏡 Secure Your Cabin
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full my-8 p-6 max-h-[95vh] overflow-y-auto">
+        <h2 className="text-2xl font-bold mb-2 text-[#0e181f]">
+          🏡 Step 2: Secure Your Cabin
         </h2>
         <p className="text-sm text-gray-600 mb-6">
-          Should ask for the user to select the location/cabin/extras first and then pay deposit at the end, not at the start.
+          Pay a $100 holding deposit to reserve your {cabinType} cabin at {location}.
         </p>
 
         <HoldingDepositForm

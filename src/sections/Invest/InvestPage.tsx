@@ -218,15 +218,13 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
 
                       <button
                         onClick={() => {
-                          setSelectedCabinForInvestment(key);
-                          setSelectedCabinForDeposit({
-                            id: key,
-                            ...cabins[key as CabinType],
-                            cabinType: key as CabinType,
-                            totalAmount: cabins[key as CabinType].price,
-                            selectedExtras: [],
-                          });
-                          setShowHoldingDepositModal(true);
+                          // Scroll to ROI calculator to select extras and site
+                          const roiCalculator = document.querySelector('.md\\:sticky');
+                          if (roiCalculator) {
+                            roiCalculator.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                          // Set the cabin type in ROI calculator
+                          handleCabinTypeChange(key as CabinType);
                         }}
                         className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 mb-2 bg-[#ffcf00] text-[#0e181f]"
                       >
@@ -607,7 +605,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                 }}
                 className="w-full py-4 rounded-lg font-bold transition-all hover:opacity-90 mb-4 bg-[#ffcf00] text-[#0e181f] text-lg"
               >
-                Reserve {cabins[roiInputs.cabinType].name} Today
+                Select Site & Reserve →
               </button>
 
               <p className="text-xs text-gray-600 italic">
@@ -625,11 +623,36 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
-              🗺️ Select Your Site Location
+              🗺️ Step 1: Select Your Site Location
             </h2>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 mb-2">
               Choose your preferred site number at {selectedLocation.name}. Each site has a specific location within the park.
             </p>
+
+            {/* Summary of selections */}
+            <div className="bg-[#86dbdf]/10 border border-[#86dbdf] rounded-lg p-4 mb-6">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-600 mb-1">Cabin Type:</p>
+                  <p className="font-bold text-[#0e181f]">{selectedCabinForDeposit.cabinType}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600 mb-1">Total Investment:</p>
+                  <p className="font-bold text-[#0e181f]">${selectedCabinForDeposit.totalAmount.toLocaleString()}</p>
+                </div>
+                {selectedCabinForDeposit.selectedExtras && selectedCabinForDeposit.selectedExtras.length > 0 && (
+                  <div className="col-span-2">
+                    <p className="text-gray-600 mb-1">Selected Extras:</p>
+                    <p className="font-bold text-[#0e181f]">
+                      {selectedCabinForDeposit.selectedExtras.map((extraId: string) => {
+                        const extra = getExtrasForCabin(selectedCabinForDeposit.cabinType).find(e => e.id === extraId);
+                        return extra?.name;
+                      }).join(', ')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
 
             <SiteSelector
               locationId={selectedLocation._id}
@@ -656,9 +679,9 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                     setShowSiteSelector(false);
                     setShowHoldingDepositModal(true);
                   }}
-                  className="flex-1 px-4 py-3 rounded-lg font-bold transition-all bg-[#ec874c] text-white hover:opacity-90"
+                  className="flex-1 px-4 py-3 rounded-lg font-bold transition-all bg-[#ffcf00] text-[#0e181f] hover:opacity-90"
                 >
-                  Continue to Payment →
+                  Continue to Deposit Payment →
                 </button>
               </div>
             )}
