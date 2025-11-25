@@ -699,7 +699,7 @@ export const HoldingDepositModal: React.FC<HoldingDepositModalProps> = ({
           🏡 Secure Your Cabin
         </h2>
         <p className="text-sm text-gray-600 mb-6">
-          Pay a $100 holding deposit to reserve your {cabinType} cabin at Wild Things! {location}.
+          Should ask for the user to select the location/cabin/extras first and then pay deposit at the end, not at the start.
         </p>
 
         <HoldingDepositForm
