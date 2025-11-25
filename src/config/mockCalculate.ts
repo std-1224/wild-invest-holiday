@@ -177,8 +177,29 @@ export const cabinPrices = {
 };
 
 export const cabinImages = {
-  "1BR": "/1BR.jpg",
-  "2BR": "/2BR.jpg",
+  "1BR": [
+    "/1br/1BR - Front.png",
+    "/1br/lounge.png",
+    "/1br/lounge (2).png",
+    "/1br/lounge (3).png",
+    "/1br/Kitchen.png",
+    "/1br/Bedroom.png",
+    "/1br/Bedroom (2).png",
+    "/1br/Bathroom.png",
+    "/1br/Bathroom (2).png",
+    "/1br/Floorplan.png",
+  ],
+  "2BR": [
+    "/2br/2BR - Front.png",
+    "/2br/Lounge.png",
+    "/2br/Lounge(2).png",
+    "/2br/Kitchen.png",
+    "/2br/bedroom.png",
+    "/2br/bedroom (2).png",
+    "/2br/bedroom (3).png",
+    "/2br/Bathroom.png",
+    "/2br/Floorplan.png",
+  ],
 };
 
 export const cabinVideos = {
@@ -202,7 +223,8 @@ export const cabins = {
     price: 190000,
     siteFee: 134,
     bedrooms: 1,
-    image: "/1BR.jpg",
+    image: "/1br/1BR - Front.png",
+    images: cabinImages["1BR"],
     rentOffPeak: 150,
     rentPeak: 400,
   },
@@ -211,7 +233,8 @@ export const cabins = {
     price: 380000,
     siteFee: 268,
     bedrooms: 2,
-    image: "/2BR.jpg",
+    image: "/2br/2BR - Front.png",
+    images: cabinImages["2BR"],
     rentOffPeak: 200,
     rentPeak: 500,
   },

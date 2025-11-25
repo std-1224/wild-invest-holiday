@@ -4,6 +4,7 @@ import {
   cabins,
   getExtrasForCabin,
   calculateROI,
+  cabinImages,
 } from "../config/mockCalculate";
 import { AttitudeChangeModal } from "../components/Modals/AttitudeChangeModal";
 import { BoostModal } from "../components/Modals/BoostModal";
@@ -23,6 +24,7 @@ import {
 import { XeroInvoices } from "../components/XeroInvoices";
 import { XeroConnect } from "../components/XeroConnect";
 import { SiteLocationDisplay } from "../components/SiteLocationDisplay";
+import CabinImageSlider from "../components/CabinImageSlider";
 import apiClient from "../api/client";
 import { OverviewPage } from "../pages/OverviewPage";
 import { BookingRevenuePage } from "../pages/BookingRevenuePage";
@@ -1058,34 +1060,34 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                       key={investment.id}
                       className="bg-gradient-to-r from-gray-50 to-white rounded-xl shadow-lg overflow-hidden border-2 border-[#86dbdf] w-full"
                     >
-                      {/* Cabin Header with Photo */}
+                      {/* Cabin Header with Photo Slider */}
                       <div className="relative">
-                        <div
-                          className="h-48 bg-cover bg-center"
-                          style={{
-                            backgroundImage: `url(/${investment.cabinType}.jpg)`,
-                          }}
-                        >
-                          <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                          <div className="absolute bottom-4 left-4 text-white">
-                            <h4 className="text-3xl font-black italic mb-1 shadow-[2px_2px_4px_rgba(0,0,0,0.7)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
-                              {investment.cabinType} CABIN
-                            </h4>
-                            <p className="text-lg font-medium text-[#86dbdf]">
-                              📍 {investment.location}
-                            </p>
-                          </div>
-                          <div className="absolute top-4 right-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-sm font-bold ${
-                                investment.status === "Active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {investment.status}
-                            </span>
-                          </div>
+                        <CabinImageSlider
+                          images={cabinImages[investment.cabinType as CabinType] || []}
+                          autoplay={true}
+                          interval={4000}
+                          className="h-64 sm:h-80"
+                          showControls={true}
+                          showIndicators={true}
+                        />
+                        <div className="absolute bottom-4 left-4 text-white z-10">
+                          <h4 className="text-3xl font-black italic mb-1 shadow-[2px_2px_4px_rgba(0,0,0,0.7)] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+                            {investment.cabinType} CABIN
+                          </h4>
+                          <p className="text-lg font-medium text-[#86dbdf]">
+                            📍 {investment.location}
+                          </p>
+                        </div>
+                        <div className="absolute top-4 right-4 z-10">
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-bold ${
+                              investment.status === "Active"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {investment.status}
+                          </span>
                         </div>
                       </div>
 

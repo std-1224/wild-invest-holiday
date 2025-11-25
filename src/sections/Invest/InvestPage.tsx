@@ -5,12 +5,14 @@ import {
   calculateROI,
   defaultNightlyRates,
   getExtrasForCabin,
+  cabinImages,
 } from "../../config/mockCalculate";
 import { InvestTimeline } from "../../components/InvestTimeline";
 import { InvestFaqs } from "../../components/InvestFaqs";
 import { CalendlyButton } from "../../components/CalendlyButton";
 import { HoldingDepositModal } from "../../components/Modals/HoldingDepositModal";
 import { SiteSelector } from "../../components/SiteSelector";
+import CabinImageSlider from "../../components/CabinImageSlider";
 import apiClient from "../../api/client";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -251,32 +253,37 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                   <label className="block text-sm font-bold mb-2 text-[#0e181f]">
                     Cabin Type
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {Object.entries(cabins).map(([key, cabin]) => {
                       const cabinKey = key as CabinType;
+                      const isSelected = roiInputs.cabinType === cabinKey;
                       return (
                         <div
                           key={key}
                           onClick={() => handleCabinTypeChange(cabinKey)}
                           className={`cursor-pointer rounded-lg overflow-hidden transition-all ${
-                            roiInputs.cabinType === (key as CabinType)
+                            isSelected
                               ? "border-[3px] border-[#ffcf00] shadow-[0_4px_12px_rgba(255,207,0,0.3)]"
                               : "border-[3px] border-[#86dbdf]"
                           }`}
                         >
-                          <div className="flex items-center gap-3 p-2">
-                            <img
-                              src={cabin.image}
-                              alt={cabin.name}
-                              className="w-20 h-[60px] object-cover rounded"
-                            />
-                            <div className="flex-1">
-                              <div className="font-bold text-sm text-[#0e181f]">
-                                {cabin.name}
-                              </div>
-                              <div className="text-base font-bold text-[#ffcf00]">
-                                ${cabin.price.toLocaleString("en-AU")} + GST
-                              </div>
+                          {/* Image Slider */}
+                          <CabinImageSlider
+                            images={cabinImages[cabinKey] || []}
+                            autoplay={isSelected}
+                            interval={3000}
+                            className="h-32"
+                            showControls={false}
+                            showIndicators={true}
+                          />
+
+                          {/* Cabin Info */}
+                          <div className="p-3 bg-white">
+                            <div className="font-bold text-sm text-[#0e181f]">
+                              {cabin.name}
+                            </div>
+                            <div className="text-base font-bold text-[#ffcf00]">
+                              ${cabin.price.toLocaleString("en-AU")} + GST
                             </div>
                           </div>
                         </div>
