@@ -182,8 +182,8 @@ export const cabinImages = {
 };
 
 export const cabinVideos = {
-  "1BR": "/1br-cabin-video.mp4",
-  "2BR": "/2BR.mp4",
+  "1BR": "/1BR Motion.mp4",
+  "2BR": "/2BR Motion.mp4",
 };
 
 export const colors = {

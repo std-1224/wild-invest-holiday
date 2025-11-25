@@ -48,13 +48,13 @@ function AppContent() {
       id: "1BR",
       name: "1 Bedroom Cabin",
       price: 110000,
-      video: "/1br-cabin-video.mp4",
+      video: "/1BR Motion.mp4",
     },
     {
       id: "2BR",
       name: "2 Bedroom Cabin",
       price: 135000,
-      video: "/2BR.mp4",
+      video: "/2BR Motion.mp4",
     },
     {
       id: "3BR",

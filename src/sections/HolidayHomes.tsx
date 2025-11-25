@@ -109,7 +109,7 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                     ) : key === "1BR" ? (
                       <div className="relative w-full h-full min-h-[320px]">
                         <video
-                          src="/1br-cabin-video.mp4"
+                          src="/1BR Motion.mp4"
                           autoPlay
                           loop
                           muted
@@ -122,7 +122,7 @@ export const HolidayHomesPage: React.FC<HolidayHomesProps> = ({
                     ) : key === "2BR" ? (
                       <div className="relative w-full h-full min-h-[320px]">
                         <video
-                          src="/2BR.mp4"
+                          src="/2BR Motion.mp4"
                           autoPlay
                           loop
                           muted

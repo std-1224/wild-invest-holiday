@@ -1913,7 +1913,7 @@ const WildThingsWebsite = () => {
                           }}
                         >
                           <video
-                            src="/1br-cabin-video.mp4"
+                            src="/1BR Motion.mp4"
                             autoPlay
                             loop
                             muted
@@ -1938,7 +1938,7 @@ const WildThingsWebsite = () => {
                           }}
                         >
                           <video
-                            src="/2BR.mp4"
+                            src="/2BR Motion.mp4"
                             autoPlay
                             loop
                             muted
