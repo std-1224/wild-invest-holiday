@@ -13,6 +13,7 @@ import { CalendlyButton } from "../../components/CalendlyButton";
 import { HoldingDepositModal } from "../../components/Modals/HoldingDepositModal";
 import { SiteSelector } from "../../components/SiteSelector";
 import CabinImageSlider from "../../components/CabinImageSlider";
+import { CabinDetailPage } from "../CabinDetailPage";
 import apiClient from "../../api/client";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -51,6 +52,8 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
   const [locations, setLocations] = useState<any[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [locationSiteCounts, setLocationSiteCounts] = useState<Record<string, number>>({});
+  const [showCabinDetail, setShowCabinDetail] = useState(false);
+  const [selectedCabinType, setSelectedCabinType] = useState<CabinType | null>(null);
 
   // Load locations on mount
   useEffect(() => {
@@ -112,6 +115,24 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
     roiInputs.nightlyRate,
     selectedExtras
   );
+
+  // Show cabin detail page if a cabin is selected
+  if (showCabinDetail && selectedCabinType) {
+    return (
+      <CabinDetailPage
+        cabinType={selectedCabinType}
+        onBack={() => {
+          setShowCabinDetail(false);
+          setSelectedCabinType(null);
+        }}
+        onSuccess={() => {
+          setShowCabinDetail(false);
+          setSelectedCabinType(null);
+          onInvest({ cabinType: selectedCabinType });
+        }}
+      />
+    );
+  }
 
   return (
     <div className="pt-20 min-h-screen w-full max-w-full overflow-x-hidden bg-[#f5f5f5]">
@@ -246,13 +267,8 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
 
                       <button
                         onClick={() => {
-                          // Scroll to ROI calculator to select extras and site
-                          const roiCalculator = document.querySelector('.md\\:sticky');
-                          if (roiCalculator) {
-                            roiCalculator.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          }
-                          // Set the cabin type in ROI calculator
-                          handleCabinTypeChange(key as CabinType);
+                          setSelectedCabinType(key as CabinType);
+                          setShowCabinDetail(true);
                         }}
                         className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 mb-2 bg-[#ffcf00] text-[#0e181f]"
                       >
