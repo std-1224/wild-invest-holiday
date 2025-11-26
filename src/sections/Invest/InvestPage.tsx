@@ -45,6 +45,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
   const [showHoldingDepositModal, setShowHoldingDepositModal] = useState(false);
   const [selectedCabinForDeposit, setSelectedCabinForDeposit] = useState<any>(null);
   const [expandedExtras, setExpandedExtras] = useState<Record<string, boolean>>({});
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [showSiteSelector, setShowSiteSelector] = useState(false);
   const [selectedSite, setSelectedSite] = useState<any>(null);
   const [locations, setLocations] = useState<any[]>([]);
@@ -57,11 +58,6 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
         const response = await apiClient.getLocations();
         if (response.success && response.locations) {
           setLocations(response.locations);
-          // Auto-select first active location
-          const activeLocation = response.locations.find((loc: any) => loc.status === 'active');
-          if (activeLocation) {
-            setSelectedLocation(activeLocation);
-          }
         }
       } catch (error) {
         console.error('Failed to load locations:', error);
@@ -608,7 +604,10 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                     });
                   }
 
-                  setShowSiteSelector(true);
+                  // Reset selections and show location selector first
+                  setSelectedLocation(null);
+                  setSelectedSite(null);
+                  setShowLocationSelector(true);
                 }}
                 className="w-full py-4 rounded-lg font-bold transition-all hover:opacity-90 mb-4 bg-[#ffcf00] text-[#0e181f] text-lg"
               >
@@ -625,12 +624,113 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
       </div>
       <InvestFaqs />
 
-      {/* Site Selection Modal */}
+      {/* Location Selection Modal - Step 1 */}
+      {showLocationSelector && selectedCabinForDeposit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
+              📍 Step 1: Select Your Location
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Choose the location where you'd like to invest in a cabin.
+            </p>
+
+            {/* Summary of selections */}
+            <div className="bg-[#86dbdf]/10 border border-[#86dbdf] rounded-lg p-4 mb-6">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-600 mb-1">Cabin Type:</p>
+                  <p className="font-bold text-[#0e181f]">{selectedCabinForDeposit.cabinType}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600 mb-1">Total Investment:</p>
+                  <p className="font-bold text-[#0e181f]">${selectedCabinForDeposit.totalAmount.toLocaleString()}</p>
+                </div>
+                {selectedCabinForDeposit.selectedExtras && selectedCabinForDeposit.selectedExtras.length > 0 && (
+                  <div className="col-span-2">
+                    <p className="text-gray-600 mb-1">Selected Extras:</p>
+                    <p className="font-bold text-[#0e181f]">
+                      {selectedCabinForDeposit.selectedExtras.map((extraId: string) => {
+                        const extra = getExtrasForCabin(selectedCabinForDeposit.cabinType).find(e => e.id === extraId);
+                        return extra?.name;
+                      }).join(', ')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Location Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {locations.filter((loc: any) => loc.status === 'active').map((location: any) => (
+                <button
+                  key={location._id}
+                  onClick={() => setSelectedLocation(location)}
+                  className={`p-6 rounded-lg border-2 transition-all text-left hover:scale-[1.02] ${
+                    selectedLocation?._id === location._id
+                      ? "border-[#ec874c] bg-[#ec874c]/10"
+                      : "border-gray-300 bg-white hover:border-[#86dbdf]"
+                  }`}
+                >
+                  <h3 className="text-xl font-bold text-[#0e181f] mb-2">
+                    {location.name}
+                  </h3>
+                  {location.description && (
+                    <p className="text-sm text-gray-600 mb-3">
+                      {location.description}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="px-3 py-1 bg-[#86dbdf]/20 text-[#0e181f] rounded-full font-semibold">
+                      {location.totalSites || 0} sites available
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {locations.filter((loc: any) => loc.status === 'active').length === 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-yellow-800 text-sm">
+                  No active locations available at the moment. Please contact us for more information.
+                </p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowLocationSelector(false);
+                  setSelectedCabinForDeposit(null);
+                  setSelectedLocation(null);
+                }}
+                className="flex-1 px-4 py-3 rounded-lg font-bold transition-all bg-gray-200 text-gray-800 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              {selectedLocation && (
+                <button
+                  onClick={() => {
+                    setShowLocationSelector(false);
+                    setShowSiteSelector(true);
+                  }}
+                  className="flex-1 px-4 py-3 rounded-lg font-bold transition-all bg-[#ffcf00] text-[#0e181f] hover:opacity-90"
+                >
+                  Continue to Site Selection →
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Site Selection Modal - Step 2 */}
       {showSiteSelector && selectedCabinForDeposit && selectedLocation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
-              🗺️ Step 1: Select Your Site Location
+              🗺️ Step 2: Select Your Site Number
             </h2>
             <p className="text-sm text-gray-600 mb-2">
               Choose your preferred site number at {selectedLocation.name}. Each site has a specific location within the park.
@@ -639,6 +739,10 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
             {/* Summary of selections */}
             <div className="bg-[#86dbdf]/10 border border-[#86dbdf] rounded-lg p-4 mb-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-600 mb-1">Location:</p>
+                  <p className="font-bold text-[#0e181f]">{selectedLocation.name}</p>
+                </div>
                 <div>
                   <p className="text-gray-600 mb-1">Cabin Type:</p>
                   <p className="font-bold text-[#0e181f]">{selectedCabinForDeposit.cabinType}</p>
@@ -670,17 +774,19 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
               selectedSiteId={selectedSite?._id}
             />
 
-            {selectedSite && (
-              <div className="mt-6 flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowSiteSelector(false);
-                    setSelectedSite(null);
-                  }}
-                  className="flex-1 px-4 py-3 rounded-lg font-bold transition-all bg-gray-200 text-gray-800 hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
+            {/* Action Buttons */}
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowSiteSelector(false);
+                  setSelectedSite(null);
+                  setShowLocationSelector(true);
+                }}
+                className="flex-1 px-4 py-3 rounded-lg font-bold transition-all bg-gray-200 text-gray-800 hover:bg-gray-300"
+              >
+                ← Back to Locations
+              </button>
+              {selectedSite && (
                 <button
                   onClick={() => {
                     setShowSiteSelector(false);
@@ -690,22 +796,8 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                 >
                   Continue to Deposit Payment →
                 </button>
-              </div>
-            )}
-
-            {!selectedSite && (
-              <div className="mt-6">
-                <button
-                  onClick={() => {
-                    setShowSiteSelector(false);
-                    setSelectedCabinForDeposit(null);
-                  }}
-                  className="w-full px-4 py-3 rounded-lg font-bold transition-all bg-gray-200 text-gray-800 hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

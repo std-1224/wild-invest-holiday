@@ -101,7 +101,7 @@ export const SiteSelector: React.FC<SiteSelectorProps> = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-[#0e181f]">
-          Select Your Site Location
+          Available Sites
         </h3>
         {location?.siteMapUrl && (
           <a
