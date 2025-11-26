@@ -221,7 +221,7 @@ export const cabins = {
   "1BR": {
     name: "1 Bedroom Cabin",
     price: 190000,
-    siteFee: 134,
+    siteFee: 268,
     bedrooms: 1,
     image: "/1br/1BR - Front.png",
     images: cabinImages["1BR"],
