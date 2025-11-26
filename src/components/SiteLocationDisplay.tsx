@@ -78,7 +78,7 @@ export const SiteLocationDisplay: React.FC<SiteLocationDisplayProps> = ({
   const displaySiteDetails = siteDetails || (investment.siteNumber ? {
     siteNumber: investment.siteNumber,
     cabinType: investment.cabinType,
-    siteLeaseFee: investment.siteLeaseFee || 7000,
+    siteLeaseFee: investment.siteLeaseFee || 14000,
     status: "sold",
   } : null);
 

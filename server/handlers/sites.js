@@ -137,7 +137,7 @@ export async function handleCreateSite(req, res) {
       siteNumber,
       cabinType,
       price,
-      siteLeaseFee: siteLeaseFee || 7000,
+      siteLeaseFee: siteLeaseFee || 14000,
       status: 'available',
       features: features || [],
     });

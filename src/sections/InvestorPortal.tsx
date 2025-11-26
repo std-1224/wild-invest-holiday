@@ -134,7 +134,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
       ],
       purchasedExtras: ["furniture", "linen"], // Already purchased extras
       siteNumber: "A-42", // Mock site number for admin demo
-      siteLeaseFee: 7000, // Mock site lease fee
+      siteLeaseFee: 14000, // Mock site lease fee
       totalBookings: 256, // Mock total bookings
     },
     {
@@ -165,7 +165,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
       ],
       purchasedExtras: ["solar"], // Already purchased extras
       siteNumber: "B-18", // Mock site number for admin demo
-      siteLeaseFee: 7000, // Mock site lease fee
+      siteLeaseFee: 14000, // Mock site lease fee
       totalBookings: 189, // Mock total bookings
     },
   ];
@@ -339,7 +339,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
               location: locationName,
               siteNumber: siteNumber,
               siteId: cabin.siteId?._id || cabin.siteId,
-              siteLeaseFee: cabin.siteId?.siteLeaseFee || 7000,
+              siteLeaseFee: cabin.siteId?.siteLeaseFee || 14000,
               purchaseDate: purchaseDate,
               purchasePrice: cabin.purchasePrice || 0,
               currentValue: cabin.purchasePrice || 0, // TODO: Add appreciation logic

@@ -92,7 +92,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
     siteNumber: "",
     cabinType: "1BR",
     price: 0,
-    siteLeaseFee: 7000,
+    siteLeaseFee: 14000,
   });
   const [uploadingSiteMap, setUploadingSiteMap] = useState(false);
   const [siteMapFile, setSiteMapFile] = useState<File | null>(null);
@@ -486,7 +486,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
           siteNumber: "",
           cabinType: "1BR",
           price: 0,
-          siteLeaseFee: 7000,
+          siteLeaseFee: 14000,
         });
         loadLocationSites(selectedLocation._id);
         setTimeout(() => setSuccess(""), 3000);
@@ -552,7 +552,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
         siteNumber: String(i),
         cabinType: '1BR',
         price: 0, // Admin will need to update prices
-        siteLeaseFee: 7000,
+        siteLeaseFee: 14000,
         status: 'available',
       });
     }
@@ -564,7 +564,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
         siteNumber: String(i),
         cabinType: '2BR',
         price: 0, // Admin will need to update prices
-        siteLeaseFee: 7000,
+        siteLeaseFee: 14000,
         status: 'available',
       });
     }
