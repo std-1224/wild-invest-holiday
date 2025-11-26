@@ -146,89 +146,230 @@ export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Left: Media Gallery */}
-        <div className="space-y-4">
-          {/* Main Media Display */}
-          <div
-            className="relative bg-black rounded-xl overflow-hidden"
-            style={{ height: "500px" }}
-          >
-            {allMedia[selectedMediaIndex].type === "video" ? (
-              <video
-                src={allMedia[selectedMediaIndex].src}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <img
-                src={allMedia[selectedMediaIndex].src}
-                alt={`${cabin.name} view ${selectedMediaIndex}`}
-                className="w-full h-full object-cover"
-              />
-            )}
-
-            {/* Expand button */}
-            <button
-              onClick={() => setShowFullScreen(true)}
-              className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-lg transition-all"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left: Media Gallery */}
+          <div className="space-y-4">
+            {/* Main Media Display */}
+            <div
+              className="relative bg-black rounded-xl overflow-hidden"
+              style={{ height: "500px" }}
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+              {allMedia[selectedMediaIndex].type === "video" ? (
+                <video
+                  src={allMedia[selectedMediaIndex].src}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
                 />
-              </svg>
-            </button>
-          </div>
+              ) : (
+                <img
+                  src={allMedia[selectedMediaIndex].src}
+                  alt={`${cabin.name} view ${selectedMediaIndex}`}
+                  className="w-full h-full object-cover"
+                />
+              )}
 
-          {/* Thumbnail Scroll */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {allMedia.map((media, index) => (
+              {/* Expand button */}
               <button
-                key={index}
-                onClick={() => setSelectedMediaIndex(index)}
-                className={`flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 transition-all ${
-                  selectedMediaIndex === index
-                    ? "border-[#ffcf00] scale-105"
-                    : "border-gray-300 hover:border-[#86dbdf]"
-                }`}
+                onClick={() => setShowFullScreen(true)}
+                className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-lg transition-all"
               >
-                {media.type === "video" ? (
-                  <div className="relative w-full h-full bg-black">
-                    <video
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Thumbnail Scroll */}
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {allMedia.map((media, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedMediaIndex(index)}
+                  className={`flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 transition-all ${
+                    selectedMediaIndex === index
+                      ? "border-[#ffcf00] scale-105"
+                      : "border-gray-300 hover:border-[#86dbdf]"
+                  }`}
+                >
+                  {media.type === "video" ? (
+                    <div className="relative w-full h-full bg-black">
+                      <video
+                        src={media.src}
+                        muted
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <svg
+                          className="w-8 h-8 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                        </svg>
+                      </div>
+                    </div>
+                  ) : (
+                    <img
                       src={media.src}
-                      muted
+                      alt={`Thumbnail ${index}`}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <svg
-                        className="w-8 h-8 text-white"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                      </svg>
-                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Right: Cabin Details & Purchase Flow */}
+          <div className="space-y-6">
+            {/* Cabin Info */}
+            <div className="bg-white rounded-xl p-6 shadow-lg">
+              <h2 className="text-3xl font-bold text-[#0e181f] mb-2">
+                {cabin.name}
+              </h2>
+              <div className="text-4xl font-bold text-[#ffcf00] mb-4">
+                ${cabin.price.toLocaleString()}{" "}
+                <span className="text-lg text-gray-600">+ GST</span>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Off Peak:</span>
+                  <span className="font-semibold">
+                    ${cabin.offPeakRate}/night
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Peak:</span>
+                  <span className="font-semibold">${cabin.peakRate}/night</span>
+                </div>
+                <div className="border-t pt-3">
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>${cabin.siteFee} + GST site fee per week</span>
                   </div>
-                ) : (
-                  <img
-                    src={media.src}
-                    alt={`Thumbnail ${index}`}
-                    className="w-full h-full object-cover"
-                  />
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>20% management fee</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Extras Selection */}
+            <div className="bg-white rounded-xl p-6 shadow-lg">
+              <h3 className="text-xl font-bold text-[#0e181f] mb-4">
+                Optional Extras
+              </h3>
+              <div className="space-y-3">
+                {getExtrasForCabin(cabinType).map((extra) => (
+                  <label
+                    key={extra.id}
+                    className="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-[#86dbdf]"
+                    style={{
+                      borderColor: selectedExtras.includes(extra.id)
+                        ? "#ffcf00"
+                        : "#e5e7eb",
+                      backgroundColor: selectedExtras.includes(extra.id)
+                        ? "#fffbeb"
+                        : "white",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedExtras.includes(extra.id)}
+                      onChange={() => toggleExtra(extra.id)}
+                      className="mt-1 w-5 h-5 text-[#ffcf00] rounded focus:ring-[#ffcf00]"
+                    />
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <span className="font-semibold text-[#0e181f]">
+                          {extra.name}
+                        </span>
+                        <span className="font-bold text-[#ffcf00]">
+                          +${extra.price.toLocaleString()}
+                        </span>
+                      </div>
+                      {extra.description && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          {extra.description}
+                        </p>
+                      )}
+                      {extra.roiImpact && (
+                        <p className="text-xs text-green-600 mt-1">
+                          +{extra.roiImpact}% ROI improvement
+                        </p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Investment Summary */}
+            <div className="bg-gradient-to-br from-[#0e181f] to-[#1a2832] rounded-xl p-6 shadow-lg">
+              <h3 className="text-xl font-bold mb-4">Investment Summary</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Cabin Price:</span>
+                  <span className="font-semibold">
+                    ${cabin.price.toLocaleString()}
+                  </span>
+                </div>
+                {selectedExtras.length > 0 && (
+                  <div className="flex justify-between">
+                    <span>Extras:</span>
+                    <span className="font-semibold">
+                      +$
+                      {getExtrasForCabin(cabinType)
+                        .filter((e) => selectedExtras.includes(e.id))
+                        .reduce((sum, e) => sum + e.price, 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
                 )}
-              </button>
-            ))}
+                <div className="border-t border-white/20 pt-2 mt-2">
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total Investment:</span>
+                    <span className="text-[#ffcf00]">
+                      ${roiResults.totalInvestment.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-white/20">
+                  <div className="flex justify-between">
+                    <span>Estimated Annual Return:</span>
+                    <span className="font-semibold text-[#86dbdf]">
+                      {/* ${roiResults.annualReturn} */}
+                    </span>
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <span>ROI:</span>
+                    <span className="font-semibold text-[#86dbdf]">
+                      {roiResults.roi.toFixed(2)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Purchase Button */}
+            <button
+              onClick={handleStartPurchase}
+              className="w-full py-4 bg-[#ffcf00] hover:bg-[#e6bb00] text-[#0e181f] font-bold text-lg rounded-xl transition-all shadow-lg hover:shadow-xl"
+            >
+              Reserve Your Cabin - $100 Deposit
+            </button>
           </div>
         </div>
       </div>
@@ -276,7 +417,7 @@ export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
               <img
                 src={allMedia[selectedMediaIndex].src}
                 alt={`${cabin.name} view ${selectedMediaIndex}`}
-                className="max-w-full max-h-full object-contain"
+                // className="max-w-full max-h-full object-contain"
               />
             )}
 
