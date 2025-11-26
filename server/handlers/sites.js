@@ -271,3 +271,66 @@ export async function handleBulkCreateSites(req, res) {
   }
 }
 
+/**
+ * PUT /api/admin/sites/bulk-update-lease-fee
+ * Update site lease fee for all sites (admin only)
+ */
+export async function handleBulkUpdateSiteLeaseFee(req, res) {
+  try {
+    await connectDB();
+
+    // Verify admin authentication
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+      });
+    }
+
+    const decoded = verifyToken(token);
+    const user = await User.findById(decoded.id);
+
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required',
+      });
+    }
+
+    const { siteLeaseFee, locationId } = req.body;
+
+    if (siteLeaseFee === undefined || siteLeaseFee === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide siteLeaseFee',
+      });
+    }
+
+    // Build query - update all sites or just for a specific location
+    const query = locationId ? { locationId } : {};
+
+    // Update all matching sites
+    const result = await Site.updateMany(
+      query,
+      { $set: { siteLeaseFee } }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: locationId
+        ? `Updated ${result.modifiedCount} sites at this location`
+        : `Updated ${result.modifiedCount} sites across all locations`,
+      modifiedCount: result.modifiedCount,
+      matchedCount: result.matchedCount,
+    });
+  } catch (error) {
+    console.error('Error bulk updating site lease fee:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update site lease fee',
+      error: error.message,
+    });
+  }
+}
+

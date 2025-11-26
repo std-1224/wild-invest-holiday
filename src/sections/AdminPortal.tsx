@@ -98,6 +98,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
   const [siteMapFile, setSiteMapFile] = useState<File | null>(null);
   const [deletingLocationId, setDeletingLocationId] = useState<string | null>(null);
   const [confirmDeleteLocationId, setConfirmDeleteLocationId] = useState<string | null>(null);
+  const [showBulkUpdateLeaseFee, setShowBulkUpdateLeaseFee] = useState(false);
+  const [locationLeaseFees, setLocationLeaseFees] = useState<{ [key: string]: number }>({});
+  const [updatingLeaseFee, setUpdatingLeaseFee] = useState(false);
 
   // Assign Cabin state
   const [showAssignCabinForm, setShowAssignCabinForm] = useState(false);
@@ -360,6 +363,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
       const response = await apiClient.getLocations();
       if (response.success) {
         setLocations(response.locations || []);
+
+        // Initialize location lease fees with default value of 14000
+        const initialFees: { [key: string]: number } = {};
+        (response.locations || []).forEach((loc: any) => {
+          initialFees[loc._id] = 14000;
+        });
+        setLocationLeaseFees(initialFees);
       } else {
         setError((response as any).error || "Failed to load locations");
       }
@@ -584,6 +594,94 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
       setError(err.message || "Failed to create sites");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkUpdateAllLeaseFees = async () => {
+    // Validate all location lease fees
+    const invalidLocations = locations.filter(
+      (loc) => !locationLeaseFees[loc._id] || locationLeaseFees[loc._id] <= 0
+    );
+
+    if (invalidLocations.length > 0) {
+      setError("Please enter valid lease fees for all locations");
+      return;
+    }
+
+    const confirmMessage = `Update site lease fees for all ${locations.length} locations? This will update all sites at each location with their respective lease fees.`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setUpdatingLeaseFee(true);
+    setError("");
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      // Update each location's sites with their specific lease fee
+      for (const location of locations) {
+        try {
+          const response = await apiClient.bulkUpdateSiteLeaseFee(
+            locationLeaseFees[location._id],
+            location._id
+          );
+          if (response.success) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } catch (err) {
+          errorCount++;
+          console.error(`Failed to update ${location.name}:`, err);
+        }
+      }
+
+      if (errorCount === 0) {
+        setSuccess(`Successfully updated site lease fees for all ${successCount} locations!`);
+        setShowBulkUpdateLeaseFee(false);
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError(`Updated ${successCount} locations, but ${errorCount} failed. Please check and try again.`);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to update site lease fees");
+    } finally {
+      setUpdatingLeaseFee(false);
+    }
+  };
+
+  const handleUpdateLocationLeaseFee = async (locationId: string, leaseFee: number) => {
+    if (!leaseFee || leaseFee <= 0) {
+      setError("Please enter a valid site lease fee");
+      return;
+    }
+
+    const location = locations.find((loc) => loc._id === locationId);
+    const confirmMessage = `Update site lease fee to $${leaseFee.toLocaleString()} for all sites at ${location?.name}?`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setUpdatingLeaseFee(true);
+    setError("");
+    try {
+      const response = await apiClient.bulkUpdateSiteLeaseFee(leaseFee, locationId);
+      if (response.success) {
+        setSuccess(response.message || "Site lease fees updated successfully!");
+        if (selectedLocation?._id === locationId) {
+          loadLocationSites(locationId);
+        }
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError((response as any).error || "Failed to update site lease fees");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to update site lease fees");
+    } finally {
+      setUpdatingLeaseFee(false);
     }
   };
 
@@ -1259,8 +1357,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
         {/* Location Management Tab */}
         {activeTab === "locations" && (
           <div className="space-y-6">
-            {/* Create Location Button */}
-            <div className="flex justify-end">
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowBulkUpdateLeaseFee(!showBulkUpdateLeaseFee)}
+                className="px-6 py-3 bg-[#86dbdf] text-[#0e181f] rounded-lg font-bold hover:opacity-90 transition-opacity"
+              >
+                {showBulkUpdateLeaseFee ? "Cancel" : "Update All Site Lease Fees"}
+              </button>
               <button
                 onClick={() => setShowLocationForm(!showLocationForm)}
                 className="px-6 py-3 bg-[#ffcf00] text-[#0e181f] rounded-lg font-bold hover:opacity-90 transition-opacity"
@@ -1268,6 +1372,71 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
                 {showLocationForm ? "Cancel" : "Create New Location"}
               </button>
             </div>
+
+            {/* Bulk Update Lease Fee Form */}
+            {showBulkUpdateLeaseFee && (
+              <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-[#86dbdf]">
+                <h2 className="text-2xl font-bold mb-4 text-[#0e181f]">
+                  Update Site Lease Fees by Location
+                </h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Set different site lease fees for each location. Each location can have its own lease fee amount.
+                </p>
+                <div className="space-y-4">
+                  {/* Individual location lease fee inputs */}
+                  <div className="space-y-3">
+                    {locations.map((location) => (
+                      <div key={location._id} className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1">
+                            <label className="block text-sm font-medium mb-1 text-[#0e181f]">
+                              {location.name}
+                            </label>
+                            <p className="text-xs text-gray-500">
+                              {location.totalSites} sites total
+                            </p>
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              type="number"
+                              value={locationLeaseFees[location._id] || 14000}
+                              onChange={(e) =>
+                                setLocationLeaseFees({
+                                  ...locationLeaseFees,
+                                  [location._id]: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86dbdf]"
+                              placeholder="e.g., 14000"
+                              min="0"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              ${(locationLeaseFees[location._id] || 14000).toLocaleString()}/year
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleBulkUpdateAllLeaseFees}
+                      disabled={updatingLeaseFee}
+                      className="flex-1 px-6 py-3 bg-[#ec874c] text-white rounded-lg font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {updatingLeaseFee ? "Updating..." : `Update All ${locations.length} Locations`}
+                    </button>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>ℹ️ Info:</strong> This will update all sites at each location with their respective lease fees. Each location can have a different fee.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Create Location Form */}
             {showLocationForm && (
@@ -1547,6 +1716,40 @@ export const AdminPortal: React.FC<AdminPortalProps> = () => {
                             >
                               {loading ? "Creating..." : `Auto-Create ${location.totalSites} Sites`}
                             </button>
+                          )}
+
+                          {/* Update Lease Fee for This Location */}
+                          {locationSites.length > 0 && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                              <label className="block text-xs font-medium mb-2 text-[#0e181f]">
+                                Update Site Lease Fee for {location.name}
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="number"
+                                  value={locationLeaseFees[location._id] || 14000}
+                                  onChange={(e) =>
+                                    setLocationLeaseFees({
+                                      ...locationLeaseFees,
+                                      [location._id]: parseFloat(e.target.value) || 0,
+                                    })
+                                  }
+                                  className="flex-1 px-2 py-1 border rounded text-sm"
+                                  placeholder="e.g., 14000"
+                                  min="0"
+                                />
+                                <button
+                                  onClick={() => handleUpdateLocationLeaseFee(location._id, locationLeaseFees[location._id] || 14000)}
+                                  disabled={updatingLeaseFee}
+                                  className="px-4 py-1 bg-[#ec874c] text-white rounded text-sm font-bold hover:opacity-90 disabled:opacity-50"
+                                >
+                                  {updatingLeaseFee ? "Updating..." : `Update ${locationSites.length} Sites`}
+                                </button>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-1">
+                                This will update all {locationSites.length} sites at this location to ${(locationLeaseFees[location._id] || 14000).toLocaleString()}/year
+                              </p>
+                            </div>
                           )}
 
                           {/* Add Single Site Button */}

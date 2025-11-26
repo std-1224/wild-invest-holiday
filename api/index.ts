@@ -70,6 +70,7 @@ import {
   handleCreateSite,
   handleUpdateSite,
   handleBulkCreateSites,
+  handleBulkUpdateSiteLeaseFee,
 } from '../server/handlers/sites.js';
 import {
   handleGetOwnerCabins,
@@ -283,7 +284,9 @@ export default async function handler(
       return await handleGetLocations(req, res);
     }
     // Site routes
-    else if (path.includes('/admin/sites/bulk-create') && req.method === 'POST') {
+    else if (path.includes('/admin/sites/bulk-update-lease-fee') && req.method === 'PUT') {
+      return await handleBulkUpdateSiteLeaseFee(req, res);
+    } else if (path.includes('/admin/sites/bulk-create') && req.method === 'POST') {
       return await handleBulkCreateSites(req, res);
     } else if (path.includes('/admin/sites') && req.method === 'POST') {
       return await handleCreateSite(req, res);

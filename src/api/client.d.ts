@@ -159,6 +159,7 @@ export class WildThingsAPI {
   deleteLocation(locationId: string): Promise<{ success: boolean; message: string; deletedSitesCount: number }>;
   createSite(siteData: any): Promise<{ success: boolean; message: string; site: any }>;
   bulkCreateSites(sites: any[]): Promise<{ success: boolean; message: string; sites: any[]; count: number }>;
+  bulkUpdateSiteLeaseFee(siteLeaseFee: number, locationId?: string | null): Promise<{ success: boolean; message: string; modifiedCount: number; matchedCount: number }>;
   createCabinPurchase(purchaseData: any): Promise<{ success: boolean; message: string; cabin: any }>;
   adminAssignCabin(assignmentData: any): Promise<{ success: boolean; message: string; cabin: any }>;
   getAvailableSites(locationId: string, cabinType?: string): Promise<{ success: boolean; sites: any[]; count: number }>;

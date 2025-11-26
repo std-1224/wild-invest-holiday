@@ -80,6 +80,7 @@ import {
   handleCreateSite,
   handleUpdateSite,
   handleBulkCreateSites,
+  handleBulkUpdateSiteLeaseFee,
 } from '../server/handlers/sites.js';
 import {
   handleHoldingDeposit,
@@ -474,6 +475,24 @@ app.get('/api/sites/:locationId/available', async (req, res) => {
 });
 
 /**
+ * POST /api/admin/sites/bulk-create
+ * Create multiple sites at once (Admin only)
+ * NOTE: Must be defined BEFORE /api/admin/sites/:siteId to avoid param matching
+ */
+app.post('/api/admin/sites/bulk-create', async (req, res) => {
+  await handleBulkCreateSites(req, res);
+});
+
+/**
+ * PUT /api/admin/sites/bulk-update-lease-fee
+ * Update site lease fee for all sites (Admin only)
+ * NOTE: Must be defined BEFORE /api/admin/sites/:siteId to avoid param matching
+ */
+app.put('/api/admin/sites/bulk-update-lease-fee', async (req, res) => {
+  await handleBulkUpdateSiteLeaseFee(req, res);
+});
+
+/**
  * POST /api/admin/sites
  * Create a new site (Admin only)
  */
@@ -487,14 +506,6 @@ app.post('/api/admin/sites', async (req, res) => {
  */
 app.put('/api/admin/sites/:siteId', async (req, res) => {
   await handleUpdateSite(req, res);
-});
-
-/**
- * POST /api/admin/sites/bulk-create
- * Create multiple sites at once (Admin only)
- */
-app.post('/api/admin/sites/bulk-create', async (req, res) => {
-  await handleBulkCreateSites(req, res);
 });
 
 // ============================================================================

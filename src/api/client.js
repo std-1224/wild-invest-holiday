@@ -786,6 +786,19 @@ class WildThingsAPI {
     });
   }
 
+  /**
+   * Bulk update site lease fee for all sites (admin only)
+   * @param {number} siteLeaseFee - New site lease fee
+   * @param {string} locationId - Optional location ID to update only sites at that location
+   * @returns {Promise<Object>} Response with update count
+   */
+  async bulkUpdateSiteLeaseFee(siteLeaseFee, locationId = null) {
+    return this.request('/api/admin/sites/bulk-update-lease-fee', {
+      method: 'PUT',
+      body: JSON.stringify({ siteLeaseFee, locationId }),
+    });
+  }
+
   // Cabin methods
   /**
    * Search owners by name or email (admin only)
