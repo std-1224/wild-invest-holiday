@@ -46,7 +46,7 @@ export const Navbar = ({
         >
           <div
             className={`flex items-center justify-center transition-all duration-[360ms] ease-in-out will-change-[opacity,transform] ${
-              introActive ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.92]'
+              introActive ? "opacity-100 scale-100" : "opacity-0 scale-[0.92]"
             }`}
           >
             <img
@@ -326,6 +326,30 @@ export const Navbar = ({
                   Merch
                 </a>
               </li>
+              <li className="mb-2">
+                <button
+                  onClick={() => onNavigate && onNavigate("investor-portal")}
+                  className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
+                  style={{
+                    fontFamily:
+                      '"Helvetica Neue", Helvetica, Arial, sans-serif',
+                  }}
+                >
+                  MY ACCOUNT
+                </button>
+              </li>
+              <li className="mb-2">
+                <button
+                  onClick={onLogout}
+                  className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
+                  style={{
+                    fontFamily:
+                      '"Helvetica Neue", Helvetica, Arial, sans-serif',
+                  }}
+                >
+                  Logout
+                </button>
+              </li>
             </ul>
           </div>
         )}
@@ -337,7 +361,9 @@ export const Navbar = ({
           <button
             onClick={onLoginClick}
             className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
-            style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
+            style={{
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+            }}
           >
             Investor Login
           </button>
@@ -346,7 +372,7 @@ export const Navbar = ({
 
       {/* Logged In User Actions - Top Right (Fixed Position) */}
       {isLoggedIn && (
-        <div className="fixed top-0 right-5 flex gap-2 z-[1000]">
+        <div className="fixed top-0 right-5 flex gap-2 z-[1000] hidden lg:flex">
           {currentUser && (
             <div className="px-4 py-2 bg-[#0e181f] text-[#ffcf00] border-none rounded-b-lg font-bold text-xs shadow-md flex items-center gap-2">
               <span>👋</span>
@@ -356,14 +382,18 @@ export const Navbar = ({
           <button
             onClick={() => onNavigate && onNavigate("investor-portal")}
             className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
-            style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
+            style={{
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+            }}
           >
             MY ACCOUNT
           </button>
           <button
             onClick={onLogout}
             className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
-            style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
+            style={{
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+            }}
           >
             Logout
           </button>
