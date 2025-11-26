@@ -82,7 +82,7 @@ export const calculateROI = (...args: any[]) => {
     financingType === "financed" ? depositAmount || 0 : totalCabinPrice;
 
   // Wild Things specific costs based on cabin type
-  const siteFees = cabinType === "2BR" ? 14000 : 7000; // Annual site rental - $7,000 for 1BR, $14,000 for 2BR
+  const siteFees = 14000; // Annual site rental - $14000 for 1BR and for 2BR
   const cleaningMaintenance = 12775; // Fixed cleaning & maintenance cost (not shown separately but included)
 
   // Energy costs: $5,110/year if solar NOT selected, $0 if solar IS selected

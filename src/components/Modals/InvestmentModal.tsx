@@ -540,7 +540,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                     Site #{selectedSite?.siteNumber || "TBD"}
                   </p>
                   <p className="text-sm" style={{ color: colors.darkBlue }}>
-                    Lease: ${selectedSite?.siteLeaseFee?.toLocaleString() || "7,000"}/yr
+                    Lease: ${selectedSite?.siteLeaseFee?.toLocaleString() || "14,000"}/yr
                   </p>
                 </div>
                 <div>

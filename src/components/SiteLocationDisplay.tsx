@@ -116,7 +116,7 @@ export const SiteLocationDisplay: React.FC<SiteLocationDisplayProps> = ({
             <div>
               <p className="text-sm text-gray-600 mb-1">Annual Site Lease</p>
               <p className="text-lg font-bold text-[#0e181f]">
-                ${displaySiteDetails.siteLeaseFee?.toLocaleString() || "7,000"}/year
+                ${displaySiteDetails.siteLeaseFee?.toLocaleString() || "14,000"}/year
               </p>
             </div>
             <div>
