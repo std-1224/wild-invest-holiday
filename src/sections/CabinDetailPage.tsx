@@ -1,36 +1,48 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  cabins,
   cabinImages,
   cabinVideos,
   calculateROI,
-  getExtrasForCabin,
-  CabinType,
 } from "../config/mockCalculate";
 import apiClient from "../api/client";
 import { SiteSelector } from "../components/SiteSelector";
 import { HoldingDepositModal } from "../components/Modals/HoldingDepositModal";
+import { ROICalculator } from "../components/ROICalculator";
 import { useAuth } from "../contexts/AuthContext";
-
+type CabinType = "1BR" | "2BR";
 interface CabinDetailPageProps {
   cabinType: CabinType;
   onBack: () => void;
   onSuccess: () => void;
+  cabin: any;
+  roiInputs: {
+    cabinType: CabinType;
+    occupancyRate: number;
+    nightlyRate: number;
+  };
+  setRoiInputs: (inputs: {
+    cabinType: CabinType;
+    occupancyRate: number;
+    nightlyRate: number;
+  }) => void;
 }
 
 export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
   cabinType,
   onBack,
   onSuccess,
+  cabin,
+  roiInputs,
+  setRoiInputs,
 }) => {
   const { login } = useAuth();
-  const cabin = cabins[cabinType];
   const images = cabinImages[cabinType];
   const video = cabinVideos[cabinType];
 
   // Gallery state
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [showFullScreen, setShowFullScreen] = useState(false);
+  const [showFloorPlan, setShowFloorPlan] = useState(false);
   const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Purchase flow state
@@ -41,15 +53,21 @@ export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [showSiteSelector, setShowSiteSelector] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [locationSiteCounts, setLocationSiteCounts] = useState<
-    Record<string, number>
-  >({});
 
-  // Combine video and images for gallery
+  // Separate floor plan from regular images (floor plan is the last image)
+  const floorPlanImage = images[images.length - 1];
+  const regularImages = images.slice(0, -1);
+
+  // Combine video and regular images for gallery (excluding floor plan)
   const allMedia = [
     { type: "video", src: video },
-    ...images.map((img) => ({ type: "image", src: img })),
+    ...regularImages.map((img) => ({ type: "image", src: img })),
   ];
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
 
   // Load locations
   useEffect(() => {
@@ -77,21 +95,13 @@ export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
     }
   }, [selectedMediaIndex, showFullScreen]);
 
-  // Calculate ROI with selected extras
+  // Calculate ROI for total investment (used in HoldingDepositModal)
   const roiResults = calculateROI(
     cabinType,
-    70,
-    cabin.nightlyRate,
+    roiInputs.occupancyRate,
+    roiInputs.nightlyRate,
     selectedExtras
   );
-
-  const toggleExtra = (extraId: string) => {
-    setSelectedExtras((prev) =>
-      prev.includes(extraId)
-        ? prev.filter((id) => id !== extraId)
-        : [...prev, extraId]
-    );
-  };
 
   const handleStartPurchase = () => {
     setShowLocationSelector(true);
@@ -231,6 +241,27 @@ export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* Floor Plan Button */}
+            <button
+              onClick={() => setShowFloorPlan(true)}
+              className="w-full py-3 px-4 bg-[#ffcf00] text-[#0e181f] font-semibold rounded-lg flex items-center justify-center gap-2 transition-all"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                />
+              </svg>
+              View Floor Plan
+            </button>
           </div>
           {/* Right: Cabin Details & Purchase Flow */}
           <div className="space-y-6">
@@ -248,12 +279,12 @@ export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
                 <div className="flex justify-between">
                   <span className="text-gray-600">Off Peak:</span>
                   <span className="font-semibold">
-                    ${cabin.offPeakRate}/night
+                    ${cabin.rentOffPeak}/night
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Peak:</span>
-                  <span className="font-semibold">${cabin.peakRate}/night</span>
+                  <span className="font-semibold">${cabin.rentPeak}/night</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-xs text-gray-500">
@@ -266,110 +297,20 @@ export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
               </div>
             </div>
 
-            {/* Extras Selection */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold text-[#0e181f] mb-4">
-                Optional Extras
-              </h3>
-              <div className="space-y-3">
-                {getExtrasForCabin(cabinType).map((extra) => (
-                  <label
-                    key={extra.id}
-                    className="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-[#86dbdf]"
-                    style={{
-                      borderColor: selectedExtras.includes(extra.id)
-                        ? "#ffcf00"
-                        : "#e5e7eb",
-                      backgroundColor: selectedExtras.includes(extra.id)
-                        ? "#fffbeb"
-                        : "white",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedExtras.includes(extra.id)}
-                      onChange={() => toggleExtra(extra.id)}
-                      className="mt-1 w-5 h-5 text-[#ffcf00] rounded focus:ring-[#ffcf00]"
-                    />
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <span className="font-semibold text-[#0e181f]">
-                          {extra.name}
-                        </span>
-                        <span className="font-bold text-[#ffcf00]">
-                          +${extra.price.toLocaleString()}
-                        </span>
-                      </div>
-                      {extra.description && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          {extra.description}
-                        </p>
-                      )}
-                      {extra.roiImpact && (
-                        <p className="text-xs text-green-600 mt-1">
-                          +{extra.roiImpact}% ROI improvement
-                        </p>
-                      )}
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Investment Summary */}
-            <div className="bg-gradient-to-br from-[#0e181f] to-[#1a2832] rounded-xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold mb-4">Investment Summary</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Cabin Price:</span>
-                  <span className="font-semibold">
-                    ${cabin.price.toLocaleString()}
-                  </span>
-                </div>
-                {selectedExtras.length > 0 && (
-                  <div className="flex justify-between">
-                    <span>Extras:</span>
-                    <span className="font-semibold">
-                      +$
-                      {getExtrasForCabin(cabinType)
-                        .filter((e) => selectedExtras.includes(e.id))
-                        .reduce((sum, e) => sum + e.price, 0)
-                        .toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                <div className="border-t border-white/20 pt-2 mt-2">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total Investment:</span>
-                    <span className="text-[#ffcf00]">
-                      ${roiResults.totalInvestment.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-white/20">
-                  <div className="flex justify-between">
-                    <span>Estimated Annual Return:</span>
-                    <span className="font-semibold text-[#86dbdf]">
-                      {/* ${roiResults.annualReturn} */}
-                    </span>
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span>ROI:</span>
-                    <span className="font-semibold text-[#86dbdf]">
-                      {roiResults.roi.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Purchase Button */}
-            <button
-              onClick={handleStartPurchase}
-              className="w-full py-4 bg-[#ffcf00] hover:bg-[#e6bb00] text-[#0e181f] font-bold text-lg rounded-xl transition-all shadow-lg hover:shadow-xl"
-            >
-              Reserve Your Cabin - $100 Deposit
-            </button>
+            {/* ROI Calculator Section */}
+            <ROICalculator
+              cabinType={cabinType}
+              selectedExtras={selectedExtras}
+              onExtrasChange={setSelectedExtras}
+              showCabinSelector={false}
+              occupancyRate={roiInputs.occupancyRate}
+              onOccupancyRateChange={(rate) => setRoiInputs({ ...roiInputs, occupancyRate: rate })}
+              nightlyRate={roiInputs.nightlyRate}
+              onNightlyRateChange={(rate) => setRoiInputs({ ...roiInputs, nightlyRate: rate })}
+              cabin={cabin}
+              onReserve={handleStartPurchase}
+              actionTitle="Reserve Your Cabin - $100 Deposit"
+            />
           </div>
         </div>
       </div>
@@ -403,7 +344,7 @@ export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
           </div>
 
           {/* Main Media */}
-          <div className="flex-1 relative flex items-center justify-center">
+          <div className="flex-1 relative flex items-center justify-center overflow-y-auto">
             {allMedia[selectedMediaIndex].type === "video" ? (
               <video
                 src={allMedia[selectedMediaIndex].src}
@@ -417,7 +358,7 @@ export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
               <img
                 src={allMedia[selectedMediaIndex].src}
                 alt={`${cabin.name} view ${selectedMediaIndex}`}
-                // className="max-w-full max-h-full object-contain"
+                className="max-w-full h-[80vh] object-contain"
               />
             )}
 
@@ -646,6 +587,47 @@ export const CabinDetailPage: React.FC<CabinDetailPageProps> = ({
           selectedSite={selectedSite}
           siteMapUrl={selectedLocation.siteMapUrl || null}
         />
+      )}
+
+      {/* Floor Plan Modal */}
+      {showFloorPlan && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+          <div className="relative max-w-4xl w-full">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowFloorPlan(false)}
+              className="absolute -top-12 right-0 text-white hover:text-[#ffcf00] transition-colors"
+            >
+              <svg
+                className="w-8 h-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            {/* Floor Plan Image */}
+            <div className="bg-white rounded-xl overflow-hidden">
+              <div className="p-4 bg-[#0e181f] text-white">
+                <h3 className="text-xl font-bold text-center">
+                  {cabinType} Floor Plan
+                </h3>
+              </div>
+              <img
+                src={floorPlanImage}
+                alt={`${cabinType} Floor Plan`}
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

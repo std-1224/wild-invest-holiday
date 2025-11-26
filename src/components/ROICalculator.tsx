@@ -1,241 +1,347 @@
-import { useState } from "react";
-import { calculateROI } from "../config/mockCalculate";
+import React, { useState } from "react";
+import { Calculator } from "lucide-react";
+import {
+  cabins,
+  calculateROI,
+  defaultNightlyRates,
+  getExtrasForCabin,
+  cabinImages,
+} from "../config/mockCalculate";
+import CabinImageSlider from "./CabinImageSlider";
 
-type Inputs = {
-  cabinType: "1BR" | "2BR" | "3BR";
-  occupancyRate: number;
-  nightlyRate: number;
+type CabinType = "1BR" | "2BR";
+
+interface ROICalculatorProps {
+  cabinType: CabinType;
   selectedExtras: string[];
-};
+  onExtrasChange: (extras: string[]) => void;
+  onReserve: () => void;
+  showCabinSelector?: boolean;
+  onCabinTypeChange?: (type: CabinType) => void;
+  occupancyRate?: number;
+  onOccupancyRateChange?: (rate: number) => void;
+  nightlyRate?: number;
+  onNightlyRateChange?: (rate: number) => void;
+  cabin?: any;
+  actionTitle?: string;
+}
 
-// Investment System Components
-export const ROICalculator = ({ cabinType, onClose }: any) => {
-  const [inputs, setInputs] = useState<Inputs>({
-    cabinType: (cabinType as Inputs["cabinType"]) || "1BR",
-    occupancyRate: 70,
-    nightlyRate: cabinType === "1BR" ? 220 : cabinType === "2BR" ? 350 : 250,
-    selectedExtras: [],
-  });
+export const ROICalculator: React.FC<ROICalculatorProps> = ({
+  cabinType,
+  selectedExtras,
+  onExtrasChange,
+  onReserve,
+  showCabinSelector = true,
+  onCabinTypeChange,
+  occupancyRate = 70,
+  onOccupancyRateChange,
+  nightlyRate,
+  onNightlyRateChange,
+  cabin: propCabin,
+  actionTitle = "Select Site & Reserve →",
+}) => {
+  const [expandedExtras, setExpandedExtras] = useState<Record<string, boolean>>({});
 
-  const availableExtras = [
-    {
-      id: "furniture",
-      name: "Premium Furniture Package",
-      price: 12000,
-      nightlyImpact: 25,
-    },
-    {
-      id: "appliances",
-      name: "High-End Appliances",
-      price: 5000,
-      nightlyImpact: 15,
-    },
-    {
-      id: "solar",
-      name: "Off Grid Solar & Battery Package",
-      price: cabinType === "1BR" ? 20000 : cabinType === "2BR" ? 30000 : 40000,
-      nightlyImpact: 0,
-    },
-    {
-      id: "decor",
-      name: "Professional Interior Decor",
-      price: 2500,
-      nightlyImpact: 12,
-    },
-    {
-      id: "outdoor",
-      name: "Outdoor Furniture Set",
-      price: 2000,
-      nightlyImpact: 8,
-    },
-    {
-      id: "entertainment",
-      name: "Entertainment System",
-      price: 1500,
-      nightlyImpact: 10,
-    },
-  ];
+  const cabin = propCabin || cabins[cabinType];
+  const effectiveNightlyRate = nightlyRate ?? defaultNightlyRates[cabinType];
 
-  const roi = calculateROI(
-    inputs.cabinType,
-    inputs.occupancyRate,
-    inputs.nightlyRate,
-    inputs.selectedExtras
+  const roiResults = calculateROI(
+    cabinType,
+    occupancyRate,
+    effectiveNightlyRate,
+    selectedExtras
   );
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
-      <div className="bg-white rounded-2xl p-8 max-w-[800px] w-[90%] max-h-[90vh] overflow-y-auto relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 bg-transparent border-none text-2xl cursor-pointer"
-        >
-          ×
-        </button>
+  const toggleExtra = (extraId: string) => {
+    if (selectedExtras.includes(extraId)) {
+      onExtrasChange(selectedExtras.filter((id) => id !== extraId));
+    } else {
+      onExtrasChange([...selectedExtras, extraId]);
+    }
+  };
 
-        <h2 className="text-[2rem] font-black italic text-[#0e181f] mb-8 text-center font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
+  return (
+    <div className="bg-white rounded-lg shadow-xl p-6">
+      <div className="flex items-center mb-6">
+        <Calculator size={28} className="text-[#ffcf00] mr-3" />
+        <h2 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
           ROI CALCULATOR
         </h2>
+      </div>
 
-        <div className="grid grid-cols-2 gap-8">
-          {/* Inputs */}
+      <div className="space-y-4 mb-6">
+        {/* Cabin Type Selector */}
+        {showCabinSelector && onCabinTypeChange && (
           <div>
-            <h3 className="text-[#0e181f] mb-4">
-              Investment Details
-            </h3>
-
-            <div className="mb-4">
-              <label className="block mb-2 font-bold">
-                Cabin Type
-              </label>
-              <select
-                value={inputs.cabinType}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    cabinType: e.target.value as Inputs["cabinType"],
-                  })
-                }
-                className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
-              >
-                <option value="1BR">1 Bedroom - $110,000</option>
-                <option value="2BR">2 Bedroom - $135,000</option>
-                <option value="3BR">3 Bedroom - $160,000</option>
-              </select>
-            </div>
-
-            <div className="mb-4">
-              <label className="block mb-2 font-bold">
-                Occupancy Rate (%)
-              </label>
-              <input
-                type="number"
-                value={inputs.occupancyRate}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    occupancyRate: parseInt(e.target.value),
-                  })
-                }
-                className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block mb-2 font-bold">
-                Nightly Rate ($)
-              </label>
-              <input
-                type="number"
-                value={inputs.nightlyRate}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    nightlyRate: parseInt(e.target.value),
-                  })
-                }
-                className="w-full p-3 border-2 border-[#86dbdf] rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block mb-2 font-bold">
-                Premium Extras
-              </label>
-              {availableExtras.map((extra) => (
-                <label
-                  key={extra.id}
-                  className="flex items-center mb-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={inputs.selectedExtras.includes(extra.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setInputs({
-                          ...inputs,
-                          selectedExtras: [...inputs.selectedExtras, extra.id],
-                        });
-                      } else {
-                        setInputs({
-                          ...inputs,
-                          selectedExtras: inputs.selectedExtras.filter(
-                            (id) => id !== extra.id
-                          ),
-                        });
-                      }
-                    }}
-                    className="mr-2"
-                  />
-                  <span className="text-[0.9rem]">
-                    {extra.name} (+${extra.nightlyImpact}/night) - $
-                    {extra.price.toLocaleString()}
-                  </span>
-                </label>
-              ))}
+            <label className="block text-sm font-bold mb-2 text-[#0e181f]">
+              Cabin Type
+            </label>
+            <div className="space-y-3">
+              {Object.entries(cabins).map(([key, cabinData]) => {
+                const cabinKey = key as CabinType;
+                const isSelected = cabinType === cabinKey;
+                return (
+                  <div
+                    key={key}
+                    onClick={() => onCabinTypeChange(cabinKey)}
+                    className={`cursor-pointer rounded-lg overflow-hidden transition-all ${
+                      isSelected
+                        ? "border-[3px] border-[#ffcf00] shadow-[0_4px_12px_rgba(255,207,0,0.3)]"
+                        : "border-[3px] border-[#86dbdf]"
+                    }`}
+                  >
+                    <CabinImageSlider
+                      images={cabinImages[cabinKey] || []}
+                      autoplay={isSelected}
+                      interval={3000}
+                      className="h-32"
+                      showControls={false}
+                      showIndicators={true}
+                    />
+                    <div className="p-3 bg-white">
+                      <div className="font-bold text-sm text-[#0e181f]">
+                        {cabinData.name}
+                      </div>
+                      <div className="text-base font-bold text-[#ffcf00]">
+                        ${cabinData.price.toLocaleString("en-AU")} + GST
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
+        )}
 
-          {/* Results */}
+        {/* Occupancy Rate Input */}
+        {onOccupancyRateChange && (
           <div>
-            <h3 className="text-[#0e181f] mb-4">
-              Projected Returns
-            </h3>
-
-            <div className="bg-gradient-to-br from-[#ffcf00] to-[#ffd700] p-6 rounded-xl text-[#0e181f] mb-4">
-              <div className="text-[2rem] font-bold mb-2">
-                {roi.roi.toFixed(1)}% ROI
-              </div>
-              <div className="text-[0.9rem] opacity-80">
-                Annual Return on Investment
-              </div>
-            </div>
-
-            <div className="grid gap-3">
-              <div className="flex justify-between py-2 border-b border-[#eee]">
-                <span>Total Investment:</span>
-                <span className="font-bold">
-                  ${roi.totalInvestment.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-[#eee]">
-                <span>Annual Revenue:</span>
-                <span className="font-bold">
-                  ${roi.annualRevenue.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-[#eee]">
-                <span>Annual Profit:</span>
-                <span className="font-bold text-[#0e181f]">
-                  ${roi.annualProfit.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-[#eee]">
-                <span>Monthly Profit:</span>
-                <span className="font-bold text-[#0e181f]">
-                  ${roi.monthlyProfit.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span>Effective Nightly Rate:</span>
-                <span className="font-bold">
-                  ${roi.effectiveNightlyRate}
-                </span>
-              </div>
-            </div>
-
-            <button
-              className="w-full mt-6 px-6 py-3 rounded-lg font-semibold text-base no-underline inline-block transition-all duration-300 border-none cursor-pointer text-center bg-[#ffcf00] text-[#0e181f] hover:opacity-90 hover:-translate-y-0.5"
-              onClick={() => {
-                alert("Investment process would start here!");
-                onClose();
+            <label className="block text-sm font-bold mb-2 text-[#0e181f]">
+              Occupancy Rate (%)
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={occupancyRate || ""}
+              onChange={(e) => {
+                const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                onOccupancyRateChange(value === "" ? 0 : isNaN(value as number) ? 0 : value as number);
               }}
-            >
-              Proceed with Investment
-            </button>
+              className="w-full px-4 py-3 rounded-lg focus:outline-none border-2 border-[#86dbdf]"
+            />
+          </div>
+        )}
+
+        {/* Nightly Rate Input */}
+        {onNightlyRateChange && (
+          <div>
+            <label className="block text-sm font-bold mb-2 text-[#0e181f]">
+              Nightly Rate ($)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={effectiveNightlyRate || ""}
+              onChange={(e) => {
+                const value = e.target.value === "" ? "" : parseFloat(e.target.value);
+                onNightlyRateChange(value === "" ? 0 : isNaN(value as number) ? 0 : value as number);
+              }}
+              className="w-full px-4 py-3 rounded-lg focus:outline-none border-2 border-[#86dbdf]"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Optional Extras Selection */}
+      <div className="mb-6">
+        <h3 className="font-bold mb-3 text-[#0e181f]">Optional Extras</h3>
+        <div className="space-y-2">
+          {getExtrasForCabin(cabinType).map((extra) => {
+            const isExpanded = expandedExtras[extra.id] || false;
+
+            return (
+              <div
+                key={extra.id}
+                className={`rounded-lg border-2 transition-all ${
+                  selectedExtras.includes(extra.id)
+                    ? "bg-[#ffcf00]/[0.2] border-[#ffcf00]"
+                    : "bg-[#f5f5f5] border-transparent"
+                }`}
+              >
+                <label className="flex items-center gap-3 p-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedExtras.includes(extra.id)}
+                    onChange={() => toggleExtra(extra.id)}
+                    className="w-5 h-5"
+                  />
+                  <div className="flex-1">
+                    {(() => {
+                      const base = calculateROI(cabinType, occupancyRate, effectiveNightlyRate, []);
+                      const withExtra = calculateROI(cabinType, occupancyRate, effectiveNightlyRate, [extra.id]);
+                      const roiImpact = (withExtra.roi || 0) - (base.roi || 0);
+                      return (
+                        <>
+                          <div className="font-bold text-sm text-[#0e181f]">{extra.name}</div>
+                          <div className="text-xs text-[#ec874c]">{extra.impactDescription}</div>
+                          {roiImpact > 0.01 && (
+                            <div className="text-xs mt-1 text-[#059669]">
+                              ROI Impact: +{roiImpact.toFixed(1)}%
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="font-bold text-sm text-[#0e181f]">
+                      ${extra.price.toLocaleString()}
+                    </div>
+                    {(extra as any).items && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setExpandedExtras({ ...expandedExtras, [extra.id]: !isExpanded });
+                        }}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        {isExpanded ? "Hide" : "Show"} details
+                      </button>
+                    )}
+                  </div>
+                </label>
+
+                {/* Pack Details */}
+                {isExpanded && (extra as any).items && (
+                  <div className="px-3 pb-3 pt-0">
+                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                      <p className="text-xs font-semibold text-[#0e181f] mb-2">What's included:</p>
+                      <ul className="text-xs text-gray-700 space-y-1">
+                        {(extra as any).items.map((item: string, idx: number) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-[#ffcf00] mt-0.5">✓</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Dynamic Pricing Display */}
+      <div className="rounded-lg p-4 mb-4 bg-[#ffcf00]/[0.2] border-2 border-[#ffcf00]">
+        <h3 className="font-bold mb-3 text-sm text-[#0e181f]">Dynamic Nightly Rate</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span>Base Rate ({cabinType}):</span>
+            <span className="font-bold">${defaultNightlyRates[cabinType]}</span>
+          </div>
+          {selectedExtras.length > 0 && (
+            <div className="flex justify-between text-[#ec874c]">
+              <span>Options Impact:</span>
+              <span className="font-bold">+${roiResults.extrasNightlyImpact.toFixed(0)}</span>
+            </div>
+          )}
+          <div className="flex justify-between pt-2 border-t-2 border-[#0e181f] font-bold">
+            <span>Final Rate:</span>
+            <span className="text-[#0e181f]">${roiResults.effectiveNightlyRate.toFixed(0)}/night</span>
           </div>
         </div>
       </div>
+
+      {/* Total Investment Display */}
+      <div className="rounded-lg p-4 mb-4 bg-[#86dbdf]/[0.2]">
+        <h3 className="font-bold mb-3 text-sm text-[#0e181f]">Total Investment</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span>Base Cabin Price:</span>
+            <span className="font-bold">${cabin.price.toLocaleString()}</span>
+          </div>
+          {roiResults.extrasCost > 0 && (
+            <div className="flex justify-between text-[#ec874c]">
+              <span>Selected Extras:</span>
+              <span className="font-bold">+${roiResults.extrasCost.toLocaleString()}</span>
+            </div>
+          )}
+          <div className="flex justify-between pt-2 border-t-2 border-[#0e181f] font-bold">
+            <span>Total:</span>
+            <span className="text-[#0e181f]">${roiResults.totalInvestment.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Annual Revenue Display */}
+      <div className="rounded-lg p-4 mb-4 bg-[#86dbdf]/[0.2]">
+        <h3 className="font-bold mb-3 text-sm text-[#0e181f]">Annual Revenue</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span>Gross Revenue:</span>
+            <span className="font-bold">
+              ${roiResults.grossAnnualRevenue.toLocaleString("en-AU", { maximumFractionDigits: 0 })} + GST
+            </span>
+          </div>
+          <div className="flex justify-between text-[#ec874c]">
+            <span>Management (20%):</span>
+            <span className="font-bold">
+              -${roiResults.wildThingsCommissionAmount.toLocaleString("en-AU", { maximumFractionDigits: 0 })}
+            </span>
+          </div>
+          <div className="flex justify-between text-[#ec874c]">
+            <span>Site Fee:</span>
+            <span className="font-bold">
+              -${roiResults.siteFees.toLocaleString("en-AU", { maximumFractionDigits: 0 })}
+            </span>
+          </div>
+          <div className="flex justify-between text-[#ec874c]">
+            <span>Energy Costs:</span>
+            <span className="font-bold">
+              -${roiResults.energyCosts.toLocaleString("en-AU", { maximumFractionDigits: 0 })}
+            </span>
+          </div>
+          {(roiResults as any).annualCostSavings > 0 && (
+            <div className="flex justify-between text-[#059669]">
+              <span>Cost Savings (Solar):</span>
+              <span className="font-bold">
+                +${((roiResults as any).annualCostSavings || 0).toLocaleString("en-AU")}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between pt-2 border-t-2 border-[#0e181f] text-[#059669] font-bold">
+            <span>Net Income:</span>
+            <span>${roiResults.annualProfit.toLocaleString("en-AU", { maximumFractionDigits: 0 })}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Estimated Annual ROI */}
+      <div className="flex flex-col justify-center items-center bg-[#ec874c] rounded-lg p-4 mb-4">
+        <h3 className="font-bold mb-1 text-sm text-white">Estimated Annual ROI</h3>
+        <div className="text-4xl font-bold text-white">{roiResults.roi.toFixed(2)}%</div>
+        {roiResults.extrasCost > 0 && (
+          <p className="text-xs mt-2 text-white">
+            Based on ${roiResults.totalInvestment.toLocaleString()} total investment
+          </p>
+        )}
+      </div>
+
+      {/* Reserve Button */}
+      <button
+        onClick={onReserve}
+        className="w-full py-4 rounded-lg font-bold transition-all hover:opacity-90 mb-4 bg-[#ffcf00] text-[#0e181f] text-lg"
+      >
+        {actionTitle}
+      </button>
+
+      <p className="text-xs text-gray-600 italic">
+        * High-level estimate. Insurance, interest, maintenance not included.
+      </p>
     </div>
   );
 };

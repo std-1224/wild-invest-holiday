@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Calculator } from "lucide-react";
 import {
   cabins,
   calculateROI,
   defaultNightlyRates,
   getExtrasForCabin,
-  cabinImages,
 } from "../../config/mockCalculate";
 import { InvestTimeline } from "../../components/InvestTimeline";
 import { InvestFaqs } from "../../components/InvestFaqs";
 import { CalendlyButton } from "../../components/CalendlyButton";
 import { HoldingDepositModal } from "../../components/Modals/HoldingDepositModal";
 import { SiteSelector } from "../../components/SiteSelector";
-import CabinImageSlider from "../../components/CabinImageSlider";
+import { ROICalculator } from "../../components/ROICalculator";
 import { CabinDetailPage } from "../CabinDetailPage";
 import apiClient from "../../api/client";
 import { useAuth } from "../../contexts/AuthContext";
@@ -45,7 +43,6 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [showHoldingDepositModal, setShowHoldingDepositModal] = useState(false);
   const [selectedCabinForDeposit, setSelectedCabinForDeposit] = useState<any>(null);
-  const [expandedExtras, setExpandedExtras] = useState<Record<string, boolean>>({});
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [showSiteSelector, setShowSiteSelector] = useState(false);
   const [selectedSite, setSelectedSite] = useState<any>(null);
@@ -109,12 +106,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
     setSelectedExtras([]); // Clear selected extras when changing cabin type
   };
 
-  const roiResults = calculateROI(
-    roiInputs.cabinType,
-    roiInputs.occupancyRate,
-    roiInputs.nightlyRate,
-    selectedExtras
-  );
+
 
   // Show cabin detail page if a cabin is selected
   if (showCabinDetail && selectedCabinType) {
@@ -130,6 +122,9 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
           setSelectedCabinType(null);
           onInvest({ cabinType: selectedCabinType });
         }}
+        cabin={cabins[selectedCabinType]}
+        roiInputs={roiInputs}
+        setRoiInputs={setRoiInputs}
       />
     );
   }
@@ -269,6 +264,11 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                         onClick={() => {
                           setSelectedCabinType(key as CabinType);
                           setShowCabinDetail(true);
+                          setRoiInputs({
+                            ...roiInputs,
+                            cabinType: key as CabinType,
+                          });
+                          handleCabinTypeChange(key as CabinType);
                         }}
                         className="w-full py-3 rounded-lg font-bold transition-all hover:opacity-90 mb-2 bg-[#ffcf00] text-[#0e181f]"
                       >
@@ -282,389 +282,46 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
           </div>
 
           <div className="w-full md:sticky md:w-auto flex-[0_0_auto] min-w-[300px] md:top-[100px] max-w-full">
-            <div className="bg-white rounded-lg shadow-xl p-6">
-              <div className="flex items-center mb-6">
-                <Calculator size={28} className="text-[#ffcf00] mr-3" />
-                <h2 className="text-2xl font-black italic text-[#0e181f] font-[family-name:var(--font-eurostile,_'Eurostile_Condensed',_'Arial_Black',_Impact,_sans-serif)]">
-                  ROI CALCULATOR
-                </h2>
-              </div>
+            <ROICalculator
+              cabinType={roiInputs.cabinType}
+              selectedExtras={selectedExtras}
+              onExtrasChange={setSelectedExtras}
+              showCabinSelector={true}
+              onCabinTypeChange={handleCabinTypeChange}
+              occupancyRate={roiInputs.occupancyRate}
+              onOccupancyRateChange={(rate) => setRoiInputs({ ...roiInputs, occupancyRate: rate })}
+              nightlyRate={roiInputs.nightlyRate}
+              onNightlyRateChange={(rate) => setRoiInputs({ ...roiInputs, nightlyRate: rate })}
+              cabin={cabins[roiInputs.cabinType]}
+              onReserve={() => {
+                setSelectedCabinForInvestment(roiInputs.cabinType);
+                setSelectedCabinForDeposit({
+                  id: roiInputs.cabinType,
+                  ...cabins[roiInputs.cabinType],
+                  cabinType: roiInputs.cabinType,
+                  totalAmount: calculateROI(
+                    roiInputs.cabinType,
+                    roiInputs.occupancyRate,
+                    roiInputs.nightlyRate,
+                    selectedExtras
+                  ).totalInvestment,
+                  selectedExtras: selectedExtras,
+                });
 
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-bold mb-2 text-[#0e181f]">
-                    Cabin Type
-                  </label>
-                  <div className="space-y-3">
-                    {Object.entries(cabins).map(([key, cabin]) => {
-                      const cabinKey = key as CabinType;
-                      const isSelected = roiInputs.cabinType === cabinKey;
-                      return (
-                        <div
-                          key={key}
-                          onClick={() => handleCabinTypeChange(cabinKey)}
-                          className={`cursor-pointer rounded-lg overflow-hidden transition-all ${
-                            isSelected
-                              ? "border-[3px] border-[#ffcf00] shadow-[0_4px_12px_rgba(255,207,0,0.3)]"
-                              : "border-[3px] border-[#86dbdf]"
-                          }`}
-                        >
-                          {/* Image Slider */}
-                          <CabinImageSlider
-                            images={cabinImages[cabinKey] || []}
-                            autoplay={isSelected}
-                            interval={3000}
-                            className="h-32"
-                            showControls={false}
-                            showIndicators={true}
-                          />
-
-                          {/* Cabin Info */}
-                          <div className="p-3 bg-white">
-                            <div className="font-bold text-sm text-[#0e181f]">
-                              {cabin.name}
-                            </div>
-                            <div className="text-base font-bold text-[#ffcf00]">
-                              ${cabin.price.toLocaleString("en-AU")} + GST
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold mb-2 text-[#0e181f]">
-                    Occupancy Rate (%)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={roiInputs.occupancyRate || ""}
-                    onChange={(e) => {
-                      const value =
-                        e.target.value === "" ? "" : parseFloat(e.target.value);
-                      setRoiInputs({
-                        ...roiInputs,
-                        occupancyRate:
-                          value === "" ? 0 : isNaN(value) ? 0 : value,
-                      });
-                    }}
-                    className="w-full px-4 py-3 rounded-lg focus:outline-none border-2 border-[#86dbdf]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold mb-2 text-[#0e181f]">
-                    Nightly Rate ($)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={roiInputs.nightlyRate || ""}
-                    onChange={(e) => {
-                      const value =
-                        e.target.value === "" ? "" : parseFloat(e.target.value);
-                      setRoiInputs({
-                        ...roiInputs,
-                        nightlyRate:
-                          value === "" ? 0 : isNaN(value) ? 0 : value,
-                      });
-                    }}
-                    className="w-full px-4 py-3 rounded-lg focus:outline-none border-2 border-[#86dbdf]"
-                  />
-                </div>
-              </div>
-
-              {/* Optional Extras Selection */}
-              <div className="mb-6">
-                <h3 className="font-bold mb-3 text-[#0e181f]">
-                  Optional Extras
-                </h3>
-                <div className="space-y-2">
-                  {getExtrasForCabin(roiInputs.cabinType).map((extra) => {
-                      const isExpanded = expandedExtras[extra.id] || false;
-
-                      return (
-                        <div
-                          key={extra.id}
-                          className={`rounded-lg border-2 transition-all ${
-                            selectedExtras.includes(extra.id)
-                              ? "bg-[#ffcf00]/[0.2] border-[#ffcf00]"
-                              : "bg-[#f5f5f5] border-transparent"
-                          }`}
-                        >
-                          <label className="flex items-center gap-3 p-3 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedExtras.includes(extra.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedExtras([...selectedExtras, extra.id]);
-                                } else {
-                                  setSelectedExtras(
-                                    selectedExtras.filter((id) => id !== extra.id)
-                                  );
-                                }
-                              }}
-                              className="w-5 h-5"
-                            />
-                            <div className="flex-1">
-                              {(() => {
-                                const base = calculateROI(
-                                  roiInputs.cabinType,
-                                  roiInputs.occupancyRate,
-                                  roiInputs.nightlyRate,
-                                  []
-                                );
-                                const withExtra = calculateROI(
-                                  roiInputs.cabinType,
-                                  roiInputs.occupancyRate,
-                                  roiInputs.nightlyRate,
-                                  [extra.id]
-                                );
-                                const roiImpact =
-                                  (withExtra.roi || 0) - (base.roi || 0);
-                                return (
-                                  <>
-                                    <div className="font-bold text-sm text-[#0e181f]">
-                                      {extra.name}
-                                    </div>
-                                    <div className="text-xs text-[#ec874c]">
-                                      {extra.impactDescription}
-                                    </div>
-                                    {roiImpact > 0.01 && (
-                                      <div className="text-xs mt-1 text-[#059669]">
-                                        ROI Impact: +{roiImpact.toFixed(1)}%
-                                      </div>
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </div>
-                            <div className="flex flex-col items-end gap-1">
-                              <div className="font-bold text-sm text-[#0e181f]">
-                                ${extra.price.toLocaleString()}
-                              </div>
-                              {(extra as any).items && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    setExpandedExtras({
-                                      ...expandedExtras,
-                                      [extra.id]: !isExpanded,
-                                    });
-                                  }}
-                                  className="text-xs text-blue-600 hover:underline"
-                                >
-                                  {isExpanded ? "Hide" : "Show"} details
-                                </button>
-                              )}
-                            </div>
-                          </label>
-
-                          {/* Pack Details */}
-                          {isExpanded && (extra as any).items && (
-                            <div className="px-3 pb-3 pt-0">
-                              <div className="bg-white rounded-lg p-3 border border-gray-200">
-                                <p className="text-xs font-semibold text-[#0e181f] mb-2">
-                                  What's included:
-                                </p>
-                                <ul className="text-xs text-gray-700 space-y-1">
-                                  {(extra as any).items.map((item: string, idx: number) => (
-                                    <li key={idx} className="flex items-start gap-2">
-                                      <span className="text-[#ffcf00] mt-0.5">✓</span>
-                                      <span>{item}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-
-              {/* Dynamic Pricing Display */}
-              <div className="rounded-lg p-4 mb-4 bg-[#ffcf00]/[0.2] border-2 border-[#ffcf00]">
-                <h3 className="font-bold mb-3 text-sm text-[#0e181f]">
-                  Dynamic Nightly Rate
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Base Rate ({roiInputs.cabinType}):</span>
-                    <span className="font-bold">
-                      ${defaultNightlyRates[roiInputs.cabinType]}
-                    </span>
-                  </div>
-                  {selectedExtras.length > 0 && (
-                    <div className="flex justify-between text-[#ec874c]">
-                      <span>Options Impact:</span>
-                      <span className="font-bold">
-                        +${roiResults.extrasNightlyImpact.toFixed(0)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between pt-2 border-t-2 border-[#0e181f] font-bold">
-                    <span>Final Rate:</span>
-                    <span className="text-[#0e181f]">
-                      ${roiResults.effectiveNightlyRate.toFixed(0)}/night
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Total Investment Display */}
-              <div className="rounded-lg p-4 mb-4 bg-[#86dbdf]/[0.2]">
-                <h3 className="font-bold mb-3 text-sm text-[#0e181f]">
-                  Total Investment
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Base Cabin Price:</span>
-                    <span className="font-bold">
-                      ${cabins[roiInputs.cabinType].price.toLocaleString()}
-                    </span>
-                  </div>
-                  {roiResults.extrasCost > 0 && (
-                    <div className="flex justify-between text-[#ec874c]">
-                      <span>Selected Extras:</span>
-                      <span className="font-bold">
-                        +${roiResults.extrasCost.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between pt-2 border-t-2 border-[#0e181f] font-bold">
-                    <span>Total:</span>
-                    <span className="text-[#0e181f]">
-                      ${roiResults.totalInvestment.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-lg p-4 mb-4 bg-[#86dbdf]/[0.2]">
-                <h3 className="font-bold mb-3 text-sm text-[#0e181f]">
-                  Annual Revenue
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Gross Revenue:</span>
-                    <span className="font-bold">
-                      $
-                      {roiResults.grossAnnualRevenue.toLocaleString("en-AU", {
-                        maximumFractionDigits: 0,
-                      })}{" "}
-                      + GST
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-[#ec874c]">
-                    <span>Management (20%):</span>
-                    <span className="font-bold">
-                      -$
-                      {roiResults.wildThingsCommissionAmount.toLocaleString(
-                        "en-AU",
-                        {
-                          maximumFractionDigits: 0,
-                        }
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-[#ec874c]">
-                    <span>Site Fee:</span>
-                    <span className="font-bold">
-                      -$
-                      {roiResults.siteFees.toLocaleString("en-AU", {
-                        maximumFractionDigits: 0,
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-[#ec874c]">
-                    <span>Energy Costs:</span>
-                    <span className="font-bold">
-                      -$
-                      {roiResults.energyCosts.toLocaleString("en-AU", {
-                        maximumFractionDigits: 0,
-                      })}
-                    </span>
-                  </div>
-                  {(roiResults as any).annualCostSavings > 0 && (
-                    <div className="flex justify-between text-[#059669]">
-                      <span>Cost Savings (Solar):</span>
-                      <span className="font-bold">
-                        +$
-                        {(
-                          roiResults as any
-                        ).annualCostSavings?.toLocaleString?.("en-AU") ?? "0"}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between pt-2 border-t-2 border-[#0e181f] text-[#059669] font-bold">
-                    <span>Net Income:</span>
-                    <span>
-                      $
-                      {roiResults.annualProfit.toLocaleString("en-AU", {
-                        maximumFractionDigits: 0,
-                      })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col justify-center items-center bg-[#ec874c] rounded-lg p-4 mb-4">
-                <h3 className="font-bold mb-1 text-sm text-white">
-                  Estimated Annual ROI
-                </h3>
-                <div className="text-4xl font-bold text-white">
-                  {roiResults.roi.toFixed(2)}%
-                </div>
-                {roiResults.extrasCost > 0 && (
-                  <p className="text-xs mt-2 text-white">
-                    Based on ${roiResults.totalInvestment.toLocaleString()}{" "}
-                    total investment
-                  </p>
-                )}
-              </div>
-
-              <button
-                onClick={() => {
-                  setSelectedCabinForInvestment(roiInputs.cabinType);
-                  setSelectedCabinForDeposit({
-                    id: roiInputs.cabinType,
-                    ...cabins[roiInputs.cabinType],
-                    cabinType: roiInputs.cabinType,
-                    totalAmount: roiResults.totalInvestment,
+                // Also set floatingInvestmentData for InvestmentModal
+                if (setFloatingInvestmentData) {
+                  setFloatingInvestmentData({
                     selectedExtras: selectedExtras,
+                    paymentMethod: "external",
                   });
+                }
 
-                  // Also set floatingInvestmentData for InvestmentModal
-                  if (setFloatingInvestmentData) {
-                    setFloatingInvestmentData({
-                      selectedExtras: selectedExtras,
-                      paymentMethod: "external",
-                    });
-                  }
-
-                  // Reset selections and show location selector first
-                  setSelectedLocation(null);
-                  setSelectedSite(null);
-                  setShowLocationSelector(true);
-                }}
-                className="w-full py-4 rounded-lg font-bold transition-all hover:opacity-90 mb-4 bg-[#ffcf00] text-[#0e181f] text-lg"
-              >
-                Select Site & Reserve →
-              </button>
-
-              <p className="text-xs text-gray-600 italic">
-                * High-level estimate. Insurance, interest, maintenance not
-                included.
-              </p>
-            </div>
+                // Reset selections and show location selector first
+                setSelectedLocation(null);
+                setSelectedSite(null);
+                setShowLocationSelector(true);
+              }}
+            />
           </div>
         </div>
       </div>
