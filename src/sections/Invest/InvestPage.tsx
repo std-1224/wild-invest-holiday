@@ -50,6 +50,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
   const [selectedSite, setSelectedSite] = useState<any>(null);
   const [locations, setLocations] = useState<any[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [locationSiteCounts, setLocationSiteCounts] = useState<Record<string, number>>({});
 
   // Load locations on mount
   useEffect(() => {
@@ -65,6 +66,35 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
     };
     loadLocations();
   }, []);
+
+  // Load available site counts for each location when location selector is shown
+  useEffect(() => {
+    if (showLocationSelector && selectedCabinForDeposit) {
+      const loadSiteCounts = async () => {
+        const counts: Record<string, number> = {};
+
+        // Fetch available sites count for each active location
+        for (const location of locations.filter((loc: any) => loc.status === 'active')) {
+          try {
+            const response = await apiClient.getAvailableSites(
+              location._id,
+              selectedCabinForDeposit.cabinType
+            );
+            if (response.success) {
+              counts[location._id] = response.count || 0;
+            }
+          } catch (error) {
+            console.error(`Failed to load site count for ${location.name}:`, error);
+            counts[location._id] = 0;
+          }
+        }
+
+        setLocationSiteCounts(counts);
+      };
+
+      loadSiteCounts();
+    }
+  }, [showLocationSelector, selectedCabinForDeposit, locations]);
 
   const handleCabinTypeChange = (newCabinType: CabinType) => {
     setRoiInputs({
@@ -662,31 +692,45 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
 
             {/* Location Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {locations.filter((loc: any) => loc.status === 'active').map((location: any) => (
-                <button
-                  key={location._id}
-                  onClick={() => setSelectedLocation(location)}
-                  className={`p-6 rounded-lg border-2 transition-all text-left hover:scale-[1.02] ${
-                    selectedLocation?._id === location._id
-                      ? "border-[#ec874c] bg-[#ec874c]/10"
-                      : "border-gray-300 bg-white hover:border-[#86dbdf]"
-                  }`}
-                >
-                  <h3 className="text-xl font-bold text-[#0e181f] mb-2">
-                    {location.name}
-                  </h3>
-                  {location.description && (
-                    <p className="text-sm text-gray-600 mb-3">
-                      {location.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="px-3 py-1 bg-[#86dbdf]/20 text-[#0e181f] rounded-full font-semibold">
-                      {location.totalSites || 0} sites available
-                    </span>
-                  </div>
-                </button>
-              ))}
+              {locations.filter((loc: any) => loc.status === 'active').map((location: any) => {
+                const availableCount = locationSiteCounts[location._id];
+                const isLoading = availableCount === undefined;
+
+                return (
+                  <button
+                    key={location._id}
+                    onClick={() => setSelectedLocation(location)}
+                    className={`p-6 rounded-lg border-2 transition-all text-left hover:scale-[1.02] ${
+                      selectedLocation?._id === location._id
+                        ? "border-[#ec874c] bg-[#ec874c]/10"
+                        : "border-gray-300 bg-white hover:border-[#86dbdf]"
+                    }`}
+                  >
+                    <h3 className="text-xl font-bold text-[#0e181f] mb-2">
+                      {location.name}
+                    </h3>
+                    {location.description && (
+                      <p className="text-sm text-gray-600 mb-3">
+                        {location.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="px-3 py-1 bg-[#86dbdf]/20 text-[#0e181f] rounded-full font-semibold flex items-center gap-2">
+                        {isLoading ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4 text-[#0e181f]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          </>
+                        ) : (
+                          `${availableCount} ${selectedCabinForDeposit.cabinType} ${availableCount === 1 ? 'site' : 'sites'} available`
+                        )}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {locations.filter((loc: any) => loc.status === 'active').length === 0 && (
