@@ -326,31 +326,36 @@ export const Navbar = ({
                   Merch
                 </a>
               </li>
-              <li className="mb-2">
-                <button
-                  onClick={() => onNavigate && onNavigate("investor-portal")}
-                  className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
-                  style={{
-                    fontFamily:
-                      '"Helvetica Neue", Helvetica, Arial, sans-serif',
-                  }}
-                >
-                  MY ACCOUNT
-                </button>
-              </li>
+
               {isLoggedIn && (
-                <li className="mb-2">
-                  <button
-                    onClick={onLogout}
-                    className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
-                    style={{
-                      fontFamily:
-                        '"Helvetica Neue", Helvetica, Arial, sans-serif',
-                    }}
-                  >
-                    Logout
-                  </button>
-                </li>
+                <>
+                  <li className="mb-2">
+                    <button
+                      onClick={() =>
+                        onNavigate && onNavigate("investor-portal")
+                      }
+                      className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
+                      style={{
+                        fontFamily:
+                          '"Helvetica Neue", Helvetica, Arial, sans-serif',
+                      }}
+                    >
+                      MY ACCOUNT
+                    </button>
+                  </li>
+                  <li className="mb-2">
+                    <button
+                      onClick={onLogout}
+                      className="px-4 py-2 bg-[#ffcf00] text-[#0e181f] border-none rounded-b-lg cursor-pointer font-bold text-xs shadow-md transition-all duration-300 hover:bg-[#0e181f] hover:text-[#ffcf00] hover:translate-y-0.5"
+                      style={{
+                        fontFamily:
+                          '"Helvetica Neue", Helvetica, Arial, sans-serif',
+                      }}
+                    >
+                      Logout
+                    </button>
+                  </li>
+                </>
               )}
             </ul>
           </div>
