@@ -77,6 +77,7 @@ interface InvestorPortalProps {
   onInvestClick: (value: string) => void;
   setSelectedCabinForInvestment: (value: string) => void;
   setShowInvestmentModal: (value: boolean) => void;
+  setFloatingInvestmentData: (data: { selectedExtras?: string[]; paymentMethod?: string; selectedLocation?: string }) => void;
   userInvestments: any[];
   setUserInvestments: (investments: any[]) => void;
 }
@@ -87,6 +88,7 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   onInvestClick,
   setShowInvestmentModal,
   setSelectedCabinForInvestment,
+  setFloatingInvestmentData: setAppFloatingInvestmentData,
   userInvestments: propUserInvestments,
 }) => {
   // React Router hooks for navigation
@@ -230,10 +232,21 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   const [floatingInvestmentData, setFloatingInvestmentData] =
     useState<FloatingInvestmentData>({
       selectedCabin: null,
-      selectedLocation: "mansfield",
+      selectedLocation: "",
       selectedExtras: [],
       paymentMethod: "external",
     });
+
+  // Locations from database with available site counts
+  interface LocationWithCount {
+    _id: string;
+    name: string;
+    siteMapUrl?: string;
+    isActive?: boolean;
+    availableSiteCount?: number;
+  }
+  const [locations, setLocations] = useState<LocationWithCount[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
 
   // Stripe Payment Methods State
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -243,6 +256,53 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
   // Load payment methods from database on mount
   useEffect(() => {
     loadPaymentMethods();
+  }, []);
+
+  // Load locations from database with site counts based on selected cabin type
+  useEffect(() => {
+    const loadLocationsWithSiteCounts = async () => {
+      setLoadingLocations(true);
+      try {
+        const response = await apiClient.getLocations();
+        if (response.success && response.locations) {
+          // Load available site counts for each location filtered by selected cabin type
+          const cabinType = floatingInvestmentData.selectedCabin || "1BR";
+          const locationsWithCounts = await Promise.all(
+            response.locations.map(async (loc: LocationWithCount) => {
+              try {
+                const sitesResponse = await apiClient.getAvailableSites(loc._id, cabinType);
+                return {
+                  ...loc,
+                  availableSiteCount: sitesResponse.success ? (sitesResponse.sites?.length || 0) : 0
+                };
+              } catch (error) {
+                console.error(`Error loading sites for ${loc.name}:`, error);
+                return { ...loc, availableSiteCount: 0 };
+              }
+            })
+          );
+
+          setLocations(locationsWithCounts);
+
+          // Set default location if not already set
+          if (!floatingInvestmentData.selectedLocation && locationsWithCounts.length > 0) {
+            // Prefer location with available sites
+            const locationWithSites = locationsWithCounts.find((loc: LocationWithCount) => (loc.availableSiteCount || 0) > 0);
+            const defaultLocation = locationWithSites || locationsWithCounts[0];
+            setFloatingInvestmentData(prev => ({
+              ...prev,
+              selectedLocation: defaultLocation._id
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading locations:', error);
+      } finally {
+        setLoadingLocations(false);
+      }
+    };
+
+    loadLocationsWithSiteCounts();
   }, []);
 
   // Load referral stats on mount
@@ -2024,19 +2084,32 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                 <label className="block text-sm font-bold mb-2 text-[#0e181f]">
                   Location
                 </label>
-                <select
-                  value={floatingInvestmentData.selectedLocation}
-                  onChange={(e) =>
-                    setFloatingInvestmentData({
-                      ...floatingInvestmentData,
-                      selectedLocation: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border-2 border-[#86dbdf] rounded-lg"
-                >
-                  <option value="mansfield">Mansfield</option>
-                  <option value="byron">Byron Bay (Coming Soon)</option>
-                </select>
+                {loadingLocations ? (
+                  <div className="w-full p-2 border-2 border-[#86dbdf] rounded-lg text-gray-500 bg-gray-50">
+                    Loading locations...
+                  </div>
+                ) : locations.length === 0 ? (
+                  <div className="w-full p-2 border-2 border-[#86dbdf] rounded-lg text-gray-500 bg-gray-50">
+                    No locations available
+                  </div>
+                ) : (
+                  <select
+                    value={floatingInvestmentData.selectedLocation}
+                    onChange={(e) =>
+                      setFloatingInvestmentData({
+                        ...floatingInvestmentData,
+                        selectedLocation: e.target.value,
+                      })
+                    }
+                    className="w-full p-2 border-2 border-[#86dbdf] rounded-lg"
+                  >
+                    {locations.map((location) => (
+                      <option key={location._id} value={location._id}>
+                        {location.name}{!location.isActive ? ' (Coming Soon)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Cabin Selection */}
@@ -2374,6 +2447,12 @@ export const InvestorPortal: React.FC<InvestorPortalProps> = ({
                     setSelectedCabinForInvestment(
                       floatingInvestmentData.selectedCabin
                     );
+                    // Sync selected location to App.tsx before opening modal
+                    setAppFloatingInvestmentData({
+                      selectedLocation: floatingInvestmentData.selectedLocation,
+                      selectedExtras: floatingInvestmentData.selectedExtras,
+                      paymentMethod: floatingInvestmentData.paymentMethod,
+                    });
                     setShowInvestmentModal(true);
                   }
                 }}

@@ -28,9 +28,11 @@ function AppContent() {
   const [floatingInvestmentData, setFloatingInvestmentData] = useState<{
     selectedExtras?: string[];
     paymentMethod?: string;
+    selectedLocation?: string;
   }>({
     selectedExtras: [],
     paymentMethod: "external",
+    selectedLocation: "",
   });
 
   // Use the auth context
@@ -122,6 +124,7 @@ function AppContent() {
                   onInvestClick={() => navigate("/invest")}
                   setShowInvestmentModal={setShowInvestmentModal}
                   setSelectedCabinForInvestment={setSelectedCabinForInvestment}
+                  setFloatingInvestmentData={setFloatingInvestmentData}
                   userInvestments={userInvestments}
                   setUserInvestments={setUserInvestments}
                 />

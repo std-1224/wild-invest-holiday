@@ -42,15 +42,20 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
   });
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [showHoldingDepositModal, setShowHoldingDepositModal] = useState(false);
-  const [selectedCabinForDeposit, setSelectedCabinForDeposit] = useState<any>(null);
+  const [selectedCabinForDeposit, setSelectedCabinForDeposit] =
+    useState<any>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [showSiteSelector, setShowSiteSelector] = useState(false);
   const [selectedSite, setSelectedSite] = useState<any>(null);
   const [locations, setLocations] = useState<any[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
-  const [locationSiteCounts, setLocationSiteCounts] = useState<Record<string, number>>({});
+  const [locationSiteCounts, setLocationSiteCounts] = useState<
+    Record<string, number>
+  >({});
   const [showCabinDetail, setShowCabinDetail] = useState(false);
-  const [selectedCabinType, setSelectedCabinType] = useState<CabinType | null>(null);
+  const [selectedCabinType, setSelectedCabinType] = useState<CabinType | null>(
+    null
+  );
 
   // Load locations on mount
   useEffect(() => {
@@ -61,7 +66,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
           setLocations(response.locations);
         }
       } catch (error) {
-        console.error('Failed to load locations:', error);
+        console.error("Failed to load locations:", error);
       }
     };
     loadLocations();
@@ -74,7 +79,9 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
         const counts: Record<string, number> = {};
 
         // Fetch available sites count for each active location
-        for (const location of locations.filter((loc: any) => loc.status === 'active')) {
+        for (const location of locations.filter(
+          (loc: any) => loc.status === "active"
+        )) {
           try {
             const response = await apiClient.getAvailableSites(
               location._id,
@@ -84,7 +91,10 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
               counts[location._id] = response.count || 0;
             }
           } catch (error) {
-            console.error(`Failed to load site count for ${location.name}:`, error);
+            console.error(
+              `Failed to load site count for ${location.name}:`,
+              error
+            );
             counts[location._id] = 0;
           }
         }
@@ -105,8 +115,6 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
     });
     setSelectedExtras([]); // Clear selected extras when changing cabin type
   };
-
-
 
   // Show cabin detail page if a cabin is selected
   if (showCabinDetail && selectedCabinType) {
@@ -139,29 +147,6 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
           Invest in your own piece of paradise. Earn passive income while
           providing families with unforgettable outdoor experiences.
         </p>
-
-        {/* Investment Timeline */}
-        <div className="bg-white rounded-lg shadow-xl p-8 mb-12">
-          <InvestTimeline />
-          <div className="text-center mt-8">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <CalendlyButton
-                url="https://calendly.com/jameswildthings"
-                text="Book an Inspection"
-                variant="orange"
-                size="lg"
-                eventType="inspection"
-                source="invest_page"
-              />
-              <button
-                onClick={() => document.getElementById("chat-widget")?.click()}
-                className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all hover:opacity-90 bg-[#86dbdf] text-[#0e181f]"
-              >
-                💬 Chat with James
-              </button>
-            </div>
-          </div>
-        </div>
 
         <div className="flex gap-8 items-start flex-wrap">
           <div className="flex-[1_1_600px] min-w-[300px]">
@@ -225,7 +210,7 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                       <div className="text-3xl font-bold mb-4 text-[#ffcf00]">
                         ${cabin.price.toLocaleString("en-AU")}
                         <span className="text-sm ml-2 text-[#0e181f]">
-                           + GST
+                          + GST
                         </span>
                       </div>
 
@@ -289,9 +274,13 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
               showCabinSelector={true}
               onCabinTypeChange={handleCabinTypeChange}
               occupancyRate={roiInputs.occupancyRate}
-              onOccupancyRateChange={(rate) => setRoiInputs({ ...roiInputs, occupancyRate: rate })}
+              onOccupancyRateChange={(rate) =>
+                setRoiInputs({ ...roiInputs, occupancyRate: rate })
+              }
               nightlyRate={roiInputs.nightlyRate}
-              onNightlyRateChange={(rate) => setRoiInputs({ ...roiInputs, nightlyRate: rate })}
+              onNightlyRateChange={(rate) =>
+                setRoiInputs({ ...roiInputs, nightlyRate: rate })
+              }
               cabin={cabins[roiInputs.cabinType]}
               onReserve={() => {
                 setSelectedCabinForInvestment(roiInputs.cabinType);
@@ -325,6 +314,28 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
           </div>
         </div>
       </div>
+      {/* Investment Timeline */}
+      <div className="bg-white rounded-lg shadow-xl p-8 mb-12">
+        <InvestTimeline />
+        <div className="text-center mt-8">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <CalendlyButton
+              url="https://calendly.com/jameswildthings"
+              text="Book an Inspection"
+              variant="orange"
+              size="lg"
+              eventType="inspection"
+              source="invest_page"
+            />
+            <button
+              onClick={() => document.getElementById("chat-widget")?.click()}
+              className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all hover:opacity-90 bg-[#86dbdf] text-[#0e181f]"
+            >
+              💬 Chat with James
+            </button>
+          </div>
+        </div>
+      </div>
       <InvestFaqs />
 
       {/* Location Selection Modal - Step 1 */}
@@ -343,73 +354,106 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-600 mb-1">Cabin Type:</p>
-                  <p className="font-bold text-[#0e181f]">{selectedCabinForDeposit.cabinType}</p>
+                  <p className="font-bold text-[#0e181f]">
+                    {selectedCabinForDeposit.cabinType}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-600 mb-1">Total Investment:</p>
-                  <p className="font-bold text-[#0e181f]">${selectedCabinForDeposit.totalAmount.toLocaleString()}</p>
+                  <p className="font-bold text-[#0e181f]">
+                    ${selectedCabinForDeposit.totalAmount.toLocaleString()}
+                  </p>
                 </div>
-                {selectedCabinForDeposit.selectedExtras && selectedCabinForDeposit.selectedExtras.length > 0 && (
-                  <div className="col-span-2">
-                    <p className="text-gray-600 mb-1">Selected Extras:</p>
-                    <p className="font-bold text-[#0e181f]">
-                      {selectedCabinForDeposit.selectedExtras.map((extraId: string) => {
-                        const extra = getExtrasForCabin(selectedCabinForDeposit.cabinType).find(e => e.id === extraId);
-                        return extra?.name;
-                      }).join(', ')}
-                    </p>
-                  </div>
-                )}
+                {selectedCabinForDeposit.selectedExtras &&
+                  selectedCabinForDeposit.selectedExtras.length > 0 && (
+                    <div className="col-span-2">
+                      <p className="text-gray-600 mb-1">Selected Extras:</p>
+                      <p className="font-bold text-[#0e181f]">
+                        {selectedCabinForDeposit.selectedExtras
+                          .map((extraId: string) => {
+                            const extra = getExtrasForCabin(
+                              selectedCabinForDeposit.cabinType
+                            ).find((e) => e.id === extraId);
+                            return extra?.name;
+                          })
+                          .join(", ")}
+                      </p>
+                    </div>
+                  )}
               </div>
             </div>
 
             {/* Location Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {locations.filter((loc: any) => loc.status === 'active').map((location: any) => {
-                const availableCount = locationSiteCounts[location._id];
-                const isLoading = availableCount === undefined;
+              {locations
+                .filter((loc: any) => loc.status === "active")
+                .map((location: any) => {
+                  const availableCount = locationSiteCounts[location._id];
+                  const isLoading = availableCount === undefined;
 
-                return (
-                  <button
-                    key={location._id}
-                    onClick={() => setSelectedLocation(location)}
-                    className={`p-6 rounded-lg border-2 transition-all text-left hover:scale-[1.02] ${
-                      selectedLocation?._id === location._id
-                        ? "border-[#ec874c] bg-[#ec874c]/10"
-                        : "border-gray-300 bg-white hover:border-[#86dbdf]"
-                    }`}
-                  >
-                    <h3 className="text-xl font-bold text-[#0e181f] mb-2">
-                      {location.name}
-                    </h3>
-                    {location.description && (
-                      <p className="text-sm text-gray-600 mb-3">
-                        {location.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="px-3 py-1 bg-[#86dbdf]/20 text-[#0e181f] rounded-full font-semibold flex items-center gap-2">
-                        {isLoading ? (
-                          <>
-                            <svg className="animate-spin h-4 w-4 text-[#0e181f]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          </>
-                        ) : (
-                          `${availableCount} ${selectedCabinForDeposit.cabinType} ${availableCount === 1 ? 'site' : 'sites'} available`
-                        )}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={location._id}
+                      onClick={() => setSelectedLocation(location)}
+                      className={`p-6 rounded-lg border-2 transition-all text-left hover:scale-[1.02] ${
+                        selectedLocation?._id === location._id
+                          ? "border-[#ec874c] bg-[#ec874c]/10"
+                          : "border-gray-300 bg-white hover:border-[#86dbdf]"
+                      }`}
+                    >
+                      <h3 className="text-xl font-bold text-[#0e181f] mb-2">
+                        {location.name}
+                      </h3>
+                      {location.description && (
+                        <p className="text-sm text-gray-600 mb-3">
+                          {location.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="px-3 py-1 bg-[#86dbdf]/20 text-[#0e181f] rounded-full font-semibold flex items-center gap-2">
+                          {isLoading ? (
+                            <>
+                              <svg
+                                className="animate-spin h-4 w-4 text-[#0e181f]"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                              </svg>
+                            </>
+                          ) : (
+                            `${availableCount} ${
+                              selectedCabinForDeposit.cabinType
+                            } ${
+                              availableCount === 1 ? "site" : "sites"
+                            } available`
+                          )}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
             </div>
 
-            {locations.filter((loc: any) => loc.status === 'active').length === 0 && (
+            {locations.filter((loc: any) => loc.status === "active").length ===
+              0 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <p className="text-yellow-800 text-sm">
-                  No active locations available at the moment. Please contact us for more information.
+                  No active locations available at the moment. Please contact us
+                  for more information.
                 </p>
               </div>
             )}
@@ -450,7 +494,8 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
               🗺️ Step 2: Select Your Site Number
             </h2>
             <p className="text-sm text-gray-600 mb-2">
-              Choose your preferred site number at {selectedLocation.name}. Each site has a specific location within the park.
+              Choose your preferred site number at {selectedLocation.name}. Each
+              site has a specific location within the park.
             </p>
 
             {/* Summary of selections */}
@@ -458,27 +503,38 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-600 mb-1">Location:</p>
-                  <p className="font-bold text-[#0e181f]">{selectedLocation.name}</p>
+                  <p className="font-bold text-[#0e181f]">
+                    {selectedLocation.name}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-600 mb-1">Cabin Type:</p>
-                  <p className="font-bold text-[#0e181f]">{selectedCabinForDeposit.cabinType}</p>
+                  <p className="font-bold text-[#0e181f]">
+                    {selectedCabinForDeposit.cabinType}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-600 mb-1">Total Investment:</p>
-                  <p className="font-bold text-[#0e181f]">${selectedCabinForDeposit.totalAmount.toLocaleString()}</p>
+                  <p className="font-bold text-[#0e181f]">
+                    ${selectedCabinForDeposit.totalAmount.toLocaleString()}
+                  </p>
                 </div>
-                {selectedCabinForDeposit.selectedExtras && selectedCabinForDeposit.selectedExtras.length > 0 && (
-                  <div className="col-span-2">
-                    <p className="text-gray-600 mb-1">Selected Extras:</p>
-                    <p className="font-bold text-[#0e181f]">
-                      {selectedCabinForDeposit.selectedExtras.map((extraId: string) => {
-                        const extra = getExtrasForCabin(selectedCabinForDeposit.cabinType).find(e => e.id === extraId);
-                        return extra?.name;
-                      }).join(', ')}
-                    </p>
-                  </div>
-                )}
+                {selectedCabinForDeposit.selectedExtras &&
+                  selectedCabinForDeposit.selectedExtras.length > 0 && (
+                    <div className="col-span-2">
+                      <p className="text-gray-600 mb-1">Selected Extras:</p>
+                      <p className="font-bold text-[#0e181f]">
+                        {selectedCabinForDeposit.selectedExtras
+                          .map((extraId: string) => {
+                            const extra = getExtrasForCabin(
+                              selectedCabinForDeposit.cabinType
+                            ).find((e) => e.id === extraId);
+                            return extra?.name;
+                          })
+                          .join(", ")}
+                      </p>
+                    </div>
+                  )}
               </div>
             </div>
 

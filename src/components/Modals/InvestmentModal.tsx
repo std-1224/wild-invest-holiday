@@ -1,14 +1,25 @@
 import React, { useState, useEffect } from "react";
 import {
   cabins,
+  cabinImages,
   calculateROI,
   defaultNightlyRates,
   getExtrasForCabin,
 } from "../../config/mockCalculate";
 import apiClient from "../../api/client";
 import { SiteSelector } from "../SiteSelector";
+import CabinImageSlider from "../CabinImageSlider";
+import { CreditCard, Lock } from 'lucide-react';
 
 type CabinType = "1BR" | "2BR";
+
+interface PaymentMethod {
+  id: string;
+  last4: string;
+  brand: string;
+  expiry: string;
+  isDefault: boolean;
+}
 
 interface InvestmentModalProps {
   showInvestmentModal: boolean;
@@ -18,6 +29,7 @@ interface InvestmentModalProps {
   floatingInvestmentData: {
     selectedExtras?: string[];
     paymentMethod?: string;
+    selectedLocation?: string;
   };
   userInvestments: any[];
   setUserInvestments: (investments: any[]) => void;
@@ -104,35 +116,62 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
   const [currentStep, setCurrentStep] = useState<"site" | "details">("site");
   const [selectedSite, setSelectedSite] = useState<any>(null);
   const [locationId, setLocationId] = useState<string>("");
+  const [locationName, setLocationName] = useState<string>("Mansfield");
 
-  // Load location ID when modal opens
+  // Payment state
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+
+  // Use selected location from InvestorPortal when modal opens
   useEffect(() => {
-    const loadLocationId = async () => {
-      try {
-        const response = await apiClient.getLocations();
-        if (response.success && response.locations.length > 0) {
-          // For now, use the first location (Mansfield)
-          // In the future, this could be based on investmentData.location
-          const mansfield = response.locations.find((loc: any) =>
-            loc.name.toLowerCase().includes('mansfield')
-          );
-          if (mansfield) {
-            setLocationId(mansfield._id);
-          } else {
-            setLocationId(response.locations[0]._id);
+    const loadLocationDetails = async () => {
+      if (!showInvestmentModal) return;
+
+      // If selectedLocation is passed from InvestorPortal, use it
+      if (floatingInvestmentData.selectedLocation) {
+        setLocationId(floatingInvestmentData.selectedLocation);
+
+        // Fetch location name for display
+        try {
+          const response = await apiClient.getLocations();
+          if (response.success && response.locations) {
+            const selectedLoc = response.locations.find(
+              (loc: any) => loc._id === floatingInvestmentData.selectedLocation
+            );
+            if (selectedLoc) {
+              setLocationName(selectedLoc.name);
+              setInvestmentData(prev => ({ ...prev, location: selectedLoc.name }));
+            }
           }
+        } catch (error) {
+          console.error("Failed to load location details:", error);
         }
-      } catch (error) {
-        console.error("Failed to load location:", error);
+      } else {
+        // Fallback: load first available location if none selected
+        try {
+          const response = await apiClient.getLocations();
+          if (response.success && response.locations.length > 0) {
+            const defaultLocation = response.locations[0];
+            setLocationId(defaultLocation._id);
+            setLocationName(defaultLocation.name);
+            setInvestmentData(prev => ({ ...prev, location: defaultLocation.name }));
+          }
+        } catch (error) {
+          console.error("Failed to load locations:", error);
+        }
       }
+
+      setCurrentStep("site");
+      setSelectedSite(null);
     };
 
     if (showInvestmentModal) {
-      loadLocationId();
-      setCurrentStep("site");
-      setSelectedSite(null);
+      loadLocationDetails();
     }
-  }, [showInvestmentModal]);
+  }, [showInvestmentModal, floatingInvestmentData.selectedLocation]);
 
   // Update extras when modal opens with floatingInvestmentData
   useEffect(() => {
@@ -144,6 +183,42 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
       setSelectedExtras(extrasObj);
     }
   }, [showInvestmentModal, floatingInvestmentData.selectedExtras]);
+
+  // Load saved payment methods for logged-in users
+  useEffect(() => {
+    const loadPaymentMethods = async () => {
+      if (!showInvestmentModal || !isLoggedIn) return;
+
+      setLoadingPaymentMethods(true);
+      try {
+        const response = await apiClient.listPaymentMethods();
+        if (response.success && response.paymentMethods) {
+          const formattedMethods: PaymentMethod[] = response.paymentMethods.map((pm: any) => ({
+            id: pm.id,
+            last4: pm.card?.last4 || pm.last4 || '0000',
+            brand: pm.card?.brand || pm.brand || 'card',
+            expiry: pm.card ? `${pm.card.exp_month}/${pm.card.exp_year}` : pm.expiry || '',
+            isDefault: pm.isDefault || false,
+          }));
+          setSavedPaymentMethods(formattedMethods);
+
+          // Auto-select default payment method
+          const defaultMethod = formattedMethods.find(m => m.isDefault);
+          if (defaultMethod) {
+            setSelectedPaymentMethod(defaultMethod.id);
+          } else if (formattedMethods.length > 0) {
+            setSelectedPaymentMethod(formattedMethods[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading payment methods:', error);
+      } finally {
+        setLoadingPaymentMethods(false);
+      }
+    };
+
+    loadPaymentMethods();
+  }, [showInvestmentModal, isLoggedIn]);
 
   // Debounced referral code validation
   useEffect(() => {
@@ -247,11 +322,18 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
 
   const handleInvestmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPaymentError(null);
 
     // Validate site selection
     if (!selectedSite) {
       alert("Please select a site location before proceeding.");
       setCurrentStep("site");
+      return;
+    }
+
+    // For logged-in users, require payment method selection
+    if (isLoggedIn && !selectedPaymentMethod) {
+      setPaymentError("Please select a payment method");
       return;
     }
 
@@ -262,106 +344,144 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
     console.log("Cabin Type:", selectedCabinForInvestment);
     console.log("Selected Site:", selectedSite);
 
+    setPaymentProcessing(true);
+
     try {
-      // If not logged in, create account first
-      if (!isLoggedIn) {
-        console.log("Creating new investment account...");
-
-        // Validate passwords match
-        if (investmentData.password !== investmentData.confirmPassword) {
-          alert("Passwords do not match!");
-          return;
-        }
-
-        // Register new user
-        const registerResponse = await apiClient.register({
-          name: `${investmentData.firstName} ${investmentData.lastName}`,
-          email: investmentData.email,
-          password: investmentData.password,
-          phone: investmentData.phone,
-          referralCode: investmentData.referralCode || undefined,
-        });
-
-        if (!registerResponse.success) {
-          alert(`Registration failed: ${registerResponse.message || "Unknown error"}`);
-          return;
-        }
-
-        console.log("Account created successfully!");
-        setIsLoggedIn(true);
-      } else {
-        console.log(
-          "User already logged in, processing investment for existing account"
-        );
-      }
-
-      // Get current user
-      const currentUser = apiClient.getUser();
-      if (!currentUser?.id) {
-        alert("User authentication failed. Please try again.");
-        return;
-      }
-
-      // Create cabin purchase record
-      console.log("Creating cabin purchase record...");
-
       // Calculate selected extras
       const purchasedExtras = Object.keys(selectedExtras).filter(
         (extraId) => selectedExtras[extraId]
       );
 
-      // Create cabin purchase via API
-      const purchaseResponse = await apiClient.createCabinPurchase({
-        locationId: locationId,
-        siteId: selectedSite._id,
-        cabinType: selectedCabinForInvestment,
-        purchasePrice: selectedCabin?.price || 0,
-        purchasedExtras: purchasedExtras,
-        financingDetails: {}, // TODO: Add financing details if needed
-      });
+      if (isLoggedIn) {
+        // Logged-in user flow: Process payment with saved payment method
+        console.log("💳 Processing holding deposit payment...");
 
-      if (!purchaseResponse.success) {
-        alert(`Failed to create cabin purchase: ${purchaseResponse.message || "Unknown error"}`);
-        return;
+        const depositResponse: any = await apiClient.request("/api/holding-deposit", {
+          method: "POST",
+          body: JSON.stringify({
+            paymentMethodId: selectedPaymentMethod,
+            cabinType: selectedCabinForInvestment,
+            location: locationName,
+            totalAmount: calculateTotalDeposit(),
+            extras: purchasedExtras,
+            siteId: selectedSite._id,
+            locationId: locationId,
+          }),
+        });
+
+        if (!depositResponse.success) {
+          throw new Error(depositResponse.message || "Payment failed");
+        }
+
+        console.log("✅ Holding deposit payment successful:", depositResponse);
+
+        // Add to local state for immediate UI update
+        const newInvestment = {
+          id: depositResponse.cabinPurchase?.id || `INV-${Date.now()}`,
+          cabinType: selectedCabinForInvestment,
+          location: locationName,
+          purchaseDate: new Date().toISOString().split("T")[0],
+          purchasePrice: selectedCabin?.price || 0,
+          currentValue: selectedCabin?.price || 0,
+          totalIncome: 0,
+          monthlyIncome: 0,
+          status: "Deposit Paid",
+          nextPayment: "Build Complete (30%)",
+          siteId: selectedSite._id,
+          siteNumber: selectedSite.siteNumber,
+          siteLeaseFee: selectedSite.siteLeaseFee,
+          purchasedExtras: purchasedExtras,
+        };
+
+        setUserInvestments([...userInvestments, newInvestment]);
+        setShowInvestmentModal(false);
+
+        alert(
+          `🎉 Congratulations! Your $100 holding deposit has been processed!\n\n` +
+          `Cabin: ${selectedCabin?.name}\n` +
+          `Site: #${selectedSite.siteNumber}\n` +
+          `Location: ${locationName}\n\n` +
+          `You can view your investment in the Investor Portal.`
+        );
+
+        setCurrentPage("investor-portal");
+      } else {
+        // New user flow: Register and process payment via guest checkout
+        console.log("Creating new investment account with payment...");
+
+        // Validate passwords match
+        if (investmentData.password !== investmentData.confirmPassword) {
+          setPaymentError("Passwords do not match!");
+          setPaymentProcessing(false);
+          return;
+        }
+
+        // Use guest checkout endpoint that handles registration + payment
+        const guestCheckoutResponse: any = await apiClient.request('/api/holding-deposit-guest', {
+          method: 'POST',
+          body: JSON.stringify({
+            firstName: investmentData.firstName,
+            lastName: investmentData.lastName,
+            email: investmentData.email,
+            password: investmentData.password,
+            phone: investmentData.phone,
+            referralCode: investmentData.referralCode || undefined,
+            cabinType: selectedCabinForInvestment,
+            location: locationName,
+            totalAmount: calculateTotalDeposit(),
+            extras: purchasedExtras,
+            siteId: selectedSite._id,
+            locationId: locationId,
+            // Note: For guest checkout, we need to use Stripe Elements
+            // which will be implemented in the CardPaymentForm component
+          }),
+        });
+
+        if (!guestCheckoutResponse.success) {
+          throw new Error(guestCheckoutResponse.message || "Registration/payment failed");
+        }
+
+        // Auto-login with returned token
+        if (guestCheckoutResponse.token) {
+          localStorage.setItem('authToken', guestCheckoutResponse.token);
+          localStorage.setItem('user', JSON.stringify(guestCheckoutResponse.user));
+          setIsLoggedIn(true);
+        }
+
+        console.log("✅ Guest checkout successful:", guestCheckoutResponse);
+
+        const newInvestment = {
+          id: guestCheckoutResponse.cabinPurchase?.id || `INV-${Date.now()}`,
+          cabinType: selectedCabinForInvestment,
+          location: locationName,
+          purchaseDate: new Date().toISOString().split("T")[0],
+          purchasePrice: selectedCabin?.price || 0,
+          currentValue: selectedCabin?.price || 0,
+          totalIncome: 0,
+          monthlyIncome: 0,
+          status: "Deposit Paid",
+          nextPayment: "Build Complete (30%)",
+          siteId: selectedSite._id,
+          siteNumber: selectedSite.siteNumber,
+          siteLeaseFee: selectedSite.siteLeaseFee,
+          purchasedExtras: purchasedExtras,
+        };
+
+        setUserInvestments([...userInvestments, newInvestment]);
+        setShowInvestmentModal(false);
+
+        alert(
+          `🎉 Congratulations! Your account has been created and $100 holding deposit processed!\n\n` +
+          `Cabin: ${selectedCabin?.name}\n` +
+          `Site: #${selectedSite.siteNumber}\n` +
+          `Location: ${locationName}\n\n` +
+          `You can view your investment in the Investor Portal.`
+        );
+
+        setCurrentPage("investor-portal");
       }
 
-      console.log("✅ Cabin purchase created successfully:", purchaseResponse.cabin);
-
-      // Add to local state for immediate UI update
-      const newInvestment = {
-        id: purchaseResponse.cabin.id,
-        cabinType: selectedCabinForInvestment,
-        location: investmentData.location,
-        purchaseDate: new Date().toISOString().split("T")[0],
-        purchasePrice: selectedCabin?.price || 0,
-        currentValue: selectedCabin?.price || 0,
-        totalIncome: 0,
-        monthlyIncome: 0,
-        status: "Pending Build",
-        nextPayment: "Build Complete (30%)",
-        siteId: selectedSite._id,
-        siteNumber: selectedSite.siteNumber,
-        siteLeaseFee: selectedSite.siteLeaseFee,
-        purchasedExtras: purchasedExtras,
-      };
-
-      setUserInvestments([...userInvestments, newInvestment]);
-
-      setShowInvestmentModal(false);
-
-      // Show success message
-      alert(
-        `🎉 Congratulations! Your cabin reservation is confirmed!\n\n` +
-        `Cabin: ${selectedCabin?.name}\n` +
-        `Site: #${selectedSite.siteNumber}\n` +
-        `Location: ${investmentData.location}\n\n` +
-        `You can view your investment in the Investor Portal.`
-      );
-
-      // Navigate to investor portal
-      setCurrentPage("investor-portal");
-
-      // Apply referral credits if referral code was used (only for first investment)
+      // Apply referral credits if referral code was used
       if (investmentData.referralCode && referralCodeValid) {
         try {
           const user = apiClient.getUser();
@@ -380,18 +500,28 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
           }
         } catch (error) {
           console.error("Error applying referral credits:", error);
-          // Don't block the investment flow if referral credits fail
         }
       }
     } catch (error: any) {
       console.error("Investment submission error:", error);
-      alert(
-        `Failed to process investment: ${error.message || "Unknown error"}. Please try again.`
-      );
+      setPaymentError(error.message || "Payment failed. Please try again.");
+    } finally {
+      setPaymentProcessing(false);
     }
+  };
 
-    // Redirect to investor portal
-    setCurrentPage("investor-portal");
+  // Format brand name for display
+  const formatBrandName = (brand: string) => {
+    const brandMap: Record<string, string> = {
+      visa: "Visa",
+      mastercard: "Mastercard",
+      amex: "American Express",
+      discover: "Discover",
+      diners: "Diners Club",
+      jcb: "JCB",
+      unionpay: "UnionPay",
+    };
+    return brandMap[brand.toLowerCase()] || brand;
   };
 
   if (!showInvestmentModal || !selectedCabin) return null;
@@ -419,13 +549,18 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
           Reserve Your Investment
         </h2>
 
-        {/* Cabin Image and Details */}
+        {/* Cabin Image Slider and Details */}
         <div className="mb-6">
-          <img
-            src={selectedCabin.image}
-            alt={selectedCabin.name}
-            className="w-full h-48 object-cover rounded-lg mb-4"
-          />
+          <div className="rounded-lg overflow-hidden mb-4">
+            <CabinImageSlider
+              images={cabinImages[selectedCabinForInvestment as CabinType] || [selectedCabin.image]}
+              autoplay={true}
+              interval={4000}
+              className="h-48"
+              showControls={true}
+              showIndicators={true}
+            />
+          </div>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3
@@ -471,16 +606,29 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
         </div>
 
         {/* Site Selection Step */}
-        {currentStep === "site" && locationId && (
+        {currentStep === "site" && (
           <div className="mb-6">
-            <SiteSelector
-              locationId={locationId}
-              cabinType={selectedCabinForInvestment as string}
-              onSiteSelect={(site) => {
-                setSelectedSite(site);
-              }}
-              selectedSiteId={selectedSite?._id}
-            />
+            {/* Selected Location Display */}
+            <div className="mb-4 p-3 bg-[#f5f5f5] rounded-lg">
+              <p className="text-sm text-gray-600">Location</p>
+              <p className="font-bold text-[#0e181f]">{locationName}</p>
+            </div>
+
+            {/* Site Selector */}
+            {locationId ? (
+              <SiteSelector
+                locationId={locationId}
+                cabinType={selectedCabinForInvestment as string}
+                onSiteSelect={(site) => {
+                  setSelectedSite(site);
+                }}
+                selectedSiteId={selectedSite?._id}
+              />
+            ) : (
+              <div className="text-center py-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-yellow-800 text-sm">Loading location...</p>
+              </div>
+            )}
 
             {selectedSite && (
               <div className="mt-6">
@@ -832,20 +980,9 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
             >
               Preferred Location
             </label>
-            <select
-              value={investmentData.location}
-              onChange={(e) =>
-                setInvestmentData({
-                  ...investmentData,
-                  location: e.target.value,
-                })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#86DBDF]"
-              required
-            >
-              <option value="Mansfield">Mansfield, Victoria</option>
-              <option value="Byron Bay">Byron Bay, NSW</option>
-            </select>
+            <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+              {locationName || "Loading..."}
+            </div>
           </div>
 
           {/* Account Creation Fields - Only show if not logged in */}
@@ -1452,21 +1589,100 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
             </div>
           </div>
 
+          {/* Payment Method Selection - For Logged In Users */}
+          {isLoggedIn && (
+            <div className="mb-6">
+              <h3
+                className="text-lg font-bold mb-3"
+                style={{ color: colors.darkBlue }}
+              >
+                <Lock className="inline w-4 h-4 mr-2" />
+                Payment Method
+              </h3>
+
+              {loadingPaymentMethods ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ffcf00] mx-auto mb-2"></div>
+                  <p className="text-gray-600 text-sm">Loading payment methods...</p>
+                </div>
+              ) : savedPaymentMethods.length === 0 ? (
+                <div className="text-center py-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <CreditCard className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                  <p className="text-yellow-800 text-sm font-bold mb-1">No Saved Payment Methods</p>
+                  <p className="text-yellow-700 text-xs">
+                    Please add a payment method in your Account Settings before proceeding.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {savedPaymentMethods.map((method) => (
+                    <label
+                      key={method.id}
+                      className={`flex items-center p-4 rounded-lg border-2 cursor-pointer hover:bg-gray-50 transition-all ${
+                        selectedPaymentMethod === method.id
+                          ? "border-[#ffcf00] bg-[#ffcf00]/10"
+                          : "border-gray-200"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        checked={selectedPaymentMethod === method.id}
+                        onChange={() => setSelectedPaymentMethod(method.id)}
+                        className="w-4 h-4 text-[#ffcf00] mr-3"
+                      />
+                      <CreditCard className="w-8 h-8 text-gray-600 mr-3" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-[#0e181f]">
+                            {formatBrandName(method.brand)} •••• {method.last4}
+                          </span>
+                          {method.isDefault && (
+                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#ffcf00] text-[#0e181f]">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Expires {method.expiry}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Payment Error Message */}
+          {paymentError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{paymentError}</p>
+            </div>
+          )}
+
           <div className="flex gap-3">
             <button
               type="submit"
-              className="flex-1 py-3 rounded-lg font-bold transition-all hover:opacity-90"
+              disabled={paymentProcessing || (isLoggedIn && savedPaymentMethods.length === 0)}
+              className="flex-1 py-3 rounded-lg font-bold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: colors.yellow,
                 color: colors.darkBlue,
               }}
             >
-              Pay Holding Deposit
+              {paymentProcessing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#0e181f]"></div>
+                  Processing...
+                </span>
+              ) : (
+                "Pay Holding Deposit"
+              )}
             </button>
             <button
               type="button"
               onClick={() => setShowInvestmentModal(false)}
-              className="flex-1 py-3 rounded-lg font-bold transition-all hover:opacity-90"
+              disabled={paymentProcessing}
+              className="flex-1 py-3 rounded-lg font-bold transition-all hover:opacity-90 disabled:opacity-50"
               style={{
                 backgroundColor: colors.darkBlue,
                 color: colors.white,
