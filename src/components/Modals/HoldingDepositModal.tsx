@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { CreditCard, Lock } from "lucide-react";
+import { CreditCard, Lock, Plus } from "lucide-react";
 import apiClient from "../../api/client";
 import { getExtrasForCabin } from "../../config/mockCalculate";
 import { loadStripe } from '@stripe/stripe-js';
@@ -360,6 +360,125 @@ const GuestCheckoutForm: React.FC<{
   );
 };
 
+/**
+ * LoggedInNewCardForm Component - For logged-in users to add a new card
+ */
+interface LoggedInNewCardFormProps {
+  onCardAdded: (paymentMethodId: string) => void;
+  onCancel: () => void;
+  processing: boolean;
+  setProcessing: (processing: boolean) => void;
+  setError: (error: string | null) => void;
+}
+
+const LoggedInNewCardFormContent: React.FC<LoggedInNewCardFormProps> = ({
+  onCardAdded,
+  onCancel,
+  processing,
+  setProcessing,
+  setError,
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const handleAddCard = async () => {
+    if (!stripe || !elements) {
+      return;
+    }
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      setError('Card element not found');
+      return;
+    }
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      // Create payment method
+      const { error: stripeError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      if (stripeError) {
+        throw new Error(stripeError.message);
+      }
+
+      if (!paymentMethod) {
+        throw new Error('Failed to create payment method');
+      }
+
+      console.log('💳 New card added:', paymentMethod.id);
+      onCardAdded(paymentMethod.id);
+    } catch (err: any) {
+      console.error('Error adding card:', err);
+      setError(err.message || 'Failed to add card');
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="border-2 border-[#86dbdf] rounded-lg p-4 bg-[#86dbdf]/10">
+      <h4 className="font-bold text-[#0e181f] mb-3 flex items-center gap-2">
+        <Plus className="w-4 h-4" />
+        Add New Card
+      </h4>
+      <div className="border-2 rounded-lg p-4 bg-white" style={{ borderColor: colors.aqua }}>
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: colors.darkBlue,
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
+              },
+              invalid: {
+                color: '#fa755a',
+              },
+            },
+          }}
+        />
+      </div>
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 mt-3">
+        <Lock className="w-4 h-4 mt-0.5 text-[#0e181f]" />
+        <p className="text-xs text-[#0e181f]">
+          Your card details are encrypted and securely stored by Stripe. Wild Things never sees your full card number.
+        </p>
+      </div>
+      <div className="flex gap-2 mt-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={processing}
+          className="flex-1 px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-800 hover:bg-gray-300 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleAddCard}
+          disabled={!stripe || processing}
+          className="flex-1 px-4 py-2 rounded-lg font-bold bg-[#ffcf00] text-[#0e181f] hover:opacity-90 disabled:opacity-50"
+        >
+          {processing ? 'Adding...' : 'Add Card'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const LoggedInNewCardForm: React.FC<LoggedInNewCardFormProps> = (props) => {
+  return (
+    <Elements stripe={stripePromise}>
+      <LoggedInNewCardFormContent {...props} />
+    </Elements>
+  );
+};
+
 const HoldingDepositForm: React.FC<
   Omit<HoldingDepositModalProps, "isOpen">
 > = ({ onClose, onSuccess, onLogin, cabinType, location, totalAmount, selectedExtras = [], selectedSite }) => {
@@ -369,6 +488,7 @@ const HoldingDepositForm: React.FC<
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showNewCardForm, setShowNewCardForm] = useState(false);
 
   // Check authentication and load data
   useEffect(() => {
@@ -487,22 +607,58 @@ const HoldingDepositForm: React.FC<
     );
   }
 
-  // If logged in but no saved payment methods, show message
-  if (savedPaymentMethods.length === 0) {
+  // If logged in but no saved payment methods and not showing new card form, show add card prompt
+  if (savedPaymentMethods.length === 0 && !showNewCardForm) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-8 bg-[#86dbdf]/10 rounded-lg border-2 border-[#86dbdf]">
         <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-400" />
         <p className="text-gray-700 font-bold mb-2">No Saved Payment Methods</p>
         <p className="text-sm text-gray-600 mb-4">
-          Please add a payment method in your Account Settings before making a deposit.
+          Add a card to complete your $100 holding deposit payment.
         </p>
         <button
-          onClick={onClose}
-          className="px-6 py-3 rounded-lg font-bold bg-[#ffcf00] text-[#0e181f] hover:opacity-90"
+          onClick={() => setShowNewCardForm(true)}
+          className="px-6 py-3 rounded-lg font-bold bg-[#ffcf00] text-[#0e181f] hover:opacity-90 flex items-center gap-2 mx-auto"
         >
-          Go to Account Settings
+          <Plus className="w-4 h-4" />
+          Add New Card
         </button>
       </div>
+    );
+  }
+
+  // If showing new card form for logged-in user with no saved methods
+  if (showNewCardForm && savedPaymentMethods.length === 0) {
+    return (
+      <LoggedInNewCardForm
+        onCardAdded={(paymentMethodId) => {
+          setSelectedPaymentMethod(paymentMethodId);
+          setShowNewCardForm(false);
+          // Reload payment methods to show the new card
+          const loadNewCard = async () => {
+            try {
+              const response = await apiClient.listPaymentMethods();
+              if (response.success && response.paymentMethods) {
+                const formattedMethods: PaymentMethod[] = response.paymentMethods.map((pm: any) => ({
+                  id: pm.id,
+                  last4: pm.card?.last4 || pm.last4 || '0000',
+                  brand: pm.card?.brand || pm.brand || 'card',
+                  expiry: pm.card ? `${pm.card.exp_month}/${pm.card.exp_year}` : pm.expiry || '',
+                  isDefault: pm.isDefault || false,
+                }));
+                setSavedPaymentMethods(formattedMethods);
+              }
+            } catch (error) {
+              console.error('Error reloading payment methods:', error);
+            }
+          };
+          loadNewCard();
+        }}
+        onCancel={() => setShowNewCardForm(false)}
+        processing={processing}
+        setProcessing={setProcessing}
+        setError={setError}
+      />
     );
   }
 
@@ -562,45 +718,89 @@ const HoldingDepositForm: React.FC<
         </p>
       </div>
 
-      {/* Saved Payment Methods */}
+      {/* Saved Payment Methods or New Card Form */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">
           Select Payment Method
         </label>
-        <div className="space-y-2">
-          {savedPaymentMethods.map((method) => (
-            <label
-              key={method.id}
-              className={`flex items-center p-4 rounded-lg border-2 cursor-pointer hover:bg-gray-50 transition-all ${
-                selectedPaymentMethod === method.id
-                  ? "border-[#ffcf00] bg-[#ffcf00]/[0.1]"
-                  : "border-gray-200"
-              }`}
-            >
-              <input
-                type="radio"
-                name="paymentMethod"
-                checked={selectedPaymentMethod === method.id}
-                onChange={() => setSelectedPaymentMethod(method.id)}
-                className="w-4 h-4 text-[#ffcf00] mr-3"
-              />
-              <CreditCard className="w-8 h-8 text-gray-600 mr-3" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-[#0e181f]">
-                    {formatBrandName(method.brand)} •••• {method.last4}
-                  </span>
-                  {method.isDefault && (
-                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#ffcf00] text-[#0e181f]">
-                      Default
+
+        {showNewCardForm ? (
+          // Show new card form
+          <LoggedInNewCardForm
+            onCardAdded={(paymentMethodId) => {
+              setSelectedPaymentMethod(paymentMethodId);
+              setShowNewCardForm(false);
+              // Reload payment methods to show the new card
+              const loadNewCard = async () => {
+                try {
+                  const response = await apiClient.listPaymentMethods();
+                  if (response.success && response.paymentMethods) {
+                    const formattedMethods: PaymentMethod[] = response.paymentMethods.map((pm: any) => ({
+                      id: pm.id,
+                      last4: pm.card?.last4 || pm.last4 || '0000',
+                      brand: pm.card?.brand || pm.brand || 'card',
+                      expiry: pm.card ? `${pm.card.exp_month}/${pm.card.exp_year}` : pm.expiry || '',
+                      isDefault: pm.isDefault || false,
+                    }));
+                    setSavedPaymentMethods(formattedMethods);
+                  }
+                } catch (error) {
+                  console.error('Error reloading payment methods:', error);
+                }
+              };
+              loadNewCard();
+            }}
+            onCancel={() => setShowNewCardForm(false)}
+            processing={processing}
+            setProcessing={setProcessing}
+            setError={setError}
+          />
+        ) : (
+          // Show saved payment methods
+          <div className="space-y-2">
+            {savedPaymentMethods.map((method) => (
+              <label
+                key={method.id}
+                className={`flex items-center p-4 rounded-lg border-2 cursor-pointer hover:bg-gray-50 transition-all ${
+                  selectedPaymentMethod === method.id
+                    ? "border-[#ffcf00] bg-[#ffcf00]/[0.1]"
+                    : "border-gray-200"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  checked={selectedPaymentMethod === method.id}
+                  onChange={() => setSelectedPaymentMethod(method.id)}
+                  className="w-4 h-4 text-[#ffcf00] mr-3"
+                />
+                <CreditCard className="w-8 h-8 text-gray-600 mr-3" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#0e181f]">
+                      {formatBrandName(method.brand)} •••• {method.last4}
                     </span>
-                  )}
+                    {method.isDefault && (
+                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#ffcf00] text-[#0e181f]">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">Expires {method.expiry}</p>
                 </div>
-                <p className="text-sm text-gray-600">Expires {method.expiry}</p>
-              </div>
-            </label>
-          ))}
-        </div>
+              </label>
+            ))}
+            {/* Add new card option */}
+            <button
+              type="button"
+              onClick={() => setShowNewCardForm(true)}
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-gray-300 text-gray-600 hover:border-[#86dbdf] hover:text-[#0e181f] hover:bg-[#86dbdf]/10 transition-all"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="font-bold">Add New Card</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -620,7 +820,7 @@ const HoldingDepositForm: React.FC<
         </button>
         <button
           type="submit"
-          disabled={processing || !selectedPaymentMethod}
+          disabled={processing || showNewCardForm || !selectedPaymentMethod}
           className="flex-1 px-4 py-3 rounded-lg font-bold transition-all bg-[#ffcf00] text-[#0e181f] hover:opacity-90 disabled:opacity-50"
         >
           {processing ? "Processing..." : "Pay $100 Deposit"}

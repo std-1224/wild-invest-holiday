@@ -9,9 +9,22 @@ import {
 import apiClient from "../../api/client";
 import { SiteSelector } from "../SiteSelector";
 import CabinImageSlider from "../CabinImageSlider";
-import { CreditCard, Lock } from 'lucide-react';
+import { CreditCard, Lock, Plus } from 'lucide-react';
+import { loadStripe } from '@stripe/stripe-js';
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js';
+import { stripeClient } from '../../api/stripe';
+
+// Initialize Stripe
+const stripePromise = loadStripe(stripeClient.getPublishableKey());
 
 type CabinType = "1BR" | "2BR";
+
+
 
 interface PaymentMethod {
   id: string;
@@ -45,6 +58,125 @@ const colors = {
   peach: "#FFCDA3",
   white: "#FFFFFF",
   lightGray: "#F5F5F5",
+};
+
+/**
+ * NewCardForm Component - Allows users to add a new card using Stripe Elements
+ */
+interface NewCardFormProps {
+  onCardAdded: (paymentMethodId: string) => void;
+  onCancel: () => void;
+  processing: boolean;
+  setProcessing: (processing: boolean) => void;
+  setError: (error: string | null) => void;
+}
+
+const NewCardFormContent: React.FC<NewCardFormProps> = ({
+  onCardAdded,
+  onCancel,
+  processing,
+  setProcessing,
+  setError,
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const handleAddCard = async () => {
+    if (!stripe || !elements) {
+      return;
+    }
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      setError('Card element not found');
+      return;
+    }
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      // Create payment method
+      const { error: stripeError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      if (stripeError) {
+        throw new Error(stripeError.message);
+      }
+
+      if (!paymentMethod) {
+        throw new Error('Failed to create payment method');
+      }
+
+      console.log('💳 New card added:', paymentMethod.id);
+      onCardAdded(paymentMethod.id);
+    } catch (err: any) {
+      console.error('Error adding card:', err);
+      setError(err.message || 'Failed to add card');
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="border-2 border-[#86DBDF] rounded-lg p-4 bg-[#86DBDF]/10">
+      <h4 className="font-bold text-[#0E181F] mb-3 flex items-center gap-2">
+        <Plus className="w-4 h-4" />
+        Add New Card
+      </h4>
+      <div className="border-2 rounded-lg p-4 bg-white" style={{ borderColor: colors.aqua }}>
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: colors.darkBlue,
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
+              },
+              invalid: {
+                color: '#fa755a',
+              },
+            },
+          }}
+        />
+      </div>
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 mt-3">
+        <Lock className="w-4 h-4 mt-0.5 text-[#0E181F]" />
+        <p className="text-xs text-[#0E181F]">
+          Your card details are encrypted and securely stored by Stripe. Wild Things never sees your full card number.
+        </p>
+      </div>
+      <div className="flex gap-2 mt-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={processing}
+          className="flex-1 px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-800 hover:bg-gray-300 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleAddCard}
+          disabled={!stripe || processing}
+          className="flex-1 px-4 py-2 rounded-lg font-bold bg-[#ffcf00] text-[#0e181f] hover:opacity-90 disabled:opacity-50"
+        >
+          {processing ? 'Adding...' : 'Add Card'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const NewCardForm: React.FC<NewCardFormProps> = (props) => {
+  return (
+    <Elements stripe={stripePromise}>
+      <NewCardFormContent {...props} />
+    </Elements>
+  );
 };
 
 export const InvestmentModal: React.FC<InvestmentModalProps> = ({
@@ -124,6 +256,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+  const [showNewCardForm, setShowNewCardForm] = useState(false);
 
   // Use selected location from InvestorPortal when modal opens
   useEffect(() => {
@@ -1605,15 +1738,56 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ffcf00] mx-auto mb-2"></div>
                   <p className="text-gray-600 text-sm">Loading payment methods...</p>
                 </div>
+              ) : showNewCardForm ? (
+                // Show new card form
+                <NewCardForm
+                  onCardAdded={(paymentMethodId) => {
+                    setSelectedPaymentMethod(paymentMethodId);
+                    setShowNewCardForm(false);
+                    // Optionally reload payment methods to show the new card
+                    const loadNewCard = async () => {
+                      try {
+                        const response = await apiClient.listPaymentMethods();
+                        if (response.success && response.paymentMethods) {
+                          const formattedMethods: PaymentMethod[] = response.paymentMethods.map((pm: any) => ({
+                            id: pm.id,
+                            last4: pm.card?.last4 || pm.last4 || '0000',
+                            brand: pm.card?.brand || pm.brand || 'card',
+                            expiry: pm.card ? `${pm.card.exp_month}/${pm.card.exp_year}` : pm.expiry || '',
+                            isDefault: pm.isDefault || false,
+                          }));
+                          setSavedPaymentMethods(formattedMethods);
+                        }
+                      } catch (error) {
+                        console.error('Error reloading payment methods:', error);
+                      }
+                    };
+                    loadNewCard();
+                  }}
+                  onCancel={() => setShowNewCardForm(false)}
+                  processing={paymentProcessing}
+                  setProcessing={setPaymentProcessing}
+                  setError={setPaymentError}
+                />
               ) : savedPaymentMethods.length === 0 ? (
-                <div className="text-center py-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                // No saved payment methods - show add card prompt
+                <div className="text-center py-4 bg-[#86DBDF]/10 rounded-lg border-2 border-[#86DBDF]">
                   <CreditCard className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                  <p className="text-yellow-800 text-sm font-bold mb-1">No Saved Payment Methods</p>
-                  <p className="text-yellow-700 text-xs">
-                    Please add a payment method in your Account Settings before proceeding.
+                  <p className="text-[#0e181f] text-sm font-bold mb-1">No Saved Payment Methods</p>
+                  <p className="text-gray-600 text-xs mb-4">
+                    Add a card to complete your $100 holding deposit payment.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCardForm(true)}
+                    className="px-6 py-2 rounded-lg font-bold bg-[#ffcf00] text-[#0e181f] hover:opacity-90 flex items-center gap-2 mx-auto"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add New Card
+                  </button>
                 </div>
               ) : (
+                // Show saved payment methods with option to add new
                 <div className="space-y-2">
                   {savedPaymentMethods.map((method) => (
                     <label
@@ -1647,6 +1821,15 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
                       </div>
                     </label>
                   ))}
+                  {/* Add new card option */}
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCardForm(true)}
+                    className="w-full flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-gray-300 text-gray-600 hover:border-[#86DBDF] hover:text-[#0e181f] hover:bg-[#86DBDF]/10 transition-all"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="font-bold">Add New Card</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -1662,7 +1845,7 @@ export const InvestmentModal: React.FC<InvestmentModalProps> = ({
           <div className="flex gap-3">
             <button
               type="submit"
-              disabled={paymentProcessing || (isLoggedIn && savedPaymentMethods.length === 0)}
+              disabled={paymentProcessing || showNewCardForm || (isLoggedIn && !selectedPaymentMethod)}
               className="flex-1 py-3 rounded-lg font-bold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: colors.yellow,
