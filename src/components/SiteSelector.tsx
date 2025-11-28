@@ -20,7 +20,7 @@ interface Location {
 interface SiteSelectorProps {
   locationId: string;
   cabinType: string;
-  onSiteSelect: (site: Site) => void;
+  onSiteSelect: (site: Site | null) => void;
   selectedSiteId?: string;
 }
 
@@ -121,25 +121,35 @@ export const SiteSelector: React.FC<SiteSelectorProps> = ({
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2">
-        {sites.map((site) => (
-          <button
-            key={site._id}
-            onClick={() => onSiteSelect(site)}
-            className={`p-4 rounded-lg border-2 transition-all hover:scale-105 ${
-              selectedSiteId === site._id
-                ? "border-[#ec874c] bg-[#ec874c] text-white"
-                : "border-gray-300 bg-white text-[#0e181f] hover:border-[#86dbdf]"
-            }`}
-          >
-            <div className="text-center">
-              <p className="text-2xl font-bold mb-1">#{site.siteNumber}</p>
-              <p className="text-xs opacity-80">{site.cabinType}</p>
-              <p className="text-xs mt-2 font-semibold">
-                ${site.siteLeaseFee?.toLocaleString()}/yr
-              </p>
-            </div>
-          </button>
-        ))}
+        {sites.map((site) => {
+          const isSelected = selectedSiteId === site._id;
+          return (
+            <button
+              key={site._id}
+              onClick={() => {
+                // Toggle selection: if already selected, unselect it
+                if (isSelected) {
+                  onSiteSelect(null);
+                } else {
+                  onSiteSelect(site);
+                }
+              }}
+              className={`p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+                isSelected
+                  ? "border-[#ec874c] bg-[#ec874c] text-white"
+                  : "border-gray-300 bg-white text-[#0e181f] hover:border-[#86dbdf]"
+              }`}
+            >
+              <div className="text-center">
+                <p className="text-2xl font-bold mb-1">#{site.siteNumber}</p>
+                <p className="text-xs opacity-80">{site.cabinType}</p>
+                <p className="text-xs mt-2 font-semibold">
+                  ${site.siteLeaseFee?.toLocaleString()}/yr
+                </p>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       <div className="bg-[#f5f5f5] rounded-lg p-4">
