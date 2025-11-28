@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   cabins,
   calculateROI,
@@ -56,6 +56,52 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
   const [selectedCabinType, setSelectedCabinType] = useState<CabinType | null>(
     null
   );
+
+  // Video refs for autoplay management
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+
+  // Setup IntersectionObserver for video autoplay
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target as HTMLVideoElement;
+          if (entry.isIntersecting) {
+            // Play video when it comes into view
+            video.play().catch((error) => {
+              console.log("Video autoplay failed:", error);
+            });
+          } else {
+            // Pause video when it goes out of view
+            video.pause();
+          }
+        });
+      },
+      {
+        threshold: 0.5, // Video must be at least 50% visible
+      }
+    );
+
+    // Observe all video elements
+    Object.values(videoRefs.current).forEach((video) => {
+      if (video) {
+        observer.observe(video);
+        // Also try to play immediately on mount if visible
+        video.play().catch((error) => {
+          console.log("Initial video autoplay failed:", error);
+        });
+      }
+    });
+
+    return () => {
+      // Cleanup observer
+      Object.values(videoRefs.current).forEach((video) => {
+        if (video) {
+          observer.unobserve(video);
+        }
+      });
+    };
+  }, []); // Run once on mount
 
   // Load locations on mount
   useEffect(() => {
@@ -160,6 +206,9 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                     {key === "3BR" ? (
                       <div className="relative w-full h-full min-h-[320px]">
                         <video
+                          ref={(el) => {
+                            videoRefs.current["3BR"] = el;
+                          }}
                           src="/3br-cabin-video.mp4"
                           autoPlay
                           loop
@@ -173,6 +222,9 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                     ) : key === "1BR" ? (
                       <div className="relative w-full h-full min-h-[320px]">
                         <video
+                          ref={(el) => {
+                            videoRefs.current["1BR"] = el;
+                          }}
                           src="/1BR Motion.mp4"
                           autoPlay
                           loop
@@ -186,6 +238,9 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
                     ) : key === "2BR" ? (
                       <div className="relative w-full h-full min-h-[320px]">
                         <video
+                          ref={(el) => {
+                            videoRefs.current["2BR"] = el;
+                          }}
                           src="/2BR Motion.mp4"
                           autoPlay
                           loop
