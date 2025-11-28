@@ -66,19 +66,13 @@ export const InvestPage: React.FC<HolidayHomesProps> = ({
       (entries) => {
         entries.forEach((entry) => {
           const video = entry.target as HTMLVideoElement;
-          if (entry.isIntersecting) {
-            // Play video when it comes into view
-            video.play().catch((error) => {
-              console.log("Video autoplay failed:", error);
-            });
-          } else {
-            // Pause video when it goes out of view
-            video.pause();
-          }
+          video.play().catch((error) => {
+            console.log("Video autoplay failed:", error);
+          });
         });
       },
       {
-        threshold: 0.5, // Video must be at least 50% visible
+        threshold: 0.1, // Video must be at least 50% visible
       }
     );
 
